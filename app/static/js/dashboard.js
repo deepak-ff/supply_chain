@@ -84,7 +84,7 @@ function updateServices(services) {
                         
                         <div class="mb-3">
                             <small class="text-muted">
-                                <i class="fas fa-cube"></i> Category: ${service.category}<br>
+                                <i class="fas fa-cube"></i> Category: ${service.category || 'Uncategorized'}<br>
                                 <i class="fas fa-exclamation"></i> Criticality: ${service.criticality}<br>
                                 <i class="fas fa-plug"></i> Status: ${service.status}
                             </small>
