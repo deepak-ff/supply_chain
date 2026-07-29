@@ -33,7 +33,18 @@ class Config:
         'X-Content-Type-Options': 'nosniff',
         'X-Frame-Options': 'SAMEORIGIN',
         'X-XSS-Protection': '1; mode=block',
-        'Content-Security-Policy': "default-src 'self'; script-src 'self' 'unsafe-inline' https://cdn.jsdelivr.net https://code.jquery.com; style-src 'self' 'unsafe-inline' https://cdn.jsdelivr.net;"
+       'Content-Security-Policy': (
+       "default-src 'self'; "
+       "script-src 'self' 'unsafe-inline' "
+       "https://cdn.jsdelivr.net "
+       "https://code.jquery.com "
+       "https://cdnjs.cloudflare.com; "
+       "style-src 'self' 'unsafe-inline' "
+       "https://cdn.jsdelivr.net "
+       "https://cdnjs.cloudflare.com; "
+       "img-src 'self' data:; "
+       "connect-src 'self';"
+)
     }
     
     # Session Security
