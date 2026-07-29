@@ -391,3 +391,62 @@ def clear_simulated_events():
         db.session.rollback()
         current_app.logger.error(f'Error clearing events: {e}')
         return jsonify({'error': str(e)}), 500
+@api_bp.route('/demo/seed-services', methods=['POST'])
+def seed_demo_services():
+    """Create sample services for the hosted demo environment."""
+
+    try:
+        demo_services = [
+            {
+                'name': 'chrome',
+                'display_name': 'Google Chrome',
+                'vendor': 'Google',
+                'category': 'Browser',
+                'criticality': 'HIGH',
+                'status': 'monitoring'
+            },
+            {
+                'name': 'zoom',
+                'display_name': 'Zoom',
+                'vendor': 'Zoom Video Communications',
+                'category': 'Communication',
+                'criticality': 'HIGH',
+                'status': 'monitoring'
+            },
+            {
+                'name': 'slack',
+                'display_name': 'Slack',
+                'vendor': 'Salesforce',
+                'category': 'Communication',
+                'criticality': 'MEDIUM',
+                'status': 'monitoring'
+            }
+        ]
+
+        created_services = []
+
+        for service_data in demo_services:
+            service = Service.query.filter_by(
+                name=service_data['name']
+            ).first()
+
+            if not service:
+                service = Service(**service_data)
+                db.session.add(service)
+                created_services.append(service_data['name'])
+
+        db.session.commit()
+
+        return jsonify({
+            'success': True,
+            'message': 'Demo services are ready',
+            'created_services': created_services
+        }), 200
+
+    except Exception as error:
+        db.session.rollback()
+        current_app.logger.error(f'Error seeding demo services: {error}')
+        return jsonify({
+            'success': False,
+            'error': 'Could not create demo services'
+        }), 500
