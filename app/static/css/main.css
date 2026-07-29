@@ -1,0 +1,266 @@
+/* ===== GLOBAL STYLES ===== */
+:root {
+    --primary-color: #0d6efd;
+    --success-color: #198754;
+    --danger-color: #dc3545;
+    --warning-color: #ffc107;
+    --info-color: #0dcaf0;
+    --dark-color: #212529;
+    --light-color: #f8f9fa;
+}
+
+body {
+    background-color: var(--light-color);
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    color: #333;
+}
+
+/* ===== NAVBAR ===== */
+.navbar-brand {
+    font-weight: bold;
+    font-size: 1.5rem;
+    letter-spacing: 1px;
+}
+
+/* ===== CARDS ===== */
+.card {
+    border-radius: 8px;
+    border: none;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+    transition: all 0.3s ease;
+}
+
+.card:hover {
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+    transform: translateY(-2px);
+}
+
+.card-header {
+    border-radius: 8px 8px 0 0;
+    font-weight: 600;
+}
+
+/* ===== SCORE ZONE STYLES ===== */
+.zone-GREEN {
+    border-left: 4px solid #198754;
+    background-color: #f0fdf4;
+}
+
+.zone-YELLOW {
+    border-left: 4px solid #ffc107;
+    background-color: #fffbf0;
+}
+
+.zone-ORANGE {
+    border-left: 4px solid #fd7e14;
+    background-color: #fef2e8;
+}
+
+.zone-RED {
+    border-left: 4px solid #dc3545;
+    background-color: #fef0f0;
+}
+
+/* ===== SCORE BADGE ===== */
+.badge-zone {
+    padding: 0.5rem 1rem;
+    font-size: 0.9rem;
+    font-weight: 600;
+    border-radius: 6px;
+}
+
+.badge-GREEN {
+    background-color: #198754;
+    color: white;
+}
+
+.badge-YELLOW {
+    background-color: #ffc107;
+    color: #333;
+}
+
+.badge-ORANGE {
+    background-color: #fd7e14;
+    color: white;
+}
+
+.badge-RED {
+    background-color: #dc3545;
+    color: white;
+}
+
+/* ===== SERVICE CARDS ===== */
+.service-card {
+    transition: all 0.3s ease;
+}
+
+.service-card:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 8px 16px rgba(0, 0, 0, 0.15);
+}
+
+.score-circle {
+    width: 100px;
+    height: 100px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 2rem;
+    font-weight: bold;
+    margin: 1rem auto;
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+}
+
+/* ===== ALERTS ===== */
+.alert-item {
+    padding: 1rem;
+    margin-bottom: 1rem;
+    border-left: 4px solid;
+    border-radius: 6px;
+    transition: all 0.3s ease;
+}
+
+.alert-item:hover {
+    transform: translateX(5px);
+}
+
+.alert-item-YELLOW {
+    border-color: #ffc107;
+    background-color: #fffbf0;
+}
+
+.alert-item-ORANGE {
+    border-color: #fd7e14;
+    background-color: #fef2e8;
+}
+
+.alert-item-RED {
+    border-color: #dc3545;
+    background-color: #fef0f0;
+}
+
+/* ===== BUTTONS ===== */
+.btn {
+    transition: all 0.2s ease;
+    font-weight: 500;
+}
+
+.btn:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.15);
+}
+
+.btn:active {
+    transform: translateY(0);
+}
+
+/* ===== MODALS ===== */
+.modal-content {
+    border-radius: 12px;
+    border: none;
+    box-shadow: 0 10px 40px rgba(0, 0, 0, 0.2);
+}
+
+.modal-header {
+    border-radius: 12px 12px 0 0;
+}
+
+/* ===== ANIMATIONS ===== */
+@keyframes slideIn {
+    from {
+        opacity: 0;
+        transform: translateX(-20px);
+    }
+    to {
+        opacity: 1;
+        transform: translateX(0);
+    }
+}
+
+@keyframes fadeIn {
+    from {
+        opacity: 0;
+    }
+    to {
+        opacity: 1;
+    }
+}
+
+.animate-slide-in {
+    animation: slideIn 0.5s ease;
+}
+
+.animate-fade-in {
+    animation: fadeIn 0.5s ease;
+}
+
+/* ===== RESPONSIVE ===== */
+@media (max-width: 768px) {
+    .score-circle {
+        width: 80px;
+        height: 80px;
+        font-size: 1.5rem;
+    }
+    
+    h1 {
+        font-size: 1.5rem;
+    }
+    
+    .btn-group {
+        display: flex;
+        flex-direction: column;
+        gap: 0.5rem;
+    }
+}
+
+/* ===== UTILITIES ===== */
+.text-truncate-2 {
+    display: -webkit-box;
+    -webkit-line-clamp: 2;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+}
+
+.bg-opacity-10 {
+    opacity: 0.1;
+}
+
+.cursor-pointer {
+    cursor: pointer;
+}
+
+/* ===== FOOTER ===== */
+footer {
+    margin-top: auto;
+}
+
+/* ===== STATUS INDICATORS ===== */
+.status-badge {
+    display: inline-block;
+    width: 10px;
+    height: 10px;
+    border-radius: 50%;
+    margin-right: 0.5rem;
+}
+
+.status-active {
+    background-color: #198754;
+    animation: pulse 2s infinite;
+}
+
+.status-inactive {
+    background-color: #6c757d;
+}
+
+@keyframes pulse {
+    0% {
+        box-shadow: 0 0 0 0 rgba(25, 135, 84, 0.7);
+    }
+    70% {
+        box-shadow: 0 0 0 10px rgba(25, 135, 84, 0);
+    }
+    100% {
+        box-shadow: 0 0 0 0 rgba(25, 135, 84, 0);
+    }
+}

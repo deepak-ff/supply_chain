@@ -1,0 +1,109 @@
+{% extends "base.html" %}
+
+{% block title %}Demo - Attack Simulation{% endblock %}
+
+{% block content %}
+<div class="row mb-4">
+    <div class="col-12">
+        <h1 class="mb-1">
+            <i class="fas fa-flask"></i> Attack Simulation Demo
+        </h1>
+        <p class="text-muted">Simulate supply chain attacks to test detection capabilities</p>
+    </div>
+</div>
+
+<!-- Warning Alert -->
+<div class="alert alert-warning" role="alert">
+    <h5 class="alert-heading">
+        <i class="fas fa-info-circle"></i> Demo Mode
+    </h5>
+    <p>This page simulates attacks by injecting simulated events. After running a simulation:</p>
+    <ol class="mb-0">
+        <li>Return to Dashboard</li>
+        <li>Click "Calculate Scores"</li>
+        <li>Watch DTS scores drop dramatically</li>
+    </ol>
+</div>
+
+<!-- Attack Scenarios -->
+<div class="row mb-4">
+    <div class="col-12">
+        <h4>Available Attack Scenarios</h4>
+    </div>
+</div>
+
+<div class="row" id="scenariosContainer">
+    <!-- Scenarios loaded here -->
+</div>
+
+<!-- Quick Actions -->
+<div class="row mt-5">
+    <div class="col-12">
+        <h4>Quick Actions</h4>
+    </div>
+</div>
+
+<div class="row">
+    <div class="col-md-4">
+        <div class="card">
+            <div class="card-body text-center">
+                <h5><i class="fas fa-bomb fa-2x text-danger mb-3"></i></h5>
+                <h6>Full System Attack</h6>
+                <p class="text-muted small">Attack all monitored services</p>
+                <button class="btn btn-danger" onclick="runFullSystemAttack()">
+                    <i class="fas fa-play"></i> Run
+                </button>
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-md-4">
+        <div class="card">
+            <div class="card-body text-center">
+                <h5><i class="fas fa-redo fa-2x text-warning mb-3"></i></h5>
+                <h6>Clear Simulations</h6>
+                <p class="text-muted small">Remove all simulated events</p>
+                <button class="btn btn-warning" onclick="clearSimulatedEvents()">
+                    <i class="fas fa-trash"></i> Clear
+                </button>
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-md-4">
+        <div class="card">
+            <div class="card-body text-center">
+                <h5><i class="fas fa-chart-line fa-2x text-info mb-3"></i></h5>
+                <h6>Back to Dashboard</h6>
+                <p class="text-muted small">View detection results</p>
+                <a href="/" class="btn btn-info">
+                    <i class="fas fa-arrow-right"></i> Go
+                </a>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Attack Log -->
+<div class="row mt-5">
+    <div class="col-12">
+        <div class="card">
+            <div class="card-header bg-dark text-white">
+                <h5 class="mb-0">
+                    <i class="fas fa-terminal"></i> Simulation Log
+                </h5>
+            </div>
+            <div class="card-body">
+                <div id="attackLog" class="bg-dark text-success p-3" style="height: 300px; overflow-y: auto; font-family: 'Courier New', monospace; font-size: 0.9rem;">
+                    <div class="text-muted">Ready for attack simulation...</div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+{% endblock %}
+
+{% block extra_js %}
+<script src="{{ url_for('static', filename='js/demo.js') }}"></script>
+{% endblock %}
