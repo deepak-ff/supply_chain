@@ -2,62 +2,100 @@
  * Attack Simulation Demo
  */
 
-$(document).ready(function() {
+$(document).ready(function () {
     loadAttackScenarios();
 });
 
+
 function loadAttackScenarios() {
     $.ajax({
-        url: '/api/attack-scenarios',
-        method: 'GET',
-        success: function(scenarios) {
-            const container = $('#scenariosContainer');
+        url: "/api/attack-scenarios",
+        method: "GET",
+
+        success: function (scenarios) {
+            const container = $("#scenariosContainer");
             container.empty();
-            
-            scenarios.forEach(function(scenario) {
-                const card = createScenarioCard(scenario);
-                container.append(card);
+
+            if (!scenarios || scenarios.length === 0) {
+                container.html(
+                    '<div class="col-12">' +
+                    '<div class="alert alert-info">' +
+                    'No attack scenarios are available.' +
+                    '</div>' +
+                    '</div>'
+                );
+                return;
+            }
+
+            scenarios.forEach(function (scenario) {
+                container.append(createScenarioCard(scenario));
             });
-            
+
             loadServices();
         },
-        error: function() {
-            console.error('Failed to load scenarios');
+
+        error: function (xhr) {
+            console.error("Failed to load attack scenarios:", xhr);
+
+            $("#scenariosContainer").html(
+                '<div class="col-12">' +
+                '<div class="alert alert-danger">' +
+                'Could not load attack scenarios. Check the API configuration.' +
+                '</div>' +
+                '</div>'
+            );
+
+            logAttack("❌ Could not load attack scenarios.");
         }
     });
 }
 
+
 function createScenarioCard(scenario) {
     const icons = {
-        'solarwinds': 'fa-satellite-dish',
-        'codecov': 'fa-code-branch',
-        'kaseya': 'fa-server',
-        '3cx': 'fa-phone'
+        solarwinds: "fa-satellite-dish",
+        codecov: "fa-code-branch",
+        kaseya: "fa-server",
+        "3cx": "fa-phone",
+        cryptominer: "fa-coins",
+        data_exfiltration: "fa-database",
+        backdoor: "fa-door-open"
     };
-    
-    const icon = icons[scenario.id] || 'fa-bug';
-    
+
+    const icon = icons[scenario.id] || "fa-bug";
+
     return `
         <div class="col-md-6 mb-4">
             <div class="card h-100">
                 <div class="card-header bg-primary text-white">
                     <h6 class="mb-0">
-                        <i class="fas ${icon}"></i> ${scenario.name}
+                        <i class="fas ${icon}"></i>
+                        ${scenario.name}
                     </h6>
                 </div>
+
                 <div class="card-body">
                     <p class="text-muted">${scenario.description}</p>
-                    
+
                     <div class="mb-3">
-                        <label class="form-label small">Target Service:</label>
-                        <select class="form-select form-select-sm" id="service-${scenario.id}">
-                            <!-- Services loaded here -->
+                        <label class="form-label small">
+                            Target Service:
+                        </label>
+
+                        <select
+                            class="form-select form-select-sm"
+                            id="service-${scenario.id}"
+                        >
+                            <option>Loading services...</option>
                         </select>
                     </div>
-                    
-                    <button class="btn btn-danger w-100"
-                            onclick="simulateAttack('${scenario.id}')">
-                        <i class="fas fa-bolt"></i> Simulate
+
+                    <button
+                        class="btn btn-danger w-100"
+                        onclick="simulateAttack('${scenario.id}')"
+                    >
+                        <i class="fas fa-bolt"></i>
+                        Simulate
                     </button>
                 </div>
             </div>
@@ -65,113 +103,197 @@ function createScenarioCard(scenario) {
     `;
 }
 
+
 function loadServices() {
     $.ajax({
-        url: '/api/services',
-        method: 'GET',
-        success: function(services) {
-            $('.form-select').each(function() {
+        url: "/api/services",
+        method: "GET",
+
+        success: function (services) {
+            $(".form-select").each(function () {
                 const select = $(this);
                 select.empty();
-                
-                if (services.length === 0) {
-                    select.append('<option>No services available</option>');
-                    select.prop('disabled', true);
-                } else {
-                    services.forEach(function(service) {
-                        select.append(`<option value="${service.name}">${service.display_name}</option>`);
-                    });
+
+                if (!services || services.length === 0) {
+                    select.append(
+                        '<option value="">No demo services available</option>'
+                    );
+                    select.prop("disabled", true);
+                    return;
                 }
+
+                select.prop("disabled", false);
+
+                services.forEach(function (service) {
+                    select.append(
+                        `<option value="${service.name}">
+                            ${service.display_name}
+                        </option>`
+                    );
+                });
             });
+        },
+
+        error: function (xhr) {
+            console.error("Failed to load services:", xhr);
+            logAttack("❌ Could not load monitored services.");
         }
     });
 }
 
+
 function simulateAttack(attackType) {
     const serviceName = $(`#service-${attackType}`).val();
-    
+
     if (!serviceName) {
-        alert('Please select a service');
+        alert("Please select a service first.");
         return;
     }
-    
+
     logAttack(`🎯 Starting ${attackType} attack on ${serviceName}...`);
-    
+
     $.ajax({
-        url: '/api/simulate-attack',
-        method: 'POST',
-        contentType: 'application/json',
+        url: "/api/simulate-attack",
+        method: "POST",
+        contentType: "application/json",
+
         data: JSON.stringify({
             service: serviceName,
             attack_type: attackType
         }),
-        success: function() {
-            logAttack('✅ Attack simulation in progress');
-            logAttack('⏱️  Wait 10 seconds, then click "Calculate Scores" on Dashboard');
+
+        success: function (response) {
+            logAttack(`✅ ${response.message}`);
+            logAttack("⏱️ Wait a few seconds, then calculate scores.");
         },
-        error: function(xhr) {
-            logAttack('❌ Attack simulation failed');
-            console.error('Error:', xhr);
+
+        error: function (xhr) {
+            const errorMessage =
+                xhr.responseJSON?.error || "Attack simulation failed.";
+
+            console.error("Attack simulation error:", xhr);
+            logAttack(`❌ ${errorMessage}`);
         }
     });
 }
+
 
 function runFullSystemAttack() {
-    if (!confirm('Attack ALL monitored services?')) return;
-    
-    logAttack('');
-    logAttack('🔥 FULL SYSTEM ATTACK INITIATED');
-    logAttack('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
-    
+    if (!confirm("Simulate a SolarWinds-style attack on all demo services?")) {
+        return;
+    }
+
+    logAttack("");
+    logAttack("🔥 FULL SYSTEM ATTACK INITIATED");
+    logAttack("━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━");
+    logAttack("🎯 Targeting Chrome, Zoom, and Slack...");
+
     $.ajax({
-        url: '/api/simulate-attack',
-        method: 'POST',
-        contentType: 'application/json',
+        url: "/api/simulate-system-attack",
+        method: "POST",
+        contentType: "application/json",
+
         data: JSON.stringify({
-            service: 'all',
-            attack_type: 'solarwinds'
+            attack_type: "solarwinds"
         }),
-        success: function() {
-            logAttack('✅ Full system attack simulation complete');
-            logAttack('📊 Go to Dashboard and click "Calculate Scores"');
+
+        success: function (response) {
+            logAttack(`✅ ${response.message}`);
+            logAttack("⏱️ Wait a few seconds for simulated events.");
+            logAttack("📊 Go to Dashboard and click Calculate Scores.");
         },
-        error: function() {
-            logAttack('❌ Attack failed');
+
+        error: function (xhr) {
+            const errorMessage =
+                xhr.responseJSON?.error || "Full system attack failed.";
+
+            logAttack(`❌ ${errorMessage}`);
+            console.error(xhr);
         }
     });
 }
+
+    logAttack("");
+    logAttack("🔥 FULL SYSTEM ATTACK INITIATED");
+    logAttack("━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━");
+
+    $.ajax({
+        url: "/api/services",
+        method: "GET",
+
+        success: function (services) {
+            if (!services || services.length === 0) {
+                logAttack("❌ No services are available for simulation.");
+                return;
+            }
+
+            services.forEach(function (service) {
+                $.ajax({
+                    url: "/api/simulate-attack",
+                    method: "POST",
+                    contentType: "application/json",
+
+                    data: JSON.stringify({
+                        service: service.name,
+                        attack_type: "solarwinds"
+                    })
+                });
+            });
+
+            logAttack("✅ Attack requests sent for all services.");
+            logAttack("📊 Go to Dashboard and calculate scores.");
+        },
+
+        error: function () {
+            logAttack("❌ Failed to load services.");
+        }
+    });
+}
+
 
 function clearSimulatedEvents() {
-    if (!confirm('Clear all simulated events?')) return;
-    
-    logAttack('🔄 Clearing simulated events...');
-    
+    if (!confirm("Clear all simulated events?")) {
+        return;
+    }
+
+    logAttack("🔄 Clearing simulated events...");
+
     $.ajax({
-        url: '/api/clear-simulated-events',
-        method: 'POST',
-        success: function(response) {
+        url: "/api/clear-simulated-events",
+        method: "POST",
+
+        success: function (response) {
             logAttack(`✅ ${response.message}`);
-            logAttack('🔄 Recalculating scores...');
-            
-            $.post('/api/calculate-all-scores', function() {
-                logAttack('✅ Scores reset - system returned to normal');
+            logAttack("🔄 Recalculating scores...");
+
+            $.post("/api/calculate-all-scores", function () {
+                logAttack("✅ Scores recalculated.");
             });
         },
-        error: function() {
-            logAttack('❌ Failed to clear events');
+
+        error: function (xhr) {
+            const errorMessage =
+                xhr.responseJSON?.error || "Could not clear simulations.";
+
+            logAttack(`❌ ${errorMessage}`);
         }
     });
 }
 
+
 function logAttack(message) {
-    const log = $('#attackLog');
-    const timestamp = moment().format('HH:mm:ss');
-    
-    if (message === '') {
-        log.append('<br>');
+    const log = $("#attackLog");
+    const timestamp = new Date().toLocaleTimeString();
+
+    if (message === "") {
+        log.append("<br>");
     } else {
-        log.append(`<div>[${timestamp}] ${message}</div>`);
+        const line = $("<div>");
+        line.text(`[${timestamp}] ${message}`);
+        log.append(line);
     }
-    
-    log.scrollTop(log[0].scrollHeight);
+
+    if (log.length > 0) {
+        log.scrollTop(log[0].scrollHeight);
+    }
 }

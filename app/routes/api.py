@@ -436,6 +436,18 @@ def seed_demo_services():
                 created_services.append(service_data['name'])
 
         db.session.commit()
+        if not Score.query.filter_by(service_id=service.id).first():
+                db.session.add(
+                    Score(
+                        service_id=service.id,
+                        dts_score=100,
+                        zone='GREEN',
+                        network_score=100,
+                        process_score=100,
+                        deviation_count=0,
+                        deviations=[]
+                        )
+                               )
 
         return jsonify({
             'success': True,
@@ -449,4 +461,63 @@ def seed_demo_services():
         return jsonify({
             'success': False,
             'error': 'Could not create demo services'
+        }), 500
+@api_bp.route('/simulate-system-attack', methods=['POST'])
+def simulate_system_attack():
+    """Simulate an attack across every active demo service."""
+
+    try:
+        from app.services.simulator import AttackSimulator
+        import threading
+
+        data = request.get_json() or {}
+        attack_type = data.get('attack_type', 'solarwinds')
+
+        simulator = AttackSimulator(
+            current_app._get_current_object()
+        )
+
+        attack_thread = threading.Thread(
+            target=simulator.simulate_multi_vendor_attack,
+            args=(attack_type,),
+            daemon=True
+        )
+
+        attack_thread.start()
+
+        return jsonify({
+            'success': True,
+            'message': 'Full system attack simulation started',
+            'attack_type': attack_type
+        }), 200
+
+    except Exception as error:
+        current_app.logger.error(
+            f'Full system simulation error: {error}'
+        )
+
+        return jsonify({
+            'success': False,
+            'error': 'Could not start full system simulation'
+        }), 500
+@api_bp.route('/attack-scenarios', methods=['GET'])
+def get_attack_scenarios():
+    """Return all attack scenarios supported by the simulator."""
+
+    try:
+        from app.services.simulator import AttackSimulator
+
+        simulator = AttackSimulator(
+            current_app._get_current_object()
+        )
+
+        return jsonify(simulator.get_available_scenarios()), 200
+
+    except Exception as error:
+        current_app.logger.error(
+            f'Error loading attack scenarios: {error}'
+        )
+
+        return jsonify({
+            'error': 'Could not load attack scenarios'
         }), 500
