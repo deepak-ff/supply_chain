@@ -213,43 +213,6 @@ function runFullSystemAttack() {
     });
 }
 
-    logAttack("");
-    logAttack("🔥 FULL SYSTEM ATTACK INITIATED");
-    logAttack("━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━");
-
-    $.ajax({
-        url: "/api/services",
-        method: "GET",
-
-        success: function (services) {
-            if (!services || services.length === 0) {
-                logAttack("❌ No services are available for simulation.");
-                return;
-            }
-
-            services.forEach(function (service) {
-                $.ajax({
-                    url: "/api/simulate-attack",
-                    method: "POST",
-                    contentType: "application/json",
-
-                    data: JSON.stringify({
-                        service: service.name,
-                        attack_type: "solarwinds"
-                    })
-                });
-            });
-
-            logAttack("✅ Attack requests sent for all services.");
-            logAttack("📊 Go to Dashboard and calculate scores.");
-        },
-
-        error: function () {
-            logAttack("❌ Failed to load services.");
-        }
-    });
-}
-
 
 function clearSimulatedEvents() {
     if (!confirm("Clear all simulated events?")) {
