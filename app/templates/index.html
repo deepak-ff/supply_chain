@@ -87,10 +87,10 @@
 <div class="row mt-5">
     <div class="col-12">
         <div class="btn-group" role="group">
-            <button class="btn btn-outline-primary" onclick="calculateAllBaselines()">
+            <button class="btn btn-outline-primary" onclick="calculateAllBaselines(this)">
                 <i class="fas fa-calculator"></i> Calculate Baselines
             </button>
-            <button class="btn btn-outline-success" onclick="calculateAllScores()">
+            <button class="btn btn-outline-success" onclick="calculateAllScores(this)">
                 <i class="fas fa-chart-line"></i> Calculate Scores
             </button>
         </div>
@@ -133,5 +133,6 @@
 {% endblock %}
 
 {% block extra_js %}
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 <script src="{{ url_for('static', filename='js/dashboard.js') }}"></script>
 {% endblock %}
