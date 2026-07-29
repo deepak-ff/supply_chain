@@ -178,7 +178,9 @@ function acknowledgeAlert(alertId) {
 function showScoreHistory(serviceId, serviceName) {
     selectedServiceId = serviceId;
     
-    $('#scoreModalTitle').text(`${serviceName} - Score History (24h)`);
+    $('#scoreModalTitle').text(
+    `${serviceName} - Score History (24h)`
+);
     
     $.ajax({
         url: `/api/scores/${serviceId}?hours=24`,
