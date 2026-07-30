@@ -110,7 +110,14 @@ function loadServices() {
         method: "GET",
 
         success: function (services) {
-            if (!services || services.length === 0) {
+            const expectedDemoServices = ['chrome', 'zoom', 'slack'];
+            const missingDemoServices = expectedDemoServices.filter(function (name) {
+                return !services?.some(function (service) {
+                    return service.name === name;
+                });
+            });
+
+            if (!services || services.length === 0 || missingDemoServices.length > 0) {
                 seedDemoServices();
                 return;
             }
@@ -186,8 +193,20 @@ function simulateAttack(attackType) {
 
         success: function (response) {
             logAttack(`✅ ${response.message}`);
-            logAttack("⏱️ Wait a few seconds, then calculate scores.");
             showNotification("success", response.message);
+
+            // Automatically recalculate scores after a demo attack.
+            $.ajax({
+                url: "/api/calculate-all-scores",
+                method: "POST",
+                success: function () {
+                    logAttack("✅ Scores recalculated automatically.");
+                    logAttack("📊 Refresh the dashboard to see the updated score.");
+                },
+                error: function () {
+                    logAttack("❌ Failed to recalculate scores automatically.");
+                }
+            });
         },
 
         error: function (xhr) {
