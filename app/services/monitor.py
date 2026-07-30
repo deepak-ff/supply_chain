@@ -224,4 +224,13 @@ class MonitoringService:
                 self.app.logger.error(f"Collection cycle error: {e}")
     
     def run(self):
+        """Run the monitoring loop."""
+        with self.app.app_context():
+            self.app.logger.info("Monitoring service started")
+            while True:
+                try:
+                    self.collect_events()
+                except Exception as e:
+                    self.app.logger.error(f"Monitoring loop error: {e}")
+                time.sleep(self.collection_interval)
         

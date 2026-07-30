@@ -107,6 +107,96 @@ def get_services():
         current_app.logger.error(f'Error fetching services: {e}\n{traceback.format_exc()}')
         return jsonify({'error': 'Failed to fetch services'}), 500
 
+@api_bp.route('/local-services', methods=['GET'])
+def get_local_services():
+    """Get local registered services without demo fallbacks"""
+    try:
+        services = Service.query.filter_by(is_active=True).all()
+        result = []
+
+        for service in services:
+            latest_score = Score.query.filter_by(
+                service_id=service.id
+            ).order_by(desc(Score.timestamp)).first()
+
+            event_count = Event.query.filter_by(
+                service_id=service.id
+            ).count()
+
+            baseline_count = Baseline.query.filter_by(
+                service_id=service.id,
+                is_valid=True
+            ).count()
+
+            service_dict = service.to_dict()
+            service_dict['dts_score'] = latest_score.dts_score if latest_score else 100
+            service_dict['zone'] = latest_score.zone if latest_score else 'GREEN'
+            service_dict['event_count'] = event_count
+            service_dict['baseline_count'] = baseline_count
+
+            result.append(service_dict)
+
+        return jsonify(result), 200
+
+    except Exception as e:
+        current_app.logger.error(f'Error fetching local services: {e}\n{traceback.format_exc()}')
+        return jsonify({'error': 'Failed to fetch local services'}), 500
+
+@api_bp.route('/demo/services', methods=['GET'])
+def get_demo_services():
+    """Return only the three demo services for the demo page"""
+    try:
+        demo_services = [
+            {
+                'id': None,
+                'name': 'chrome',
+                'display_name': 'Google Chrome',
+                'vendor': 'Google',
+                'category': 'Browser',
+                'criticality': 'HIGH',
+                'status': 'demo',
+                'is_active': True,
+                'dts_score': 100,
+                'zone': 'GREEN',
+                'event_count': 0,
+                'baseline_count': 0
+            },
+            {
+                'id': None,
+                'name': 'zoom',
+                'display_name': 'Zoom',
+                'vendor': 'Zoom Video Communications',
+                'category': 'Communication',
+                'criticality': 'HIGH',
+                'status': 'demo',
+                'is_active': True,
+                'dts_score': 100,
+                'zone': 'GREEN',
+                'event_count': 0,
+                'baseline_count': 0
+            },
+            {
+                'id': None,
+                'name': 'slack',
+                'display_name': 'Slack',
+                'vendor': 'Salesforce',
+                'category': 'Communication',
+                'criticality': 'MEDIUM',
+                'status': 'demo',
+                'is_active': True,
+                'dts_score': 100,
+                'zone': 'GREEN',
+                'event_count': 0,
+                'baseline_count': 0
+            }
+        ]
+
+        return jsonify(demo_services), 200
+
+    except Exception as e:
+        current_app.logger.error(f'Error fetching demo services: {e}\n{traceback.format_exc()}')
+        return jsonify({'error': 'Failed to fetch demo services'}), 500
+
 @api_bp.route('/services/<int:service_id>', methods=['GET'])
 def get_service(service_id):
     """Get specific service details"""
@@ -443,148 +533,7 @@ def clear_simulated_events():
         db.session.rollback()
         current_app.logger.error(f'Error clearing events: {e}')
         return jsonify({'error': str(e)}), 500
-@api_bp.route('/demo/seed-services', methods=['POST'])
-def seed_demo_services():
-    """Create sample services for the hosted demo environment."""
 
-    try:
-        demo_services = [
-            {
-                'name': 'chrome',
-                'display_name': 'Google Chrome',
-                'vendor': 'Google',
-                'category': 'Browser',
-                'criticality': 'HIGH',
-                'status': 'monitoring'
-            },
-            {
-                'name': 'zoom',
-                'display_name': 'Zoom',
-                'vendor': 'Zoom Video Communications',
-                'category': 'Communication',
-                'criticality': 'HIGH',
-                'status': 'monitoring'
-            },
-            {
-                'name': 'slack',
-                'display_name': 'Slack',
-                'vendor': 'Salesforce',
-                'category': 'Communication',
-                'criticality': 'MEDIUM',
-                'status': 'monitoring'
-            }
-        ]
-
-        created_services = []
-
-        for service_data in demo_services:
-            service = Service.query.filter_by(
-                name=service_data['name']
-            ).first()
-
-            if not service:
-                service = Service(**service_data)
-                db.session.add(service)
-                created_services.append(service_data['name'])
-
-        db.session.commit()
-
-        # Ensure seeded services have a default green score and baseline to allow demo attacks to affect scoring.
-        for service_data in demo_services:
-            service = Service.query.filter_by(name=service_data['name']).first()
-            if service:
-                if not Score.query.filter_by(service_id=service.id).first():
-                    db.session.add(
-                        Score(
-                            service_id=service.id,
-                            dts_score=100,
-                            zone='GREEN',
-                            network_score=100,
-                            process_score=100,
-                            deviation_count=0,
-                            deviations=[]
-                        )
-                    )
-
-                # Create default baseline entries if missing
-                from app.models import Baseline
-                if not Baseline.query.filter_by(service_id=service.id, metric_name='network_behavior').first():
-                    db.session.add(
-                        Baseline(
-                            service_id=service.id,
-                            metric_name='network_behavior',
-                            metric_type='network',
-                            baseline_data={
-                                'unique_ips': [],
-                                'unique_ports': [443, 80, 53],
-                                'connection_stats': {
-                                    'mean': 2,
-                                    'stdev': 1,
-                                    'min': 1,
-                                    'max': 3
-                                },
-                                'sample_size': 20,
-                                'learning_period_days': 1
-                            },
-                            confidence=1.0,
-                            sample_size=20,
-                            is_valid=True
-                        )
-                    )
-
-                if not Baseline.query.filter_by(service_id=service.id, metric_name='process_behavior').first():
-                    db.session.add(
-                        Baseline(
-                            service_id=service.id,
-                            metric_name='process_behavior',
-                            metric_type='process',
-                            baseline_data={
-                                'normal_processes': [
-                                    'chrome.exe',
-                                    'zoom.exe',
-                                    'slack.exe',
-                                    'explorer.exe'
-                                ],
-                                'cpu_stats': {
-                                    'mean': 5,
-                                    'stdev': 2,
-                                    'max': 8,
-                                    'p95': 7
-                                },
-                                'memory_stats': {
-                                    'mean': 5,
-                                    'stdev': 2,
-                                    'max': 10,
-                                    'p95': 9
-                                },
-                                'thread_stats': {
-                                    'mean': 10,
-                                    'max': 20
-                                },
-                                'sample_size': 20,
-                                'learning_period_days': 1
-                            },
-                            confidence=1.0,
-                            sample_size=20,
-                            is_valid=True
-                        )
-                    )
-
-        db.session.commit()
-
-        return jsonify({
-            'success': True,
-            'message': 'Demo services are ready',
-            'created_services': created_services
-        }), 200
-
-    except Exception as error:
-        db.session.rollback()
-        current_app.logger.error(f'Error seeding demo services: {error}')
-        return jsonify({
-            'success': False,
-            'error': 'Could not create demo services'
-        }), 500
 @api_bp.route('/simulate-system-attack', methods=['POST'])
 def simulate_system_attack():
     """Simulate an attack across every active demo service."""

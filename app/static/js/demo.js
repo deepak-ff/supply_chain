@@ -106,19 +106,12 @@ function createScenarioCard(scenario) {
 
 function loadServices() {
     $.ajax({
-        url: "/api/services",
+        url: "/api/demo/services",
         method: "GET",
 
         success: function (services) {
-            const expectedDemoServices = ['chrome', 'zoom', 'slack'];
-            const missingDemoServices = expectedDemoServices.filter(function (name) {
-                return !services?.some(function (service) {
-                    return service.name === name;
-                });
-            });
-
-            if (!services || services.length === 0 || missingDemoServices.length > 0) {
-                seedDemoServices();
+            if (!services || services.length === 0) {
+                showNotification("warning", "No demo services available.");
                 return;
             }
 
@@ -146,30 +139,6 @@ function loadServices() {
         }
     });
 }
-
-function seedDemoServices() {
-    logAttack("🔧 No demo services found. Seeding demo environment...");
-    showNotification("info", "Seeding demo services. Please wait...");
-
-    $.ajax({
-        url: "/api/demo/seed-services",
-        method: "POST",
-
-        success: function (response) {
-            logAttack("✅ Demo services seeded successfully.");
-            showNotification("success", "Demo services are ready. Reloading demo...");
-            loadAttackScenarios();
-        },
-
-        error: function (xhr) {
-            const errorMessage = xhr.responseJSON?.error || "Failed to seed demo services.";
-            console.error("Demo seed error:", xhr);
-            logAttack(`❌ ${errorMessage}`);
-            showNotification("error", errorMessage);
-        }
-    });
-}
-
 
 function simulateAttack(attackType) {
     const serviceName = $(`#service-${attackType}`).val();
