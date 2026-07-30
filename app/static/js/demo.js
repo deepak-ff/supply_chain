@@ -121,9 +121,10 @@ function loadServices() {
                 select.prop("disabled", false);
 
                 services.forEach(function (service) {
+                    const vendorLabel = service.vendor ? ` (${service.vendor})` : '';
                     select.append(
                         `<option value="${service.name}">
-                            ${service.display_name}
+                            ${service.display_name}${vendorLabel}
                         </option>`
                     );
                 });

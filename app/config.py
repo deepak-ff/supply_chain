@@ -99,6 +99,13 @@ class Config:
             'criticality': 'MEDIUM',
             'vendor': 'Google'
         },
+        'zoom': {
+            'process_names': ['zoom.exe', 'zoom', 'Zoom'],
+            'display_name': 'Zoom',
+            'category': 'Communication',
+            'criticality': 'HIGH',
+            'vendor': 'Zoom Video Communications'
+        },
         'vscode': {
             'process_names': ['Code.exe', 'code', 'Visual Studio Code'],
             'display_name': 'Visual Studio Code',
