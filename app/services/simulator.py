@@ -112,27 +112,13 @@ class AttackSimulator:
                     self.app.logger.error(f"Unknown attack type: {attack_type}")
                     return False
                 
-                # Get service
-                service = Service.query.filter_by(name=service_name).first()
+                # Get or create service
+                service = self._get_or_create_service(service_name)
                 if not service:
-                    self.app.logger.warning(f"Service {service_name} not found, creating...")
-                    # Auto-create if not found
-                    from app.config import Config
-                    all_services = {**Config.MONITORED_SERVICES, **Config.FALLBACK_SERVICES}
-                    if service_name in all_services:
-                        info = all_services[service_name]
-                        service = Service(
-                            name=service_name,
-                            display_name=info['display_name'],
-                            vendor=info.get('vendor', 'Unknown'),
-                            category=info['category'],
-                            criticality=info['criticality'],
-                            status='monitoring',
-                            is_active=True
-                        )
-                        db.session.add(service)
-                        db.session.commit()
-                
+                    self.app.logger.error(f"Service {service_name} could not be created")
+                    return False
+
+                self._ensure_baselines(service)
                 scenario = self.scenarios[attack_type]
                 
                 self.app.logger.info(f"🚨 ATTACK SIMULATION STARTING")
@@ -166,15 +152,152 @@ class AttackSimulator:
                     count=15
                 )
                 
+                # Propagate to connected demo services
+                self._propagate_attack_to_connected_services(service_name, scenario)
+
                 self.app.logger.info(f"✅ Attack simulation complete!")
                 self.app.logger.info(f"⚠️  DTS score should drop significantly")
-                self.app.logger.info(f"💡 Click 'Calculate Scores' to see impact")
+                self.app.logger.info(f"💡 Scores are updated in the dashboard and demo service panel")
                 
                 return True
                 
             except Exception as e:
                 self.app.logger.error(f"Attack simulation error: {e}")
                 return False
+
+    def _get_or_create_service(self, service_name):
+        """Retrieve or create a service from configured demo and monitored definitions."""
+        service = Service.query.filter_by(name=service_name).first()
+        if service:
+            return service
+
+        from app.config import Config
+        all_services = {**Config.MONITORED_SERVICES, **Config.FALLBACK_SERVICES}
+        info = all_services.get(service_name)
+        if not info:
+            return None
+
+        service = Service(
+            name=service_name,
+            display_name=info['display_name'],
+            vendor=info.get('vendor', 'Unknown'),
+            category=info['category'],
+            criticality=info['criticality'],
+            status='monitoring',
+            is_active=True
+        )
+        db.session.add(service)
+        db.session.commit()
+        return service
+
+    def _ensure_baselines(self, service):
+        """Ensure a baseline exists for a service so scoring can evaluate anomalies."""
+        from app.models import Baseline
+        try:
+            network_baseline = Baseline.query.filter_by(
+                service_id=service.id,
+                metric_name='network_behavior'
+            ).first()
+            process_baseline = Baseline.query.filter_by(
+                service_id=service.id,
+                metric_name='process_behavior'
+            ).first()
+
+            if not network_baseline:
+                db.session.add(
+                    Baseline(
+                        service_id=service.id,
+                        metric_name='network_behavior',
+                        metric_type='network',
+                        baseline_data={
+                            'unique_ips': [],
+                            'unique_ports': [443, 80, 53],
+                            'connection_stats': {
+                                'mean': 2,
+                                'stdev': 1,
+                                'min': 1,
+                                'max': 3
+                            },
+                            'sample_size': 20,
+                            'learning_period_days': 1
+                        },
+                        confidence=1.0,
+                        sample_size=20,
+                        is_valid=True
+                    )
+                )
+
+            if not process_baseline:
+                db.session.add(
+                    Baseline(
+                        service_id=service.id,
+                        metric_name='process_behavior',
+                        metric_type='process',
+                        baseline_data={
+                            'normal_processes': [
+                                service.name + '.exe',
+                                service.name,
+                                service.display_name
+                            ],
+                            'cpu_stats': {
+                                'mean': 5,
+                                'stdev': 2,
+                                'max': 8,
+                                'p95': 7
+                            },
+                            'memory_stats': {
+                                'mean': 5,
+                                'stdev': 2,
+                                'max': 10,
+                                'p95': 9
+                            },
+                            'thread_stats': {
+                                'mean': 10,
+                                'max': 20
+                            },
+                            'sample_size': 20,
+                            'learning_period_days': 1
+                        },
+                        confidence=1.0,
+                        sample_size=20,
+                        is_valid=True
+                    )
+                )
+
+            db.session.commit()
+        except Exception as e:
+            db.session.rollback()
+            self.app.logger.error(f"Error ensuring baselines for {service.name}: {e}")
+
+    def _propagate_attack_to_connected_services(self, service_name, scenario):
+        """Inject smaller attack anomalies into connected services to simulate internal spread."""
+        try:
+            relations = self.app.config.get('SERVICE_RELATIONS', {})
+            connected = relations.get(service_name, [])
+            if not connected:
+                return
+
+            for related_name in connected:
+                related_service = self._get_or_create_service(related_name)
+                if not related_service:
+                    continue
+
+                self._ensure_baselines(related_service)
+                self.app.logger.info(f"➡️ Propagating attack to connected service: {related_service.display_name}")
+
+                self._inject_network_events(
+                    related_service.id,
+                    scenario['malicious_domains'][:1],
+                    scenario['malicious_ips'][:1],
+                    count=4
+                )
+                self._inject_process_events(
+                    related_service.id,
+                    scenario['suspicious_processes'][:1],
+                    count=2
+                )
+        except Exception as e:
+            self.app.logger.error(f"Error propagating attack: {e}")
     
     def _inject_network_events(self, service_id, domains, ips, ports=[443, 80, 53], count=10):
         """Inject malicious network events"""

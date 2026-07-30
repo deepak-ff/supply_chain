@@ -144,54 +144,58 @@ def get_local_services():
 
 @api_bp.route('/demo/services', methods=['GET'])
 def get_demo_services():
-    """Return only the three demo services for the demo page"""
+    """Return a connected set of demo services for the demo page"""
     try:
-        demo_services = [
-            {
-                'id': None,
-                'name': 'chrome',
-                'display_name': 'Google Chrome',
-                'vendor': 'Google',
-                'category': 'Browser',
-                'criticality': 'HIGH',
-                'status': 'demo',
-                'is_active': True,
-                'dts_score': 100,
-                'zone': 'GREEN',
-                'event_count': 0,
-                'baseline_count': 0
-            },
-            {
-                'id': None,
-                'name': 'zoom',
-                'display_name': 'Zoom',
-                'vendor': 'Zoom Video Communications',
-                'category': 'Communication',
-                'criticality': 'HIGH',
-                'status': 'demo',
-                'is_active': True,
-                'dts_score': 100,
-                'zone': 'GREEN',
-                'event_count': 0,
-                'baseline_count': 0
-            },
-            {
-                'id': None,
-                'name': 'slack',
-                'display_name': 'Slack',
-                'vendor': 'Salesforce',
-                'category': 'Communication',
-                'criticality': 'MEDIUM',
-                'status': 'demo',
-                'is_active': True,
-                'dts_score': 100,
-                'zone': 'GREEN',
-                'event_count': 0,
-                'baseline_count': 0
-            }
-        ]
+        demo_service_keys = current_app.config.get('DEMO_SERVICE_KEYS', [])
+        relations = current_app.config.get('SERVICE_RELATIONS', {})
+        service_definitions = {
+            **current_app.config.get('MONITORED_SERVICES', {}),
+            **current_app.config.get('FALLBACK_SERVICES', {})
+        }
 
-        return jsonify(demo_services), 200
+        result = []
+        for service_key in demo_service_keys:
+            service = Service.query.filter_by(name=service_key).first()
+            if service:
+                latest_score = Score.query.filter_by(
+                    service_id=service.id
+                ).order_by(desc(Score.timestamp)).first()
+
+                event_count = Event.query.filter_by(
+                    service_id=service.id
+                ).count()
+
+                baseline_count = Baseline.query.filter_by(
+                    service_id=service.id,
+                    is_valid=True
+                ).count()
+
+                service_dict = service.to_dict()
+                service_dict['dts_score'] = latest_score.dts_score if latest_score else 100
+                service_dict['zone'] = latest_score.zone if latest_score else 'GREEN'
+                service_dict['event_count'] = event_count
+                service_dict['baseline_count'] = baseline_count
+                service_dict['related_services'] = relations.get(service_key, [])
+                result.append(service_dict)
+            else:
+                info = service_definitions.get(service_key, {})
+                result.append({
+                    'id': None,
+                    'name': service_key,
+                    'display_name': info.get('display_name', service_key.title()),
+                    'vendor': info.get('vendor', 'Unknown'),
+                    'category': info.get('category', 'Unknown'),
+                    'criticality': info.get('criticality', 'MEDIUM'),
+                    'status': 'demo',
+                    'is_active': True,
+                    'dts_score': 100,
+                    'zone': 'GREEN',
+                    'event_count': 0,
+                    'baseline_count': 0,
+                    'related_services': relations.get(service_key, [])
+                })
+
+        return jsonify(result), 200
 
     except Exception as e:
         current_app.logger.error(f'Error fetching demo services: {e}\n{traceback.format_exc()}')

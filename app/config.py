@@ -121,6 +121,15 @@ class Config:
             'vendor': 'Salesforce'
         }
     }
+
+    DEMO_SERVICE_KEYS = ['splunk', 'crowdstrike', 'carbonblack', 'vscode']
+
+    SERVICE_RELATIONS = {
+        'splunk': ['crowdstrike', 'carbonblack'],
+        'crowdstrike': ['carbonblack'],
+        'carbonblack': ['vscode'],
+        'vscode': []
+    }
     
     # Monitoring Configuration
     MONITOR_INTERVAL = int(os.environ.get('MONITOR_INTERVAL', 60))

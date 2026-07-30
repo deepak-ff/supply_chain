@@ -115,6 +115,8 @@ function loadServices() {
                 return;
             }
 
+            renderServiceMap(services);
+
             $(".form-select").each(function () {
                 const select = $(this);
                 select.empty();
@@ -170,7 +172,8 @@ function simulateAttack(attackType) {
                 method: "POST",
                 success: function () {
                     logAttack("✅ Scores recalculated automatically.");
-                    logAttack("📊 Refresh the dashboard to see the updated score.");
+                    logAttack("📊 Updating demo service map...");
+                    loadServices();
                 },
                 error: function () {
                     logAttack("❌ Failed to recalculate scores automatically.");
@@ -246,6 +249,7 @@ function clearSimulatedEvents() {
 
             $.post("/api/calculate-all-scores", function () {
                 logAttack("✅ Scores recalculated.");
+                loadServices();
             });
         },
 
@@ -258,6 +262,38 @@ function clearSimulatedEvents() {
         }
     });
 }
+
+function renderServiceMap(services) {
+    const container = $("#demoServiceMap");
+    container.empty();
+
+    if (!services || services.length === 0) {
+        container.html('<div class="text-muted">No demo services available.</div>');
+        return;
+    }
+
+    const rows = services.map(function (service) {
+        const connections = (service.related_services || [])
+            .map(function (rel) {
+                return `<span class="badge bg-secondary me-1">${rel}</span>`;
+            })
+            .join(' ');
+
+        return `
+            <div class="mb-3">
+                <strong>${service.display_name}</strong>
+                <span class="text-muted">(${service.name})</span>
+                <div class="small text-muted">
+                    ${service.category} • ${service.criticality} • Score: ${service.dts_score}
+                </div>
+                <div class="mt-1">Connected to: ${connections || '<em>none</em>'}</div>
+            </div>
+        `;
+    });
+
+    container.html(rows.join(''));
+}
+
 
 
 function showNotification(type, message) {
