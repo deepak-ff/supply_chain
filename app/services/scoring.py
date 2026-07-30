@@ -40,11 +40,11 @@ class ScoringService:
                     return 100
                 
                 # Get recent events (last 5 minutes)
+                # Include simulated attack events so demo attacks impact scoring.
                 time_threshold = datetime.utcnow() - timedelta(seconds=self.score_interval)
                 recent_events = Event.query.filter(
                     Event.service_id == service_id,
-                    Event.timestamp > time_threshold,
-                    Event.is_simulated == False
+                    Event.timestamp > time_threshold
                 ).all()
                 
                 if not recent_events:

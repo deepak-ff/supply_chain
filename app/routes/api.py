@@ -3,6 +3,7 @@ API routes with input validation and rate limiting
 """
 from flask import Blueprint, jsonify, request, current_app
 from app import db
+from app.config import Config
 from app.models import Service, Event, Baseline, Score, Alert
 from datetime import datetime, timedelta
 from sqlalchemy import func, desc
@@ -60,6 +61,44 @@ def get_services():
             service_dict['baseline_count'] = baseline_count
             
             result.append(service_dict)
+        
+        if not result:
+            # If no services exist yet, return demo fallback services for the demo page.
+            demo_services = {
+                'chrome': {
+                    'display_name': 'Google Chrome',
+                    'vendor': 'Google',
+                    'category': 'Browser',
+                    'criticality': 'HIGH'
+                },
+                'zoom': {
+                    'display_name': 'Zoom',
+                    'vendor': 'Zoom Video Communications',
+                    'category': 'Communication',
+                    'criticality': 'HIGH'
+                },
+                'slack': {
+                    'display_name': 'Slack',
+                    'vendor': 'Salesforce',
+                    'category': 'Communication',
+                    'criticality': 'MEDIUM'
+                }
+            }
+            for name, info in demo_services.items():
+                result.append({
+                    'id': None,
+                    'name': name,
+                    'display_name': info['display_name'],
+                    'vendor': info['vendor'],
+                    'category': info['category'],
+                    'criticality': info['criticality'],
+                    'status': 'demo',
+                    'is_active': True,
+                    'dts_score': 100,
+                    'zone': 'GREEN',
+                    'event_count': 0,
+                    'baseline_count': 0
+                })
         
         return jsonify(result), 200
         
@@ -343,34 +382,42 @@ def simulate_attack():
     """Simulate supply chain attack"""
     try:
         from app.services.simulator import AttackSimulator
-        
+        from app.services.scoring import ScoringService
+
         data = request.get_json() or {}
         service_name = data.get('service', 'chrome')
         attack_type = data.get('attack_type', 'solarwinds')
-        
+
         # Validate input
         if not isinstance(service_name, str) or len(service_name) > 50:
             return jsonify({'error': 'Invalid service name'}), 400
-        
+
         if not isinstance(attack_type, str) or len(attack_type) > 50:
             return jsonify({'error': 'Invalid attack type'}), 400
-        
+
         simulator = AttackSimulator(current_app._get_current_object())
-        
-        # Run in background
-        import threading
-        thread = threading.Thread(
-            target=simulator.simulate_attack,
-            args=(service_name, attack_type)
-        )
-        thread.daemon = True
-        thread.start()
-        
-        return jsonify({
+
+        # Run attack and then calculate score so demo shows correct results.
+        success = simulator.simulate_attack(service_name, attack_type)
+        if not success:
+            return jsonify({'error': 'Attack simulation failed'}), 500
+
+        service = Service.query.filter_by(name=service_name).first()
+        if service:
+            scoring_service = ScoringService(current_app._get_current_object())
+            score = scoring_service.calculate_score_for_service(service.id)
+        else:
+            score = None
+
+        response = {
             'success': True,
-            'message': f'Attack simulation started on {service_name}'
-        }), 200
+            'message': f'Attack simulation completed on {service_name}'
+        }
+        if score is not None:
+            response['score'] = score
         
+        return jsonify(response), 200
+
     except Exception as e:
         current_app.logger.error(f'Error simulating attack: {e}')
         return jsonify({'error': str(e)}), 500
@@ -436,18 +483,89 @@ def seed_demo_services():
                 created_services.append(service_data['name'])
 
         db.session.commit()
-        if not Score.query.filter_by(service_id=service.id).first():
-                db.session.add(
-                    Score(
-                        service_id=service.id,
-                        dts_score=100,
-                        zone='GREEN',
-                        network_score=100,
-                        process_score=100,
-                        deviation_count=0,
-                        deviations=[]
+
+        # Ensure seeded services have a default green score and baseline to allow demo attacks to affect scoring.
+        for service_data in demo_services:
+            service = Service.query.filter_by(name=service_data['name']).first()
+            if service:
+                if not Score.query.filter_by(service_id=service.id).first():
+                    db.session.add(
+                        Score(
+                            service_id=service.id,
+                            dts_score=100,
+                            zone='GREEN',
+                            network_score=100,
+                            process_score=100,
+                            deviation_count=0,
+                            deviations=[]
                         )
-                               )
+                    )
+
+                # Create default baseline entries if missing
+                from app.models import Baseline
+                if not Baseline.query.filter_by(service_id=service.id, metric_name='network_behavior').first():
+                    db.session.add(
+                        Baseline(
+                            service_id=service.id,
+                            metric_name='network_behavior',
+                            metric_type='network',
+                            baseline_data={
+                                'unique_ips': [],
+                                'unique_ports': [443, 80, 53],
+                                'connection_stats': {
+                                    'mean': 2,
+                                    'stdev': 1,
+                                    'min': 1,
+                                    'max': 3
+                                },
+                                'sample_size': 20,
+                                'learning_period_days': 1
+                            },
+                            confidence=1.0,
+                            sample_size=20,
+                            is_valid=True
+                        )
+                    )
+
+                if not Baseline.query.filter_by(service_id=service.id, metric_name='process_behavior').first():
+                    db.session.add(
+                        Baseline(
+                            service_id=service.id,
+                            metric_name='process_behavior',
+                            metric_type='process',
+                            baseline_data={
+                                'normal_processes': [
+                                    'chrome.exe',
+                                    'zoom.exe',
+                                    'slack.exe',
+                                    'explorer.exe'
+                                ],
+                                'cpu_stats': {
+                                    'mean': 5,
+                                    'stdev': 2,
+                                    'max': 8,
+                                    'p95': 7
+                                },
+                                'memory_stats': {
+                                    'mean': 5,
+                                    'stdev': 2,
+                                    'max': 10,
+                                    'p95': 9
+                                },
+                                'thread_stats': {
+                                    'mean': 10,
+                                    'max': 20
+                                },
+                                'sample_size': 20,
+                                'learning_period_days': 1
+                            },
+                            confidence=1.0,
+                            sample_size=20,
+                            is_valid=True
+                        )
+                    )
+
+        db.session.commit()
 
         return jsonify({
             'success': True,
@@ -468,7 +586,7 @@ def simulate_system_attack():
 
     try:
         from app.services.simulator import AttackSimulator
-        import threading
+        from app.services.scoring import ScoringService
 
         data = request.get_json() or {}
         attack_type = data.get('attack_type', 'solarwinds')
@@ -477,17 +595,20 @@ def simulate_system_attack():
             current_app._get_current_object()
         )
 
-        attack_thread = threading.Thread(
-            target=simulator.simulate_multi_vendor_attack,
-            args=(attack_type,),
-            daemon=True
-        )
+        success = simulator.simulate_multi_vendor_attack(attack_type)
 
-        attack_thread.start()
+        if not success:
+            return jsonify({
+                'success': False,
+                'error': 'Full system attack simulation failed'
+            }), 500
+
+        scoring_service = ScoringService(current_app._get_current_object())
+        scoring_service.calculate_all_scores()
 
         return jsonify({
             'success': True,
-            'message': 'Full system attack simulation started',
+            'message': 'Full system attack simulation completed',
             'attack_type': attack_type
         }), 200
 

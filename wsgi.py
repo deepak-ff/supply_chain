@@ -1,9 +1,6 @@
 """
 WSGI Entry Point for Production Deployment
 """
-from app import create_app
-
-app = create_app()
 import os
 from app import create_app, db
 from app.models import Service, Event, Baseline, Score, Alert

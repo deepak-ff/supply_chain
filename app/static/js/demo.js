@@ -110,18 +110,14 @@ function loadServices() {
         method: "GET",
 
         success: function (services) {
+            if (!services || services.length === 0) {
+                seedDemoServices();
+                return;
+            }
+
             $(".form-select").each(function () {
                 const select = $(this);
                 select.empty();
-
-                if (!services || services.length === 0) {
-                    select.append(
-                        '<option value="">No demo services available</option>'
-                    );
-                    select.prop("disabled", true);
-                    return;
-                }
-
                 select.prop("disabled", false);
 
                 services.forEach(function (service) {
@@ -137,6 +133,31 @@ function loadServices() {
         error: function (xhr) {
             console.error("Failed to load services:", xhr);
             logAttack("❌ Could not load monitored services.");
+            showNotification("error", "Could not load monitored services. Retrying...");
+            setTimeout(loadServices, 1500);
+        }
+    });
+}
+
+function seedDemoServices() {
+    logAttack("🔧 No demo services found. Seeding demo environment...");
+    showNotification("info", "Seeding demo services. Please wait...");
+
+    $.ajax({
+        url: "/api/demo/seed-services",
+        method: "POST",
+
+        success: function (response) {
+            logAttack("✅ Demo services seeded successfully.");
+            showNotification("success", "Demo services are ready. Reloading demo...");
+            loadAttackScenarios();
+        },
+
+        error: function (xhr) {
+            const errorMessage = xhr.responseJSON?.error || "Failed to seed demo services.";
+            console.error("Demo seed error:", xhr);
+            logAttack(`❌ ${errorMessage}`);
+            showNotification("error", errorMessage);
         }
     });
 }
@@ -165,6 +186,7 @@ function simulateAttack(attackType) {
         success: function (response) {
             logAttack(`✅ ${response.message}`);
             logAttack("⏱️ Wait a few seconds, then calculate scores.");
+            showNotification("success", response.message);
         },
 
         error: function (xhr) {
@@ -173,6 +195,7 @@ function simulateAttack(attackType) {
 
             console.error("Attack simulation error:", xhr);
             logAttack(`❌ ${errorMessage}`);
+            showNotification("error", errorMessage);
         }
     });
 }
@@ -201,6 +224,7 @@ function runFullSystemAttack() {
             logAttack(`✅ ${response.message}`);
             logAttack("⏱️ Wait a few seconds for simulated events.");
             logAttack("📊 Go to Dashboard and click Calculate Scores.");
+            showNotification("success", response.message);
         },
 
         error: function (xhr) {
@@ -209,6 +233,7 @@ function runFullSystemAttack() {
 
             logAttack(`❌ ${errorMessage}`);
             console.error(xhr);
+            showNotification("error", errorMessage);
         }
     });
 }
@@ -228,6 +253,7 @@ function clearSimulatedEvents() {
         success: function (response) {
             logAttack(`✅ ${response.message}`);
             logAttack("🔄 Recalculating scores...");
+            showNotification("success", response.message);
 
             $.post("/api/calculate-all-scores", function () {
                 logAttack("✅ Scores recalculated.");
@@ -239,8 +265,38 @@ function clearSimulatedEvents() {
                 xhr.responseJSON?.error || "Could not clear simulations.";
 
             logAttack(`❌ ${errorMessage}`);
+            showNotification("error", errorMessage);
         }
     });
+}
+
+
+function showNotification(type, message) {
+    const alertClass =
+        type === "success"
+            ? "success"
+            : type === "warning"
+            ? "warning"
+            : type === "info"
+            ? "info"
+            : "danger";
+
+    const notification = `
+        <div class="position-fixed top-0 end-0 p-3" style="z-index: 9999;">
+            <div class="alert alert-${alertClass} alert-dismissible fade show" role="alert">
+                ${message}
+                <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+            </div>
+        </div>
+    `;
+
+    $("body").append(notification);
+
+    setTimeout(function () {
+        $(".alert-dismissible").fadeOut(function () {
+            $(this).remove();
+        });
+    }, 4000);
 }
 
 

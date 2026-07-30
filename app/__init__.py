@@ -66,7 +66,8 @@ def setup_logging(app):
     file_handler = RotatingFileHandler(
         app.config['LOG_FILE'],
         maxBytes=app.config['LOG_MAX_BYTES'],
-        backupCount=app.config['LOG_BACKUP_COUNT']
+        backupCount=app.config['LOG_BACKUP_COUNT'],
+        encoding='utf-8'
     )
     
     file_handler.setFormatter(logging.Formatter(
