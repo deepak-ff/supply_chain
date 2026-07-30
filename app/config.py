@@ -16,8 +16,15 @@ class Config:
         'sqlite:///' + os.path.join(basedir, '..', 'scbtss.db')
     
     # Fix for PostgreSQL URL (Railway/Heroku compatibility)
-    if SQLALCHEMY_DATABASE_URI and SQLALCHEMY_DATABASE_URI.startswith('postgres://'):
-        SQLALCHEMY_DATABASE_URI = SQLALCHEMY_DATABASE_URI.replace('postgres://', 'postgresql://', 1)
+    if SQLALCHEMY_DATABASE_URI:
+        if SQLALCHEMY_DATABASE_URI.startswith('postgres://'):
+            SQLALCHEMY_DATABASE_URI = SQLALCHEMY_DATABASE_URI.replace(
+                'postgres://', 'postgresql+pg8000://', 1
+            )
+        elif SQLALCHEMY_DATABASE_URI.startswith('postgresql://'):
+            SQLALCHEMY_DATABASE_URI = SQLALCHEMY_DATABASE_URI.replace(
+                'postgresql://', 'postgresql+pg8000://', 1
+            )
     
     SQLALCHEMY_TRACK_MODIFICATIONS = False
     SQLALCHEMY_ENGINE_OPTIONS = {
