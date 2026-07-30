@@ -62,29 +62,30 @@ def get_services():
             
             result.append(service_dict)
         
-        if not result:
-            # If no services exist yet, return demo fallback services for the demo page.
-            demo_services = {
-                'chrome': {
-                    'display_name': 'Google Chrome',
-                    'vendor': 'Google',
-                    'category': 'Browser',
-                    'criticality': 'HIGH'
-                },
-                'zoom': {
-                    'display_name': 'Zoom',
-                    'vendor': 'Zoom Video Communications',
-                    'category': 'Communication',
-                    'criticality': 'HIGH'
-                },
-                'slack': {
-                    'display_name': 'Slack',
-                    'vendor': 'Salesforce',
-                    'category': 'Communication',
-                    'criticality': 'MEDIUM'
-                }
+        demo_services = {
+            'chrome': {
+                'display_name': 'Google Chrome',
+                'vendor': 'Google',
+                'category': 'Browser',
+                'criticality': 'HIGH'
+            },
+            'zoom': {
+                'display_name': 'Zoom',
+                'vendor': 'Zoom Video Communications',
+                'category': 'Communication',
+                'criticality': 'HIGH'
+            },
+            'slack': {
+                'display_name': 'Slack',
+                'vendor': 'Salesforce',
+                'category': 'Communication',
+                'criticality': 'MEDIUM'
             }
-            for name, info in demo_services.items():
+        }
+
+        existing_names = {service['name'] for service in result}
+        for name, info in demo_services.items():
+            if name not in existing_names:
                 result.append({
                     'id': None,
                     'name': name,
@@ -428,10 +429,14 @@ def clear_simulated_events():
     try:
         deleted = Event.query.filter_by(is_simulated=True).delete()
         db.session.commit()
+
+        from app.services.scoring import ScoringService
+        scoring_service = ScoringService(current_app._get_current_object())
+        scoring_service.calculate_all_scores()
         
         return jsonify({
             'success': True,
-            'message': f'Cleared {deleted} simulated events'
+            'message': f'Cleared {deleted} simulated events and recalculated scores'
         }), 200
         
     except Exception as e:

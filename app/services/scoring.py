@@ -48,9 +48,12 @@ class ScoringService:
                 ).all()
                 
                 if not recent_events:
-                    # No recent activity, maintain previous score
+                    # No recent activity: reset to default if baselines exist.
+                    if network_baseline or process_baseline:
+                        self._save_score(service_id, 100, 'GREEN', [], 100, 100)
+                        return 100
                     return self._get_latest_score(service_id)
-                
+
                 # Calculate component scores
                 network_score = 100
                 process_score = 100
