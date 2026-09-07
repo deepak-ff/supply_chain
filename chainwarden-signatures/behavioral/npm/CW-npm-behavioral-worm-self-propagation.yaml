@@ -1,0 +1,30 @@
+id: CW-npm-behavioral-worm-self-propagation
+name: Supply chain worm self-propagation via stolen publish tokens
+
+type: behavioral_rule
+ecosystem: npm
+severity: CRITICAL
+
+rule: |
+  Detect packages that contain logic to: (1) scan for npm/GitHub authentication tokens
+  on the local system (.npmrc, .gitconfig, environment variables), (2) validate discovered
+  tokens against npm registry or GitHub API, (3) enumerate packages the token has publish
+  access to, (4) inject malicious code into those packages and republish them, and
+  (5) write GitHub Actions workflows into repositories for persistent trojanization.
+  Key indicators: automated calls to npm whoami, npm publish, or GitHub API repo/contents
+  endpoints from within package install or runtime hooks. Also look for embedded TruffleHog
+  or similar secret scanning tools being downloaded and executed during package installation.
+
+description: |
+  The Shai-Hulud worm family (September 2025 onward) introduced self-propagating supply chain
+  malware to npm. After initial compromise via phishing (npmjs.help domain), the worm harvested
+  npm publish tokens, validated them, then automatically repackaged and republished downstream
+  packages with injected malware. It also wrote GitHub Actions workflows into repositories for
+  persistent access. Over 40 packages were trojanized in the second wave alone, including
+  debug@4.2.2 which was ingested by OpenAI Codex via transitive dependency resolution.
+
+references:
+  - https://www.oligo.security/blog/the-hidden-risks-of-the-npm-supply-chain-attacks-ai-agents
+
+author: chainwarden
+tags: [worm, self-propagating, npm-publish, credential-reuse, shai-hulud, trufflehog]

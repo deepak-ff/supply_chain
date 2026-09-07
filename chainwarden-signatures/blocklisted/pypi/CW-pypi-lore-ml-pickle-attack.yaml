@@ -1,0 +1,26 @@
+id: CW-pypi-lore-ml-pickle-attack
+name: Lore-ml/ai-exploits — HuggingFace pickle deserialization attack
+
+type: blocklisted_package
+ecosystem: pypi
+severity: CRITICAL
+
+package: ai-exploits
+version_range: ">=0.1"
+
+description: |
+  Researchers discovered malicious machine learning models on HuggingFace Hub that
+  exploited Python's pickle deserialization to achieve remote code execution. The
+  technique abuses the fact that ML model files (PyTorch .pt, .pkl, and safetensors
+  formats) can embed arbitrary Python code via pickle's __reduce__ method. When users
+  loaded these models using standard ML libraries, the embedded code executed
+  automatically. This highlighted systemic risks in the ML supply chain where model
+  files are treated as data but can contain executable payloads.
+
+cve: ~
+references:
+  - https://jfrog.com/blog/data-scientists-targeted-by-malicious-hugging-face-ml-models-with-silent-backdoor/
+  - https://hiddenlayer.com/research/weaponizing-machine-learning-models-with-ransomware/
+
+author: chainwarden
+tags: [ml-supply-chain, pickle-deserialization, model-poisoning, huggingface]

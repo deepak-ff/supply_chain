@@ -1,0 +1,38 @@
+id: CW-rubygems-typosquat-nokogiri
+name: Typosquatting target — nokogiri (300M+ total downloads)
+
+type: typosquatting_target
+ecosystem: rubygems
+severity: HIGH
+
+target: nokogiri
+
+similar_names:
+  - nokogirii
+  - nkogiri
+  - nokogri
+  - nokogiir
+  - nokogirii
+  - nokigiri
+  - nokogirl
+  - nokoiri
+  - nokogeri
+  - nokogrii
+  - nokogriri
+  - nokokiri
+  - nogokiri
+  - nokogirii
+  - nokogiry
+
+description: |
+  nokogiri is the most popular XML/HTML parsing library in Ruby with over 300 million total
+  downloads. Its Japanese name (meaning "saw") is frequently misspelled by English-speaking
+  developers. The unusual spelling creates many natural typosquatting opportunities through
+  vowel transposition and missing characters. Nokogiri processes untrusted HTML/XML input,
+  making a malicious variant especially dangerous.
+
+references:
+  - https://rubygems.org/gems/nokogiri
+
+author: chainwarden
+tags: [typosquatting]

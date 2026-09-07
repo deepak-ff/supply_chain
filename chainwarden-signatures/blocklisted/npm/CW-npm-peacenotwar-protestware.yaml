@@ -1,0 +1,26 @@
+id: CW-npm-peacenotwar-protestware
+name: peacenotwar — file-wiping protestware targeting Russia/Belarus
+
+type: blocklisted_package
+ecosystem: npm
+severity: CRITICAL
+
+package: peacenotwar
+version_range: ">=0.0.1"
+
+description: |
+  In March 2022, the maintainer of the node-ipc npm package added peacenotwar
+  as a dependency. The peacenotwar module contained code that, when executed on
+  machines with IP addresses geolocated to Russia or Belarus, would overwrite
+  files on the filesystem with heart emojis, causing destructive data loss.
+  This was framed as an anti-war protest following Russia's invasion of Ukraine.
+  The node-ipc package had over 1 million weekly downloads and was a dependency
+  of Vue.js CLI tooling.
+
+cve: CVE-2022-23812
+references:
+  - https://snyk.io/blog/peacenotwar-malicious-npm-node-ipc-package-vulnerability/
+  - https://github.com/advisories/GHSA-97m3-w2cp-4xx6
+
+author: chainwarden
+tags: [protestware, destructive, file-wiper, geopolitical]

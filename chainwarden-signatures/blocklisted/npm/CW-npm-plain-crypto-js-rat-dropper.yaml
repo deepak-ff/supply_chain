@@ -1,0 +1,21 @@
+id: CW-npm-plain-crypto-js-rat-dropper
+name: plain-crypto-js RAT dropper (Axios attack)
+type: blocklisted_package
+ecosystem: npm
+severity: CRITICAL
+package: plain-crypto-js
+version_range: "=4.2.1"
+description: |
+  Malicious npm package published on March 30, 2026 as part of the Axios
+  supply chain compromise attributed to North Korean actor Sapphire Sleet.
+  The package was injected as a phantom dependency into axios@1.14.1 and
+  axios@0.30.4. Its postinstall script (setup.js) downloaded platform-specific
+  second-stage payloads from sfrclak.com:8000, then self-cleaned by deleting
+  itself and restoring a benign package.json. A clean decoy version 4.2.0
+  had been pre-staged 18 hours prior.
+cve: ~
+references:
+  - https://www.resecurity.com/blog/article/supply-chain-malware-alert-plain-crypto-js-compromises-axios-packages
+  - https://socket.dev/blog/axios-npm-package-compromised
+author: chainwarden
+tags: [supply-chain, npm, rat, dropper, phantom-dependency, north-korea]

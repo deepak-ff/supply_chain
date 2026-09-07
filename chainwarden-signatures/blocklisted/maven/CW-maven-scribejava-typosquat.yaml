@@ -1,0 +1,25 @@
+id: CW-maven-scribejava-typosquat
+name: scribejava-core OAuth credential stealer typosquat (MAL-2025-2552)
+
+type: blocklisted_package
+ecosystem: maven
+severity: CRITICAL
+
+package: io.github.leetcrunch:scribejava-core
+version_range: ">=0.0.0"
+
+description: |
+  A malicious Maven artifact published under groupId io.github.leetcrunch typosquatting the
+  legitimate com.github.scribejava:scribejava-core OAuth library. Version 8.3.5 covertly
+  harvests and exfiltrates OAuth credentials on a time-based trigger (every 15th of the month),
+  making detection through casual testing difficult. The periodic exfiltration schedule is
+  designed to evade CI/CD security scans that typically run during build time. Any version
+  of this package under the leetcrunch groupId is malicious.
+
+cve: ~
+references:
+  - https://www.oligo.security/blog/oligo-runtime-malicious-packages-detection
+  - https://osv.dev/vulnerability/MAL-2025-2552
+
+author: chainwarden
+tags: [typosquat, maven, oauth-theft, credential-stealer, time-based-trigger]

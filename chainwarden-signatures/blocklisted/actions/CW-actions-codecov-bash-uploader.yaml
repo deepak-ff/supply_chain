@@ -1,0 +1,27 @@
+id: CW-actions-codecov-bash-uploader
+name: Codecov bash uploader — CI secret exfiltration via modified script
+
+type: blocklisted_package
+ecosystem: actions
+severity: CRITICAL
+
+package: codecov/codecov-action
+version_range: "<=1.5.0"
+
+description: |
+  In January-April 2021, the Codecov bash uploader script was compromised after
+  attackers exploited a vulnerability in Codecov's Docker image creation process
+  to extract credentials and modify the bash uploader script hosted at
+  codecov.io/bash. The modified script exfiltrated environment variables, source
+  code, and CI/CD secrets (including tokens and keys) from any CI pipeline that
+  used it. The compromise persisted undetected for over two months and affected
+  thousands of repositories including those of Twitch, HashiCorp, and other major
+  companies. This was also used via the codecov/codecov-action GitHub Action.
+
+cve: ~
+references:
+  - https://about.codecov.io/security-update/
+  - https://blog.gitguardian.com/codecov-supply-chain-breach/
+
+author: chainwarden
+tags: [ci-cd-compromise, secret-exfiltration, bash-uploader, docker]

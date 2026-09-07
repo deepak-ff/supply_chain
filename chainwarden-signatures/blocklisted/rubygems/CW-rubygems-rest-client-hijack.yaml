@@ -1,0 +1,26 @@
+id: CW-rubygems-rest-client-hijack
+name: rest-client gem hijacked — credential stealer
+
+type: blocklisted_package
+ecosystem: rubygems
+severity: CRITICAL
+
+package: rest-client
+version_range: "=1.6.13"
+
+description: |
+  In August 2019, the rest-client RubyGem was hijacked through a compromised
+  maintainer account. The malicious version 1.6.13 contained code that collected
+  system information and credentials, sending them to a remote Pastebin-like
+  service. The backdoor also gave the attacker the ability to remotely execute
+  arbitrary code on infected systems. The rest-client gem had over 100 million
+  total downloads and was one of the most popular HTTP client libraries for Ruby.
+  Multiple other gems from the same maintainer were also compromised.
+
+cve: ~
+references:
+  - https://github.com/rest-client/rest-client/issues/713
+  - https://www.bleepingcomputer.com/news/security/backdoor-found-in-popular-ruby-library-for-checking-passwords/
+
+author: chainwarden
+tags: [hijack, credential-stealer, account-compromise, rce]

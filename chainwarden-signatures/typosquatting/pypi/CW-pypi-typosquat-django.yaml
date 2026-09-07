@@ -1,0 +1,38 @@
+id: CW-pypi-typosquat-django
+name: Typosquatting target — django (8M+ monthly downloads)
+
+type: typosquatting_target
+ecosystem: pypi
+severity: HIGH
+
+target: django
+
+similar_names:
+  - djnago
+  - djagno
+  - djanog
+  - djangoo
+  - djano
+  - dajngo
+  - diango
+  - djanngo
+  - dj4ngo
+  - django_
+  - _django
+  - djanggo
+  - djngo
+  - djanga
+  - djangp
+
+description: |
+  django is a major Python web framework with over 8 million monthly PyPI downloads, used
+  extensively in enterprise and government web applications. The unusual consonant cluster
+  "dj" at the start makes it particularly prone to transposition typos. Attackers have
+  previously registered django typosquats to target developers deploying production web
+  applications that handle authentication and database operations.
+
+references:
+  - https://pypi.org/project/Django/
+
+author: chainwarden
+tags: [typosquatting]

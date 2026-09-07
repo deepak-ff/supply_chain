@@ -1,0 +1,30 @@
+id: CW-pypi-behavioral-setup-subprocess-download
+name: setup.py with os.system/subprocess calls downloading and executing remote payloads
+
+type: behavioral_rule
+ecosystem: pypi
+severity: CRITICAL
+
+rule: |
+  Package setup.py, setup.cfg build hooks, or pyproject.toml build-system hooks contain:
+    - os.system() with commands including curl, wget, or python -c
+    - OR subprocess.run(), subprocess.Popen(), subprocess.call() with download commands
+    - OR urllib.request.urlretrieve() or requests.get() writing to a file
+  AND the downloaded content is subsequently executed:
+    - os.system() or subprocess invocation of the downloaded file
+    - OR exec() or eval() on the downloaded content
+    - OR os.chmod() followed by subprocess execution
+  AND this occurs during the install phase (inside setup() call, cmdclass overrides,
+      or PEP 517 build hooks)
+
+description: |
+  Setup.py is executed during pip install with full system privileges. Combining download
+  and execute operations in setup.py creates an unconstrained remote code execution
+  vector. The attacker controls the remote server and can serve targeted payloads based
+  on request metadata (OS, architecture, IP range). Unlike runtime imports, setup.py
+  execution happens before any application-level security controls are initialized. The
+  PyPI packages `hkg-sol-utils`, `colorama` (typosquat), and dozens of 2023-2024 malware
+  campaigns used this exact technique to deploy infostealers and crypto miners.
+
+author: chainwarden
+tags: [setup-py, subprocess, download-execute, install-time-rce, pip-install]

@@ -1,0 +1,18 @@
+id: CW-npm-behavioral-github-dep-prepare-script
+name: Malicious GitHub dependency with prepare script execution
+type: behavioral_rule
+ecosystem: npm
+severity: HIGH
+rule: |
+  Flag npm packages that use GitHub URL dependencies (github:user/repo#commit) combined with
+  prepare scripts that execute JavaScript via bun or node. Check for optionalDependencies or
+  dependencies pointing to github: URLs with specific commit hashes, where the referenced
+  repository contains prepare scripts executing .js files followed by "exit 1" to suppress
+  error reporting.
+description: |
+  The Mini Shai-Hulud TanStack and @antv campaigns use a novel dependency injection technique
+  where optional dependencies point to malicious GitHub repositories (e.g., github:tanstack/router#commit).
+  The repository's prepare script runs "bun run payload.js && exit 1", executing the malware
+  during dependency resolution while the exit 1 makes the optional dep appear to fail harmlessly.
+author: chainwarden
+tags: [shai-hulud, github-dependency, prepare-script, optional-dependency, behavioral]

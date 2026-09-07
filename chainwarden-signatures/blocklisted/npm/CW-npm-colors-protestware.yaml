@@ -1,0 +1,25 @@
+id: CW-npm-colors-protestware
+name: colors protestware — infinite loop denial of service
+
+type: blocklisted_package
+ecosystem: npm
+severity: HIGH
+
+package: colors
+version_range: ">=1.4.1,<=1.4.2"
+
+description: |
+  In January 2022, the maintainer of the popular colors npm package (Marak Squires)
+  deliberately sabotaged version 1.4.1 by introducing an infinite loop that printed
+  gibberish LIBERTY text to the console, effectively breaking any application that
+  depended on it. This was a protest against large corporations using open-source
+  software without compensation. The package had over 20 million weekly downloads
+  and the sabotage affected thousands of projects including AWS CDK.
+
+cve: ~
+references:
+  - https://github.com/Marak/colors.js/issues/285
+  - https://snyk.io/blog/open-source-npm-packages-colors-faker/
+
+author: chainwarden
+tags: [protestware, denial-of-service, maintainer-sabotage]

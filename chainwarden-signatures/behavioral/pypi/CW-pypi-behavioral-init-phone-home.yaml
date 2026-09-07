@@ -1,0 +1,32 @@
+id: CW-pypi-behavioral-init-phone-home
+name: Package __init__.py phones home to external server on import
+
+type: behavioral_rule
+ecosystem: pypi
+severity: HIGH
+
+rule: |
+  Package __init__.py or top-level module executed on import contains:
+    - Network requests at module scope (not inside a function):
+      urllib.request.urlopen(), requests.get/post(), httpx.get/post(),
+      http.client.HTTPConnection(), socket.connect()
+    - OR DNS lookups with exfiltrated data encoded in the subdomain:
+      socket.getaddrinfo('<data>.<attacker-domain>')
+    - OR threading.Thread started at import time that performs network operations
+  AND the request includes system information:
+    - platform.node(), platform.system(), socket.gethostname(), getpass.getuser()
+    - OR os.environ, os.getcwd(), sys.argv
+    - OR machine-identifying data (MAC address, IP address, username)
+  AND the package is not a well-known telemetry/analytics SDK
+
+description: |
+  A package that makes network requests at import time (in __init__.py or module-level
+  code) is phoning home without user consent. When this request includes system
+  fingerprinting data, it indicates reconnaissance for targeted follow-up attacks or
+  data exfiltration. This pattern is particularly insidious because merely importing
+  the package triggers the beacon — no explicit function call required. The PyPI packages
+  `ctx` and `phpass` used import-time phone-home to harvest environment variables and
+  system metadata from developers who merely imported the package.
+
+author: chainwarden
+tags: [phone-home, beacon, import-hook, reconnaissance, telemetry-abuse]

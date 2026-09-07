@@ -1,0 +1,20 @@
+id: CW-npm-duckdb-sept2025-hijack
+name: DuckDB npm packages hijacked (Sept 2025 crypto theft)
+type: blocklisted_package
+ecosystem: npm
+severity: CRITICAL
+package: duckdb
+version_range: "=1.3.3"
+description: |
+  Part of the September 8, 2025 supply chain attack on 29 npm packages
+  via the compromised ~qix maintainer account. duckdb@1.3.3 along with
+  @duckdb/node-api@1.3.3, @duckdb/node-bindings@1.3.3, and
+  @duckdb/duckdb-wasm@1.29.2 were published with injected Web3 wallet
+  transaction interception code. The malware activated when a Web3 wallet
+  was present and redirected cryptocurrency transactions to attacker
+  addresses.
+cve: ~
+references:
+  - https://snyk.io/blog/npm-supply-chain-attack-via-open-source-maintainer-compromise/
+author: chainwarden
+tags: [supply-chain, npm, crypto-theft, web3, duckdb, sept2025-campaign]

@@ -1,0 +1,30 @@
+id: CW-npm-behavioral-native-addon-evasion
+name: Package loads native addon (.node file) to bypass JavaScript-level detection
+
+type: behavioral_rule
+ecosystem: npm
+severity: HIGH
+
+rule: |
+  Package contains or downloads a prebuilt native addon file (.node, .so, .dll, .dylib)
+  AND loads it via:
+    - process.dlopen(), require('./<name>.node'), or require('bindings')('<name>')
+    - OR dynamically constructs the path to the .node file to evade static analysis
+  AND the native addon is NOT built from included C/C++ source via node-gyp or cmake-js
+  AND the .node file is either:
+    - Bundled as a binary blob in the package (not compiled from source during install)
+    - OR downloaded from an external URL during install
+  AND the package does not appear in well-known native addon registries (prebuild, prebuildify)
+
+description: |
+  Native addons (.node files) are shared libraries loaded directly into the Node.js
+  process. Because they contain compiled machine code, they completely bypass JavaScript
+  static analysis, AST parsing, and most npm security scanners. An attacker can hide
+  any malicious behavior — keylogging, credential theft, reverse shells, crypto miners —
+  inside a native addon where only binary reverse engineering can detect it. This technique
+  is particularly dangerous because it exploits a blind spot in nearly all JavaScript-focused
+  supply chain security tools. Prebuilt binaries that are not compiled from auditable source
+  should be treated with extreme suspicion.
+
+author: chainwarden
+tags: [native-addon, binary-evasion, dlopen, anti-analysis, compiled-payload]

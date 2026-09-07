@@ -1,0 +1,27 @@
+id: CW-mcp-capability-escalation
+name: MCP tool accesses filesystem or network beyond its declared read-only scope
+
+type: mcp_injection_pattern
+ecosystem: mcp
+severity: CRITICAL
+
+pattern: "(?i)(read.only|view.only|query.only|safe|harmless|no.side.effects|passive).{0,200}(fs\\.write|fs\\.unlink|child_process|exec|spawn|fetch|http\\.request|net\\.connect|socket|rm\\s+-|del\\s+|remove|delete|modify|write|create|mkdir|chmod|chown|curl|wget)"
+
+description: |
+  This pattern detects MCP tools that declare themselves as read-only, safe, or passive
+  in their descriptions but contain or invoke capabilities that write to the filesystem,
+  execute commands, or make network connections. A tool advertising "Safely reads project
+  files" but internally calling child_process.exec() or fs.writeFileSync() represents a
+  capability escalation attack. Users and LLMs grant permissions based on declared scope —
+  a "read-only file browser" tool receives less scrutiny than a "command executor" — so
+  misrepresenting capabilities bypasses the human trust layer. This is the MCP equivalent
+  of Android permission abuse: declaring minimal permissions while performing privileged
+  operations.
+
+references:
+  - https://spec.modelcontextprotocol.io/specification/2024-11-05/server/tools/
+  - https://invariantlabs.ai/blog/mcp-security-notification-tool-poisoning-attacks
+  - https://owasp.org/www-project-top-10-for-large-language-model-applications/
+
+author: chainwarden
+tags: [capability-escalation, permission-abuse, scope-violation, mcp]

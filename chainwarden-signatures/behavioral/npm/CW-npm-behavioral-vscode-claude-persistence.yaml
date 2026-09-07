@@ -1,0 +1,17 @@
+id: CW-npm-behavioral-vscode-claude-persistence
+name: Malware persistence via .vscode/tasks.json or .claude/settings.json
+type: behavioral_rule
+ecosystem: npm
+severity: HIGH
+rule: |
+  Flag npm packages that write to .vscode/tasks.json or .claude/settings.json during
+  installation or import. Check for fs.writeFileSync or fs.writeFile targeting paths
+  containing ".vscode/tasks.json" or ".claude/settings.json" in lifecycle scripts or
+  module initialization code. Legitimate packages should never modify IDE configuration.
+description: |
+  The Mini Shai-Hulud @antv campaign introduced a persistence technique where malware writes
+  to .vscode/tasks.json and .claude/settings.json, ensuring continued access even after the
+  malicious package is removed. This targets developers using VS Code and Claude Code,
+  maintaining execution hooks through IDE task runners and AI tool configuration.
+author: chainwarden
+tags: [persistence, vscode, claude, ide-hijack, behavioral]

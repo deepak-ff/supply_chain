@@ -1,0 +1,17 @@
+id: CW-npm-codexui-android-ai-token-stealer
+name: codexui-android package steals OpenAI/Codex tokens
+type: blocklisted_package
+ecosystem: npm
+severity: CRITICAL
+package: codexui-android
+version_range: ">=0.1.82"
+description: |
+  codexui-android masquerades as a legitimate Codex remote UI but steals access_token,
+  refresh_token, id_token, and auth.json from ~/.codex/. Credentials are XOR-encrypted
+  with key "anyclaw2026", base64-encoded, and exfiltrated via HTTPS POST to
+  sentry.anyclaw.store/startlog. Malicious code exists only in npm builds, not the GitHub repo.
+cve: ~
+references:
+  - https://www.aikido.dev/blog/codex-remote-ui-steals-ai-tokens
+author: chainwarden
+tags: [ai-token-theft, openai, codex, xor-encryption, supply-chain]

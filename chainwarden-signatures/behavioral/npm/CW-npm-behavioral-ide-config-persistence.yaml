@@ -1,0 +1,23 @@
+id: CW-npm-behavioral-ide-config-persistence
+name: IDE/agent config persistence via install hooks
+type: behavioral_rule
+ecosystem: npm
+severity: CRITICAL
+rule: |
+  Detect npm packages that modify IDE or AI agent configuration files
+  during installation, specifically: .claude/settings.json (adding
+  SessionStart hooks), .vscode/tasks.json (adding runOn: folderOpen
+  entries), .cursor/settings.json, or similar dotfiles. The Mini
+  Shai-Hulud campaign (2025-2026) used these persistence mechanisms
+  to maintain access across sessions and re-execute malicious payloads
+  whenever a project folder is opened.
+description: |
+  First seen in Wave 3 of the Mini Shai-Hulud campaign (April 2026,
+  SAP CAP-JS), and expanded in Wave 5 (May 2026, AntV), this persistence
+  technique plants hooks in IDE and AI agent configuration files. The
+  .claude/settings.json SessionStart hook triggers on every new Claude
+  session, while .vscode/tasks.json with runOn:folderOpen executes when
+  VS Code opens the folder. Also observed planting kitty terminal
+  plugins and systemd services for broader persistence.
+author: chainwarden
+tags: [behavioral, persistence, ide-hooks, claude, vscode, shai-hulud, teampcp]

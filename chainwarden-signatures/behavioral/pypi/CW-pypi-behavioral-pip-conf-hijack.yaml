@@ -1,0 +1,29 @@
+id: CW-pypi-behavioral-pip-conf-hijack
+name: Package modifies pip.conf or pip.ini to inject malicious package index URL
+
+type: behavioral_rule
+ecosystem: pypi
+severity: CRITICAL
+
+rule: |
+  Package source or setup.py contains file write operations targeting pip configuration:
+    - ~/.pip/pip.conf or ~/.config/pip/pip.conf (Linux/macOS)
+    - %APPDATA%\pip\pip.ini (Windows)
+    - /etc/pip.conf (system-wide)
+    - Site-specific pip.conf in virtualenv directories
+  AND the written content modifies index-url, extra-index-url, or trusted-host settings
+  AND the new index URL points to a non-standard host (not pypi.org or files.pythonhosted.org)
+  OR the package modifies easy-install.pth, setuptools.cfg, or distutils.cfg to alter
+  package resolution behavior
+
+description: |
+  Modifying pip configuration to inject a malicious package index URL is a persistence
+  and supply chain amplification technique. Once pip.conf points to an attacker-controlled
+  index, every subsequent pip install command will resolve packages from the malicious
+  server, allowing the attacker to serve trojaned versions of any package. This creates
+  a self-perpetuating compromise that survives even after the initial malicious package
+  is removed. The technique converts a single package compromise into full control over
+  all future package installations on the affected system.
+
+author: chainwarden
+tags: [pip-conf, index-poisoning, persistence, supply-chain-amplification, configuration-tamper]

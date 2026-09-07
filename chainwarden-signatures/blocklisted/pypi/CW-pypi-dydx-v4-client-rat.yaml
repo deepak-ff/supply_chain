@@ -1,0 +1,20 @@
+id: CW-pypi-dydx-v4-client-rat
+name: dYdX PyPI wallet stealer and RAT
+type: blocklisted_package
+ecosystem: pypi
+severity: CRITICAL
+package: dydx-v4-client
+version_range: "=1.1.5.post1"
+description: |
+  Discovered January 27, 2026, a malicious version of the dydx-v4-client
+  PyPI package was published with both a cryptocurrency wallet stealer and
+  a Remote Access Trojan. The RAT was hidden in account.py using 100
+  iterations of obfuscation (reverse, base64, zlib). Capabilities included
+  stealing SSH keys, API credentials, source code, installing persistent
+  backdoors, and pivoting to other systems. C2 at dydx.priceoracle.site/py.
+cve: ~
+references:
+  - https://socket.dev/blog/malicious-dydx-packages-published-to-npm-and-pypi
+  - https://thehackernews.com/2026/02/compromised-dydx-npm-and-pypi-packages.html
+author: chainwarden
+tags: [supply-chain, pypi, crypto-theft, rat, wallet-stealer, dydx, defi]

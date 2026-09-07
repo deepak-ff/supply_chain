@@ -1,0 +1,17 @@
+id: CW-rubygems-behavioral-ssl-verify-none-download
+name: RubyGem disabling SSL verification to download binaries
+type: behavioral_rule
+ecosystem: rubygems
+severity: CRITICAL
+rule: |
+  Flag RubyGems that both disable SSL verification (OpenSSL::SSL::VERIFY_NONE) and download
+  external binaries during require or installation. Check for: verify_mode set to VERIFY_NONE,
+  Net::HTTP calls to non-standard hosts, binary downloads from Forgejo/Gitea instances, and
+  execution via system()/exec()/`backticks` of downloaded content.
+description: |
+  The SleeperGem campaign hijacked dormant RubyGems maintainer accounts and published versions
+  that download binaries from git.disroot.org with SSL verification disabled. The dropper
+  executes payloads via PowerShell or /bin/sh and deliberately avoids CI environments by
+  checking ~30 CI-related environment variables before execution.
+author: chainwarden
+tags: [sleepergem, ssl-bypass, binary-download, dormant-account, behavioral]

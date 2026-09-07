@@ -1,0 +1,31 @@
+id: CW-ai-pickle-os-system
+name: Pickle model file contains os.system or subprocess calls for command execution
+
+type: pickle_rule
+ecosystem: huggingface
+severity: CRITICAL
+
+rule: |
+  Model file (.bin, .pkl, .pickle, .pt, .pth) contains pickled objects referencing
+  any of: os.system, os.popen, subprocess.Popen, subprocess.call, subprocess.run,
+  subprocess.check_output, commands.getoutput, or pty.spawn
+  Detection via: pickletools.dis() output contains "os\nsystem", "subprocess\nPopen",
+  "subprocess\ncall", "subprocess\nrun", or binary grep for these module.function pairs
+  in the pickle opcode stream
+
+description: |
+  This rule detects model files serialized with Python pickle that contain references to
+  os.system(), subprocess.Popen(), or related command execution functions. When a user
+  loads the model with torch.load() or pickle.load(), the pickled os.system call executes
+  arbitrary shell commands — installing backdoors, downloading second-stage payloads,
+  establishing reverse shells, or exfiltrating environment credentials. This is the most
+  direct form of pickle-based code execution and has been found in malicious models
+  uploaded to HuggingFace Hub targeting popular model name typosquats.
+
+references:
+  - https://research.jfrog.com/vulnerability-research/the-danger-of-pickle-in-ml/
+  - https://blog.huntr.com/malicious-ml-models-on-hugging-face
+  - https://nvd.nist.gov/vuln/detail/CVE-2022-41871
+
+author: chainwarden
+tags: [pickle, os-system, command-execution, arbitrary-code-execution, ai-model]

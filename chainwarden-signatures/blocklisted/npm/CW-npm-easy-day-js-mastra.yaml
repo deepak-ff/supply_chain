@@ -1,0 +1,17 @@
+id: CW-npm-easy-day-js-mastra
+name: Malicious easy-day-js package targeting Mastra ecosystem
+type: blocklisted_package
+ecosystem: npm
+severity: CRITICAL
+package: easy-day-js
+version_range: "=1.11.22"
+description: |
+  easy-day-js v1.11.22 was published as a malicious version of a previously clean package,
+  used as a dependency by 141 Mastra AI framework packages including @mastra/core. The
+  postinstall hook fetches second-stage RAT from 23.254.164.92:8000, targeting 160+ browser
+  crypto wallet extensions including MetaMask and Coinbase. Self-deletes to evade forensics.
+cve: ~
+references:
+  - https://www.aikido.dev/blog/over-140-popular-mastra-npm-packages-hit-by-supply-chain-attack
+author: chainwarden
+tags: [cryptocurrency, wallet-stealer, rat, supply-chain, self-deleting]

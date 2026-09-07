@@ -1,0 +1,31 @@
+id: CW-general-behavioral-gha-script-injection
+name: GitHub Actions script injection via untrusted context interpolation
+
+type: behavioral_rule
+ecosystem: actions
+severity: CRITICAL
+
+rule: |
+  Detect GitHub Actions workflow files that directly interpolate untrusted event context
+  (github.event.issue.title, github.event.pull_request.title, github.event.comment.body,
+  github.event.discussion.title, github.event.pages.*.page_name, github.event.head_commit.message)
+  into run: shell commands using the ${{ }} expression syntax. This allows unauthenticated
+  attackers to inject arbitrary shell commands by crafting malicious issue titles, PR titles,
+  or comment bodies. Safe alternatives: pass the value through an environment variable
+  (env: TITLE: ${{ github.event.issue.title }}) and reference it as $TITLE in the run block,
+  or use jq with --arg for JSON-safe handling.
+
+description: |
+  GitHub Actions script injection occurs when untrusted event data is interpolated directly
+  into run: blocks via ${{ }} expressions. Discovered by Wiz Red Agent in Snowflake's
+  snowflake-connector-net repository (2026), where a workflow interpolated issue titles
+  into a shell command, allowing unauthenticated RCE that exfiltrated Jira API credentials.
+  GitHub Advanced Security failed to flag the pattern. This class of vulnerability affects
+  any public repository with workflows triggered by issues_opened, pull_request_target,
+  or issue_comment events that use direct context interpolation.
+
+references:
+  - https://www.wiz.io/blog/red-agent-snowflake-copilot-cicd-bug
+
+author: chainwarden
+tags: [github-actions, script-injection, cicd, snowflake, workflow-security]

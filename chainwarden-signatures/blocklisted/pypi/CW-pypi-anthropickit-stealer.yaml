@@ -1,0 +1,18 @@
+id: CW-pypi-anthropickit-stealer
+name: Malicious anthropickit package exfiltrates SSH keys and secrets
+type: blocklisted_package
+ecosystem: pypi
+severity: CRITICAL
+package: anthropickit
+version_range: "=999.9.9"
+description: |
+  anthropickit v999.9.9 was published to PyPI on June 14, 2026, using an inflated version
+  number to override legitimate packages via dependency confusion. The setup.py executes during
+  installation, collecting SSH private keys from ~/.ssh, SSH configs, and environment variables
+  matching KEY/SECRET/TOKEN/PASS/AUTH/API patterns. Data exfiltrated via POST to
+  enqqnvvtgrnyl.x.pipedream.net and staged locally at /tmp/runner_exfil.json.
+cve: ~
+references:
+  - https://www.aikido.dev/blog/anthropic-rogue-agents-package-stole-keys
+author: chainwarden
+tags: [dependency-confusion, ssh-theft, credential-theft, ai-agent, pipedream]

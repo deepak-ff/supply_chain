@@ -1,0 +1,17 @@
+id: CW-npm-asyncapi-generator-backdoor
+name: AsyncAPI generator npm package backdoored via GitHub Actions
+type: blocklisted_package
+ecosystem: npm
+severity: CRITICAL
+package: "@asyncapi/generator"
+version_range: "=3.3.1"
+description: |
+  @asyncapi/generator v3.3.1 was compromised in the same campaign as @asyncapi/specs, exploiting
+  a pull_request_target workflow to steal npm tokens. The obfuscated payload fetches encrypted
+  loaders from IPFS, deploys Miasma reverse shell connecting to 85.137.53.71:8080, and installs
+  systemd persistence at ~/.config/systemd/user/miasma-monitor.service on Linux.
+cve: ~
+references:
+  - https://www.aikido.dev/blog/asyncapi-npm-packages-backdoored-via-github-actions
+author: chainwarden
+tags: [github-actions, pull-request-target, miasma, reverse-shell, supply-chain]

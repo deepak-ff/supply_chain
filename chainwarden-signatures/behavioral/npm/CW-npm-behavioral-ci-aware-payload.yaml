@@ -1,0 +1,31 @@
+id: CW-npm-behavioral-ci-aware-payload
+name: preinstall script detects CI environment and behaves differently
+
+type: behavioral_rule
+ecosystem: npm
+severity: HIGH
+
+rule: |
+  Package lifecycle script or main module checks for CI environment variables:
+    - CI, CONTINUOUS_INTEGRATION, BUILD_NUMBER, JENKINS_URL, TRAVIS,
+      GITHUB_ACTIONS, GITLAB_CI, CIRCLECI, CODEBUILD_BUILD_ID, TF_BUILD,
+      BITBUCKET_PIPELINE, DRONE, BUILDKITE, TEAMCITY_VERSION
+  AND executes different code paths based on CI detection:
+    - if (process.env.CI) { <payload> }
+    - OR if (process.env.GITHUB_ACTIONS) { <exfiltration> }
+    - OR conditional network requests only when CI vars are present
+  AND the CI-specific code path contains suspicious behavior:
+    - Network exfiltration, file reads of secrets, environment dumping
+    - OR the CI-specific path is more complex than the non-CI path
+
+description: |
+  Malicious packages that detect CI environments can target the most valuable execution
+  context — build pipelines that hold deployment credentials, signing keys, cloud IAM
+  tokens, and NPM_TOKEN values. By only activating in CI, the malware avoids triggering
+  alerts on developer machines where security tools are more likely to be running. The
+  Codecov bash uploader compromise (2021) demonstrated this technique at scale, extracting
+  CI secrets from thousands of repositories. CI-aware conditional execution in a library
+  package is almost never legitimate.
+
+author: chainwarden
+tags: [ci-detection, conditional-payload, cicd, github-actions, secrets-theft]

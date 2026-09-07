@@ -1,0 +1,17 @@
+id: CW-crates-arrayref-compromise
+name: Compromised arrayref crate with credential stealer
+type: blocklisted_package
+ecosystem: crates
+severity: CRITICAL
+package: arrayref
+version_range: "=0.3.10"
+description: |
+  The arrayref crate (244M downloads) was compromised in version 0.3.10 with a single injected
+  manifest line adding proc-macro1 (typosquat of proc-macro2). The malicious build.rs downloads
+  Rust binaries that steal Chromium saved logins, install macOS LaunchAgent persistence, and
+  connect to C2 at 23.254.165.112:443 for remote command execution.
+cve: ~
+references:
+  - https://www.aikido.dev/blog/two-popular-rust-crates-arrayref-and-append-only-vec-compromised-in-supply-chain-attack
+author: chainwarden
+tags: [compromised-maintainer, credential-theft, rust, supply-chain]

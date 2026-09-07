@@ -1,0 +1,17 @@
+id: CW-crates-internment-compromise
+name: Compromised internment crate with credential stealer
+type: blocklisted_package
+ecosystem: crates
+severity: CRITICAL
+package: internment
+version_range: "=0.8.7"
+description: |
+  The internment crate (14M downloads) was compromised in version 0.8.7 with injected proc-macro1
+  typosquat dependency. Part of the same campaign targeting arrayref and append-only-vec. The
+  build.rs downloads executables that steal Chromium browser credentials and establish persistent
+  C2 connectivity to 23.254.165.112 with shell command capabilities.
+cve: ~
+references:
+  - https://www.aikido.dev/blog/two-popular-rust-crates-arrayref-and-append-only-vec-compromised-in-supply-chain-attack
+author: chainwarden
+tags: [compromised-maintainer, credential-theft, rust, supply-chain]

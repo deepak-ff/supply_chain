@@ -1,0 +1,22 @@
+id: CW-pypi-behavioral-pth-file-injection
+name: Python .pth file auto-execution injection
+type: behavioral_rule
+ecosystem: pypi
+severity: CRITICAL
+rule: |
+  Detect PyPI packages that install .pth files (path configuration files)
+  containing executable Python code. Python .pth files that contain lines
+  starting with "import " are automatically executed every time the Python
+  interpreter starts, regardless of whether the package is explicitly
+  imported. Look for .pth files in site-packages that contain import
+  statements, exec(), eval(), or subprocess calls.
+description: |
+  The LiteLLM compromise (March 2026) by TeamPCP used a .pth file to
+  achieve auto-execution without any explicit import. Python .pth files
+  are intended for path configuration but any line starting with "import"
+  is executed on interpreter startup. The malicious .pth launched a
+  three-stage attack: credential harvesting, Kubernetes lateral movement,
+  and systemd backdoor installation. This technique bypasses most static
+  analysis since the payload runs before any application code.
+author: chainwarden
+tags: [behavioral, pth-injection, auto-execution, litellm, teampcp]

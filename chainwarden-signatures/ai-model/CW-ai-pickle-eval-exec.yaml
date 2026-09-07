@@ -1,0 +1,31 @@
+id: CW-ai-pickle-eval-exec
+name: Pickle model contains eval() or exec() for arbitrary Python code execution
+
+type: pickle_rule
+ecosystem: huggingface
+severity: CRITICAL
+
+rule: |
+  Model file (.bin, .pkl, .pickle, .pt, .pth) contains pickled objects referencing
+  builtins.eval, builtins.exec, builtins.compile, or __builtins__['eval']
+  Detection via: pickletools.dis() output contains "builtins\neval", "builtins\nexec",
+  "builtins\ncompile", or the REDUCE opcode followed by these function references
+  Also detect: base64-encoded Python code strings adjacent to eval/exec references
+
+description: |
+  This rule detects model files containing pickled eval() or exec() calls that execute
+  arbitrary Python code during deserialization. Unlike os.system which runs shell commands,
+  eval/exec can run full Python programs — enabling sophisticated attacks like injecting
+  code into the running ML pipeline, modifying model weights post-load to introduce
+  backdoors, or patching security checks at runtime. Attackers commonly obfuscate the
+  payload by base64-encoding the Python code string, making the malicious intent invisible
+  to simple string scanning. The pickle REDUCE opcode is the mechanism that triggers
+  execution of these functions.
+
+references:
+  - https://research.jfrog.com/vulnerability-research/the-danger-of-pickle-in-ml/
+  - https://blog.trail-of-bits.com/2021/03/15/never-a-dill-moment-exploiting-machine-learning-pickle-files/
+  - https://docs.python.org/3/library/pickle.html#restricting-globals
+
+author: chainwarden
+tags: [pickle, eval, exec, code-execution, obfuscation, ai-model]

@@ -1,0 +1,20 @@
+id: CW-pypi-durabletask-worm
+name: durabletask PyPI credential stealer (TeamPCP/AntV)
+type: blocklisted_package
+ecosystem: pypi
+severity: CRITICAL
+package: durabletask
+version_range: ">=1.4.1"
+description: |
+  On May 20, 2026, as part of the AntV Mini Shai-Hulud campaign expansion,
+  three malicious versions of Microsoft's durabletask PyPI package were
+  published by TeamPCP. The dropper payload had three functions: credential
+  harvesting from cloud providers, password managers, and developer tooling;
+  worm propagation to additional packages; and irreversible disk wiping.
+  The infostealer executed only on Linux. Second-stage payload (rope.pyz)
+  fetched from check.git-service.com. Package had ~103K weekly downloads.
+cve: ~
+references:
+  - https://snyk.io/blog/durabletask-pypi-supply-chain-attack/
+author: chainwarden
+tags: [supply-chain, pypi, teampcp, mini-shai-hulud, durabletask, wiper, credential-theft]

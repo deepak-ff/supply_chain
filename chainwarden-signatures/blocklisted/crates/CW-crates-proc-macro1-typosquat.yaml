@@ -1,0 +1,17 @@
+id: CW-crates-proc-macro1-typosquat
+name: Malicious proc-macro1 typosquat crate
+type: blocklisted_package
+ecosystem: crates
+severity: CRITICAL
+package: proc-macro1
+version_range: ">=1.0.107"
+description: |
+  Typosquat of the legitimate proc-macro2 crate, injected as a dependency into compromised crates
+  arrayref, append-only-vec, and internment. The build.rs executes at compile time, downloading
+  platform-specific binaries that steal Chromium browser credentials, establish C2 communication
+  with 23.254.165.112:443, and install macOS LaunchAgent persistence. No user code changes needed.
+cve: ~
+references:
+  - https://www.aikido.dev/blog/two-popular-rust-crates-arrayref-and-append-only-vec-compromised-in-supply-chain-attack
+author: chainwarden
+tags: [typosquat, credential-theft, rust, supply-chain, c2, persistence]

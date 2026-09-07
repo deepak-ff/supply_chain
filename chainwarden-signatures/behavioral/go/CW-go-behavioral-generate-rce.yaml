@@ -1,0 +1,33 @@
+id: CW-go-behavioral-generate-rce
+name: Module with go:generate directive that runs arbitrary commands
+
+type: behavioral_rule
+ecosystem: go
+severity: HIGH
+
+rule: |
+  Go source files contain //go:generate directives that execute suspicious commands:
+    - //go:generate curl <URL> | sh
+    - //go:generate wget <URL> -O- | bash
+    - //go:generate sh -c "<complex command>"
+    - //go:generate powershell -Command "<command>"
+    - //go:generate cmd /c "<command>"
+  OR //go:generate directives that invoke tools not in the standard Go toolchain:
+    - Tools that download from external URLs
+    - Tools that modify files outside the module directory
+    - Tools that exfiltrate environment variables or system information
+  AND the directive is present in source files included in the module distribution
+  (not just in internal development tooling)
+
+description: |
+  The //go:generate directive tells `go generate` to run arbitrary shell commands. While
+  go generate is not automatically invoked by go build or go install, developers and CI
+  pipelines frequently run it as part of their build process. A malicious go:generate
+  directive in a dependency can execute arbitrary commands when a developer runs
+  `go generate ./...` in a project that imports the compromised module. Unlike init()
+  attacks, this requires an explicit go generate invocation, but many build scripts and
+  Makefiles include this step. The directive is also easily overlooked in code review
+  because it appears as a comment.
+
+author: chainwarden
+tags: [go-generate, code-generation, rce, build-time-attack, comment-directive]

@@ -1,0 +1,26 @@
+id: CW-mcp-context-window-poisoning
+name: MCP tool returns oversized payload to flush safety instructions from context
+
+type: mcp_injection_pattern
+ecosystem: mcp
+severity: HIGH
+
+pattern: "(?i)(\\.repeat\\(|\\*\\s*\\d{4,}|padding|filler|lorem|dummy.{0,20}(text|data|content)|generate.{0,20}(large|huge|massive|long)|context.{0,20}(overflow|flood|flush|fill|exhaust|window))"
+
+description: |
+  This pattern detects MCP tool responses designed to flood the LLM context window with
+  junk data, pushing system prompts and safety instructions beyond the model's effective
+  attention range. A malicious tool can return megabytes of seemingly legitimate but
+  meaningless text (repeated lorem ipsum, padded JSON, inflated XML responses) followed by
+  a prompt injection payload at the end. As safety-critical instructions are pushed to the
+  beginning of a now-overflowing context, the LLM's attention mechanism deprioritizes them
+  in favor of the most recent tokens — which are the attacker's injected instructions.
+  This exploit leverages the "lost in the middle" phenomenon documented in LLM research.
+
+references:
+  - https://arxiv.org/abs/2307.03172
+  - https://arxiv.org/abs/2403.02691
+  - https://owasp.org/www-project-top-10-for-large-language-model-applications/
+
+author: chainwarden
+tags: [context-overflow, attention-manipulation, payload-flooding, mcp]

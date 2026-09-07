@@ -1,0 +1,19 @@
+id: CW-go-typosquat-decimal-shopsprint
+name: Go shopspring/decimal typosquat (shopsprint)
+type: blocklisted_package
+ecosystem: go
+severity: HIGH
+package: github.com/shopsprint/decimal
+version_range: "*"
+description: |
+  Malicious Go module discovered in 2025 that impersonates the widely used
+  github.com/shopspring/decimal library (arbitrary-precision decimal math).
+  The typosquat uses a single-character substitution (shopsprint vs shopspring)
+  to trick developers. The module contains hidden malicious functionality
+  designed to compromise developer systems. The Go Module Mirror's caching
+  mechanism enabled persistence even after GitHub removal.
+cve: ~
+references:
+  - https://hackread.com/malware-infects-linux-macos-typosquatted-go-packages/
+author: chainwarden
+tags: [typosquatting, go, decimal, shopspring, single-char-substitution]

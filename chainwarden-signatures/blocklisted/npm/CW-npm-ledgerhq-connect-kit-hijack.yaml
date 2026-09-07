@@ -1,0 +1,26 @@
+id: CW-npm-ledgerhq-connect-kit-hijack
+name: "@ledgerhq/connect-kit hijacked — crypto wallet drainer"
+
+type: blocklisted_package
+ecosystem: npm
+severity: CRITICAL
+
+package: "@ledgerhq/connect-kit"
+version_range: ">=1.1.5,<=1.1.7"
+
+description: |
+  In December 2023, a former Ledger employee's npm account was compromised via a
+  phishing attack, allowing the attacker to publish malicious versions 1.1.5, 1.1.6,
+  and 1.1.7 of @ledgerhq/connect-kit. The compromised versions contained a crypto
+  wallet drainer that injected rogue JavaScript via a malicious WalletConnect clone,
+  prompting users to approve fraudulent transactions that drained their crypto assets.
+  The malicious code was live for approximately 5 hours and resulted in at least
+  $600,000 in stolen cryptocurrency. Ledger replaced the package within hours.
+
+cve: ~
+references:
+  - https://www.ledger.com/blog/a-]letter-from-ledger-chairman-ceo-pascal-gauthier-regarding-ledger-connect-kit-exploit
+  - https://www.bleepingcomputer.com/news/security/ledger-dapp-library-hacked-600k-in-crypto-stolen/
+
+author: chainwarden
+tags: [hijack, crypto-drainer, phishing, account-compromise, defi]

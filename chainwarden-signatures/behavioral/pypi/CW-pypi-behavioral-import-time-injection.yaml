@@ -1,0 +1,20 @@
+id: CW-pypi-behavioral-import-time-injection
+name: Import-time code execution in client modules
+type: behavioral_rule
+ecosystem: pypi
+severity: HIGH
+rule: |
+  Detect PyPI packages where core client modules (e.g., _client.py,
+  client.py, __init__.py) execute network calls, subprocess commands,
+  or file operations at import time rather than in functions/methods.
+  Code that runs at module import runs before any user code can inspect
+  or prevent it, making it ideal for supply chain payloads.
+description: |
+  The Telnyx compromise (March 2026) injected malicious code into
+  telnyx/_client.py that executed at import time, before any user function
+  call. The loader downloaded disguised second-stage payloads (WAV files)
+  from C2 infrastructure, XOR-decoded them, and executed the result. This
+  technique ensures the payload runs the instant the package is imported
+  by any application, maximizing infection rates.
+author: chainwarden
+tags: [behavioral, import-time, telnyx, teampcp, loader]

@@ -1,0 +1,26 @@
+id: CW-pypi-pytorch-nightly-depconfusion
+name: pytorch-nightly dependency confusion — torchtriton hijack
+
+type: blocklisted_package
+ecosystem: pypi
+severity: CRITICAL
+
+package: torchtriton
+version_range: "=2.0.0"
+
+description: |
+  In December 2022, a dependency confusion attack targeted PyTorch's nightly build
+  process. The attacker registered a malicious package called torchtriton on public
+  PyPI, which shadowed PyTorch's legitimate internal torchtriton dependency hosted
+  on their private index. When users installed pytorch-nightly, pip resolved the
+  dependency from public PyPI instead of the private index, installing the malicious
+  version. The compromised package exfiltrated system information, environment
+  variables, SSH keys, and the first 1000 files in the home directory.
+
+cve: ~
+references:
+  - https://pytorch.org/blog/compromised-nightly-dependency/
+  - https://www.bleepingcomputer.com/news/security/pytorch-discloses-malicious-dependency-chain-compromise/
+
+author: chainwarden
+tags: [dependency-confusion, data-exfiltration, build-pipeline]

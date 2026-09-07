@@ -1,0 +1,37 @@
+id: CW-pypi-typosquat-flask
+name: Typosquatting target — flask (10M+ monthly downloads)
+
+type: typosquatting_target
+ecosystem: pypi
+severity: HIGH
+
+target: flask
+
+similar_names:
+  - flaask
+  - flak
+  - flaks
+  - flaask
+  - flaskk
+  - falsk
+  - flask_
+  - _flask
+  - f1ask
+  - flasl
+  - flassk
+  - flaskpy
+  - flasx
+  - fllask
+  - flsak
+
+description: |
+  flask is one of the most popular Python web frameworks with over 10 million monthly PyPI
+  downloads. It powers a large number of production APIs and microservices. A typosquatted
+  flask variant could inject backdoors into web applications, intercept HTTP requests, or
+  establish reverse shells on servers running Flask-based APIs.
+
+references:
+  - https://pypi.org/project/flask/
+
+author: chainwarden
+tags: [typosquatting]

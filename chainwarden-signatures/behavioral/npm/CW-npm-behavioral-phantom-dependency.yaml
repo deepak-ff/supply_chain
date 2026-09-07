@@ -1,0 +1,22 @@
+id: CW-npm-behavioral-phantom-dependency
+name: Phantom dependency injection (never-imported package)
+type: behavioral_rule
+ecosystem: npm
+severity: HIGH
+rule: |
+  Detect npm packages that add dependencies which are never imported or
+  required in the package source code but contain postinstall hooks. The
+  Axios attack (March 2026) injected plain-crypto-js@4.2.1 as a dependency
+  in package.json, but no source file ever imported it. The sole purpose
+  was to execute a postinstall dropper. Check for dependencies whose
+  package name does not appear in any require/import statement within
+  the package's source files.
+description: |
+  The phantom dependency technique was used in the March 2026 Axios
+  compromise by North Korean actor Sapphire Sleet. A malicious dependency
+  (plain-crypto-js) was added to package.json but never imported anywhere
+  in the Axios source. Its only purpose was to execute a postinstall script
+  that downloaded a cross-platform RAT. A clean decoy version (4.2.0) was
+  pre-staged 18 hours before the attack to establish registry history.
+author: chainwarden
+tags: [behavioral, phantom-dependency, axios, dropper, supply-chain]

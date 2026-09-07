@@ -1,0 +1,17 @@
+id: CW-npm-keyv-shai-hulud
+name: Keyv npm package compromised by Shai-Hulud worm
+type: blocklisted_package
+ecosystem: npm
+severity: CRITICAL
+package: keyv
+version_range: "=6.0.0"
+description: |
+  Keyv v6.0.0 (604M monthly downloads) was compromised in the Mini Shai-Hulud supply chain
+  campaign. A preinstall hook executes setup.mjs dropper that downloads Bun runtime and runs
+  a 728KB obfuscated credential stealer (Math_Symbol.js) harvesting npm tokens, GitHub PATs,
+  AWS credentials, Kubernetes tokens, SSH keys, and more. Data exfiltrated to npm-cache.com:443.
+cve: ~
+references:
+  - https://www.aikido.dev/blog/keyv-and-friends-compromised-in-npm-supply-chain-attack
+author: chainwarden
+tags: [shai-hulud, worm, credential-theft, npm, supply-chain, compromised-maintainer]

@@ -1,0 +1,19 @@
+id: CW-npm-nx-key-malicious
+name: "@nx/key malicious package (Nx campaign)"
+type: blocklisted_package
+ecosystem: npm
+severity: CRITICAL
+package: "@nx/key"
+version_range: "=3.2.0"
+description: |
+  Published as part of the August 2025 Nx supply chain compromise. The
+  @nx/key@3.2.0 and @nx/enterprise-cloud@3.2.0 packages were created alongside
+  compromised versions of @nx/devkit, @nx/js, @nx/workspace, @nx/node, and
+  @nx/eslint. All carried the same telemetry.js postinstall payload that
+  weaponized AI coding agents for filesystem reconnaissance and credential
+  exfiltration via GitHub repositories.
+cve: ~
+references:
+  - https://snyk.io/blog/weaponizing-ai-coding-agents-for-malware-in-the-nx-malicious-package/
+author: chainwarden
+tags: [supply-chain, npm, ai-weaponization, nx-campaign]

@@ -1,0 +1,25 @@
+id: CW-pypi-colourama-typosquat
+name: colourama typosquat — credential stealer mimicking colorama
+
+type: blocklisted_package
+ecosystem: pypi
+severity: CRITICAL
+
+package: colourama
+version_range: ">=0.1"
+
+description: |
+  The colourama package on PyPI was a typosquat of the popular colorama library
+  (which has over 150 million monthly downloads). The malicious package mimicked
+  colorama's functionality while also containing code that harvested credentials
+  and environment variables from infected systems. It exploited the common British
+  English spelling of "colour" to trick developers into installing the wrong package.
+  The package was eventually removed from PyPI after being reported.
+
+cve: ~
+references:
+  - https://blog.sonatype.com/sonatype-catches-new-pypi-cryptomining-malware
+  - https://snyk.io/blog/typosquatting-attacks-targeting-popular-python-packages/
+
+author: chainwarden
+tags: [typosquat, credential-stealer, impersonation]

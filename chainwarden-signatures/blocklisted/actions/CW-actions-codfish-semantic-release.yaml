@@ -1,0 +1,17 @@
+id: CW-actions-codfish-semantic-release
+name: codfish/semantic-release-action compromised with Miasma stealer
+type: blocklisted_package
+ecosystem: actions
+severity: CRITICAL
+package: codfish/semantic-release-action
+version_range: ">=2.2.1,<=5.0.0"
+description: |
+  codfish/semantic-release-action was compromised on June 24, 2026 via force-pushed commits
+  repointing tags v2 through v5. The payload installs Bun runtime and executes obfuscated
+  index.js using the Miasma credential stealing framework, targeting GITHUB_TOKEN, NPM_TOKEN,
+  and CI/CD environment secrets. Uses dead-drop via GitHub commit search for C2 commands.
+cve: ~
+references:
+  - https://www.aikido.dev/blog/compromised-github-action-codfish-steals-secrets
+author: chainwarden
+tags: [github-actions, miasma, credential-theft, ci-cd, tag-repoint, supply-chain]

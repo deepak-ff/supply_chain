@@ -1,0 +1,26 @@
+id: CW-mcp-cross-server-tool-override
+name: MCP cross-server tool name collision/override
+type: behavioral_rule
+ecosystem: "*"
+severity: HIGH
+rule: |
+  Detect when multiple connected MCP servers register tools with
+  identical or similar names, enabling a malicious server to intercept
+  or shadow calls intended for a legitimate server. Check for duplicate
+  tool names across all connected MCP servers and alert when a newly
+  connected server registers tools matching existing trusted servers.
+  Also detect tool descriptions containing hidden instructions or
+  prompt injection targeting the LLM agent.
+description: |
+  When multiple MCP servers connect to the same AI agent, a malicious
+  server can register tools with the same names as trusted servers,
+  effectively intercepting calls. The agent may route requests to the
+  malicious tool instead of the legitimate one. This attack is enabled
+  by the lack of namespace isolation in most MCP client implementations.
+  Combined with tool poisoning (hidden instructions in descriptions),
+  this allows data theft via trusted-looking tool interfaces.
+references:
+  - https://owasp.org/www-community/attacks/MCP_Tool_Poisoning
+  - https://simonwillison.net/2025/Apr/9/mcp-prompt-injection/
+author: chainwarden
+tags: [mcp, tool-override, namespace-collision, cross-server, tool-poisoning]

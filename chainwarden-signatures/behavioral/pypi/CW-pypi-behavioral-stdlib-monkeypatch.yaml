@@ -1,0 +1,31 @@
+id: CW-pypi-behavioral-stdlib-monkeypatch
+name: Package patches stdlib modules at runtime for interception (monkey-patching)
+
+type: behavioral_rule
+ecosystem: pypi
+severity: HIGH
+
+rule: |
+  Package source modifies standard library or widely-used third-party module attributes:
+    - Replaces functions in ssl, http, urllib, socket, os, subprocess modules
+      (e.g. ssl.wrap_socket = malicious_wrapper, socket.create_connection = interceptor)
+    - OR patches requests.Session.send, urllib3.HTTPConnectionPool, http.client methods
+    - OR modifies builtins (builtins.open, builtins.__import__, builtins.exec)
+    - OR uses sys.modules injection to replace legitimate modules with trojan versions
+  AND the replacement function:
+    - Logs, copies, or exfiltrates arguments (URLs, headers, credentials, file paths)
+    - OR modifies return values to inject malicious content
+    - OR adds a side channel that sends data to an external server
+
+description: |
+  Runtime monkey-patching of standard library modules allows a malicious package to
+  intercept all network traffic, file operations, or subprocess calls made by the
+  entire application. By replacing ssl.wrap_socket, an attacker can downgrade TLS or
+  intercept encrypted traffic. By patching builtins.__import__, they can inject code
+  into every subsequent module load. This technique is extremely stealthy because the
+  malicious behavior occurs in the context of trusted modules, making attribution
+  difficult. Legitimate monkey-patching (e.g. gevent, mock) is limited to specific
+  well-known use cases and does not exfiltrate data.
+
+author: chainwarden
+tags: [monkey-patch, stdlib-hijack, interception, module-tampering, man-in-the-middle]

@@ -1,0 +1,25 @@
+id: CW-npm-lottie-player-hijack
+name: lottie-player hijacked — crypto wallet drainer injection
+
+type: blocklisted_package
+ecosystem: npm
+severity: CRITICAL
+
+package: "@lottiefiles/lottie-player"
+version_range: ">=2.0.4,<=2.0.8"
+
+description: |
+  In October 2024, the LottieFiles lottie-player npm package was compromised when
+  a maintainer's npm access token was stolen. Malicious versions 2.0.4 through 2.0.8
+  were published containing injected code that displayed a fake Web3 wallet connection
+  popup. When users connected their wallets, the code drained their cryptocurrency
+  assets. The package was widely used for rendering Lottie animations on websites.
+  LottieFiles quickly published a clean version 2.0.9 and revoked compromised tokens.
+
+cve: ~
+references:
+  - https://www.bleepingcomputer.com/news/security/lottie-player-npm-package-hijacked-in-supply-chain-attack/
+  - https://blog.lottiefiles.com/security-incident-update/
+
+author: chainwarden
+tags: [hijack, crypto-drainer, token-theft, web3]

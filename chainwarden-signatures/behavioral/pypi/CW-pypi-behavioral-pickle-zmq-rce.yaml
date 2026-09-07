@@ -1,0 +1,32 @@
+id: CW-pypi-behavioral-pickle-zmq-rce
+name: Pickle deserialization over unauthenticated ZeroMQ sockets (ShadowMQ)
+
+type: behavioral_rule
+ecosystem: pypi
+severity: CRITICAL
+
+rule: |
+  Detect Python packages or applications that deserialize data received over ZeroMQ (ZMQ)
+  sockets using pickle (recv_pyobj, pickle.loads on ZMQ message data). This pattern creates
+  a direct remote code execution pathway since pickle can instantiate arbitrary Python objects
+  during deserialization. Key indicators: import of zmq combined with recv_pyobj() calls,
+  or pickle.loads() on data received from zmq.Socket.recv(). Check that ZMQ sockets are
+  not bound to 0.0.0.0 or public interfaces without authentication (zmq.CURVE or zmq.PLAIN).
+  Affected frameworks include vLLM, TensorRT-LLM, Meta Llama Stack, SGLang, Modular Max
+  Server, and Microsoft Sarathi-Serve.
+
+description: |
+  The ShadowMQ vulnerability class (disclosed 2025) affects multiple major AI inference
+  servers that copied a common pattern of using Python pickle deserialization over
+  unauthenticated ZeroMQ sockets for inter-process communication. CVE-2024-50050 (Llama
+  Stack), CVE-2025-23254 (TensorRT-LLM), CVE-2025-30165 (vLLM), and CVE-2025-60455
+  (Modular Max Server) all stem from the same unsafe recv_pyobj() pattern. Thousands of
+  exposed ZMQ sockets were found on the public internet, enabling unauthenticated RCE on
+  production AI clusters. The vulnerability cascaded across projects through direct code
+  copying rather than shared library dependency.
+
+references:
+  - https://www.oligo.security/blog/shadowmq-how-code-reuse-spread-critical-vulnerabilities-across-the-ai-ecosystem
+
+author: chainwarden
+tags: [pickle, zmq, deserialization, rce, shadowmq, ai-infrastructure, code-reuse]

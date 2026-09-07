@@ -1,0 +1,19 @@
+id: CW-go-typosquat-hypert-shadowybulk
+name: Go hypert typosquat (shadowybulk)
+type: blocklisted_package
+ecosystem: go
+severity: CRITICAL
+package: github.com/shadowybulk/hypert
+version_range: "*"
+description: |
+  One of four malicious Go modules discovered February 2025, impersonating
+  the legitimate github.com/areknoster/hypert HTTP API testing library.
+  Contains hidden RCE functions that download and execute malicious payloads
+  from attacker infrastructure. Part of a broader campaign that also included
+  typosquats of the github.com/loov/layout library. Targets Linux and macOS.
+cve: ~
+references:
+  - https://socket.dev/blog/typosquatted-go-packages-deliver-malware-loader
+  - https://thehackernews.com/2025/03/seven-malicious-go-packages-found.html
+author: chainwarden
+tags: [typosquatting, go, rce, malware-loader, hypert]

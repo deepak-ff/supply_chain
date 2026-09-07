@@ -1,0 +1,26 @@
+id: CW-nuget-xaml-markup-typosquat
+name: Microsoft.UI.Xaml.Markup typosquat — .NET supply chain attack
+
+type: blocklisted_package
+ecosystem: nuget
+severity: HIGH
+
+package: Microsoft.UI.Xaml.Markup
+version_range: ">=0.1"
+
+description: |
+  Malicious packages on NuGet.org were discovered typosquatting legitimate Microsoft
+  namespace packages, including variations of Microsoft.UI.Xaml.Markup. The attack
+  exploited NuGet's lack of namespace reservation enforcement to publish packages
+  with names resembling official Microsoft packages. These typosquats contained
+  obfuscated code that could download and execute additional payloads. The campaign
+  highlighted the risk of namespace confusion attacks in the .NET ecosystem, where
+  the Microsoft.* prefix creates a false sense of trust.
+
+cve: ~
+references:
+  - https://jfrog.com/blog/large-scale-npm-attack-targets-azure-developers-with-malicious-packages/
+  - https://www.reversinglabs.com/blog/iconburst-npm-software-supply-chain-attack-grabs-data-from-apps-and-websites
+
+author: chainwarden
+tags: [typosquat, namespace-confusion, dotnet, impersonation]

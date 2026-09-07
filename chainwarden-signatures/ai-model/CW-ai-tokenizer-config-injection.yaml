@@ -1,0 +1,36 @@
+id: CW-ai-tokenizer-config-injection
+name: Tokenizer config contains malicious pre/post processing code or prompt injection
+
+type: pickle_rule
+ecosystem: huggingface
+severity: CRITICAL
+
+rule: |
+  Tokenizer files (tokenizer.json, tokenizer_config.json, special_tokens_map.json)
+  in a model repository contain any of:
+  - "pre_tokenizer" or "post_processor" with "type": "Script" or inline code blocks
+  - chat_template field containing injection patterns: hidden system messages,
+    "ignore previous instructions", or template logic that appends invisible text
+  - added_tokens with content containing prompt injection or control sequences
+  - special_tokens_map entries with values containing URLs, shell commands, or
+    base64-encoded strings
+  - tokenizer.json with a normalizer containing Unicode manipulation rules that
+    transform safe-looking input into malicious sequences
+
+description: |
+  This rule detects tokenizer configuration files with malicious pre-processing code,
+  injected chat templates, or poisoned special tokens. The tokenizer runs before every
+  LLM inference call, making it a persistent and invisible attack vector. A poisoned
+  chat_template in tokenizer_config.json can inject hidden system instructions into every
+  prompt. Malicious normalizer rules can silently transform user input. Custom pre/post
+  processors with embedded scripts execute arbitrary code during tokenization. Because
+  tokenizer files are JSON, they bypass pickle scanners entirely — yet they run code
+  and manipulate every input to the model.
+
+references:
+  - https://huggingface.co/docs/tokenizers/api/pre-tokenizers
+  - https://research.jfrog.com/vulnerability-research/the-danger-of-pickle-in-ml/
+  - https://huggingface.co/docs/transformers/main/en/chat_templating
+
+author: chainwarden
+tags: [tokenizer, config-injection, chat-template, pre-processing, ai-model]

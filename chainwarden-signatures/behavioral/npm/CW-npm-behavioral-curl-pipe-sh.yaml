@@ -1,0 +1,28 @@
+id: CW-npm-behavioral-curl-pipe-sh
+name: Install script executes curl|sh or wget|bash remote code execution pattern
+
+type: behavioral_rule
+ecosystem: npm
+severity: CRITICAL
+
+rule: |
+  Package has any lifecycle script (preinstall, install, postinstall) in package.json
+  AND the script or referenced file contains a pipe-to-shell pattern:
+    - curl <URL> | sh, curl <URL> | bash, curl -s <URL> | sh
+    - wget <URL> -O- | sh, wget -q <URL> | bash
+    - OR equivalent constructed via child_process.exec() with string concatenation
+  AND the URL is not a well-known legitimate installer (e.g. rustup.rs, nvm-sh, brew)
+  OR the script uses child_process to invoke:
+    - /bin/sh -c "$(curl ...)" or /bin/bash -c "$(wget ...)"
+
+description: |
+  The curl-pipe-shell pattern downloads and immediately executes arbitrary remote code
+  without any integrity verification, signature checking, or content inspection. This
+  is extremely dangerous in a package install context because the remote server controls
+  what code runs, can serve different payloads based on request headers (targeting CI
+  environments), and leaves no auditable artifact. Multiple npm malware families use
+  this pattern to download second-stage payloads. No legitimate npm library package
+  should use this pattern during installation.
+
+author: chainwarden
+tags: [curl-pipe-sh, remote-code-execution, install-script, download-execute]

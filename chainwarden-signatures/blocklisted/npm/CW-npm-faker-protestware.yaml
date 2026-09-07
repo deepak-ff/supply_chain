@@ -1,0 +1,25 @@
+id: CW-npm-faker-protestware
+name: faker protestware — infinite loop denial of service
+
+type: blocklisted_package
+ecosystem: npm
+severity: HIGH
+
+package: faker
+version_range: "=6.6.6"
+
+description: |
+  In January 2022, the maintainer of the faker npm package (Marak Squires)
+  deliberately sabotaged version 6.6.6 by introducing an infinite loop that
+  printed gibberish text to the console, mirroring the simultaneous sabotage
+  of the colors package. The faker package was widely used for generating
+  realistic fake data in testing and development. The version number 6.6.6
+  was chosen deliberately. The community later forked the project as @faker-js/faker.
+
+cve: ~
+references:
+  - https://github.com/Marak/faker.js/issues/1046
+  - https://snyk.io/blog/open-source-npm-packages-colors-faker/
+
+author: chainwarden
+tags: [protestware, denial-of-service, maintainer-sabotage]

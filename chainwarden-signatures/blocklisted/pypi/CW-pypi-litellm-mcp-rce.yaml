@@ -1,0 +1,25 @@
+id: CW-pypi-litellm-mcp-rce
+name: LiteLLM MCP endpoint unauthenticated RCE (CVE-2026-42271)
+
+type: blocklisted_package
+ecosystem: pypi
+severity: CRITICAL
+
+package: litellm
+version_range: ">=1.74.2,<=1.83.6"
+
+description: |
+  CVE-2026-42271 is a critical command injection vulnerability in LiteLLM's MCP server test
+  endpoints (/mcp-rest/test/connection and /mcp-rest/test/tools/list). These endpoints accept
+  a full server configuration including command, arguments, and environment variables, which
+  LiteLLM spawns as an unsandboxed subprocess. When chained with CVE-2026-48710 (Starlette
+  Host header validation bypass), an unauthenticated attacker can achieve arbitrary command
+  execution on the proxy host, steal model provider API keys (OpenAI, Anthropic, Azure),
+  and move laterally into connected AI infrastructure. Affects versions 1.74.2 through 1.83.6.
+
+cve: CVE-2026-42271
+references:
+  - https://www.oligo.security/blog/oligo-detects-and-blocks-rce-in-litellm-cve-2026-42271
+
+author: chainwarden
+tags: [rce, command-injection, litellm, ai-proxy, mcp, unauthenticated, cve-2026-42271]

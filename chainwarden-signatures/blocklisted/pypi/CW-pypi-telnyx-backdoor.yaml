@@ -1,0 +1,22 @@
+id: CW-pypi-telnyx-backdoor
+name: Telnyx PyPI credential stealer (TeamPCP)
+type: blocklisted_package
+ecosystem: pypi
+severity: CRITICAL
+package: telnyx
+version_range: "=4.87.1||=4.87.2"
+description: |
+  On March 27, 2026, TeamPCP published two backdoored versions of the Telnyx
+  SDK (4.87.1, 4.87.2) to PyPI as part of their credential-chaining campaign.
+  Malicious code injected into telnyx/_client.py executed at import time. The
+  loader downloaded second-stage payloads disguised as WAV files (hangup.wav
+  for Windows, ringtone.wav for Linux) from C2 infrastructure, decoded them
+  via XOR using the first 8 bytes as key, and executed the payload. Part of
+  the Trivy -> KICS -> LiteLLM -> Telnyx attack chain. Over 1M monthly
+  downloads affected.
+cve: ~
+references:
+  - https://cybersecuritynews.com/telnyx-pypi-package-compromised/
+  - https://securitylabs.datadoghq.com/articles/litellm-compromised-pypi-teampcp-supply-chain-campaign/
+author: chainwarden
+tags: [supply-chain, pypi, teampcp, telnyx, credential-chaining, xor-payload]

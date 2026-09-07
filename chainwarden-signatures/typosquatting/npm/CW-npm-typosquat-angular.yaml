@@ -1,0 +1,38 @@
+id: CW-npm-typosquat-angular
+name: Typosquatting target — @angular/core (3M+ weekly downloads)
+
+type: typosquatting_target
+ecosystem: npm
+severity: HIGH
+
+target: "@angular/core"
+
+similar_names:
+  - angular
+  - angualr
+  - angular-core
+  - angular_core
+  - angullar
+  - anguler
+  - angulor
+  - anuglar
+  - anglar
+  - agnular
+  - angularr
+  - angular2
+  - angullar-core
+  - angualar
+  - angulare
+
+description: |
+  @angular/core is the runtime foundation of the Angular framework with over 3 million weekly
+  npm downloads. Typosquatting attacks commonly target the unscoped name "angular" or hyphenated
+  variants like "angular-core" since developers may forget the @angular/ scope prefix. An
+  attacker publishing an unscoped package with a similar name can intercept installations from
+  developers unfamiliar with npm scoped packages.
+
+references:
+  - https://www.npmjs.com/package/@angular/core
+
+author: chainwarden
+tags: [typosquatting]

@@ -1,0 +1,38 @@
+id: CW-npm-typosquat-webpack
+name: Typosquatting target — webpack (25M+ weekly downloads)
+
+type: typosquatting_target
+ecosystem: npm
+severity: HIGH
+
+target: webpack
+
+similar_names:
+  - webpck
+  - webpak
+  - webapack
+  - wepback
+  - webpackk
+  - w3bpack
+  - weback
+  - webpacck
+  - webpack_
+  - webbpack
+  - webpakc
+  - web-pack
+  - _webpack
+  - webppack
+  - webpackjs
+
+description: |
+  webpack is the dominant JavaScript module bundler with over 25 million weekly npm downloads.
+  It runs during build processes where it has full filesystem and network access, making a
+  malicious typosquat particularly dangerous. Attackers targeting webpack can execute arbitrary
+  code during CI/CD builds, exfiltrate environment variables, or inject backdoors into bundled
+  application code.
+
+references:
+  - https://www.npmjs.com/package/webpack
+
+author: chainwarden
+tags: [typosquatting]

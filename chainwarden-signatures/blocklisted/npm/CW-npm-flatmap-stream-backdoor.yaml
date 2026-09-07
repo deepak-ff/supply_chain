@@ -1,0 +1,26 @@
+id: CW-npm-flatmap-stream-backdoor
+name: flatmap-stream — encrypted backdoor targeting Copay wallet
+
+type: blocklisted_package
+ecosystem: npm
+severity: CRITICAL
+
+package: flatmap-stream
+version_range: "=0.1.1"
+
+description: |
+  flatmap-stream@0.1.1, published in September 2018, was the malicious dependency
+  injected into event-stream@3.3.6. It contained an AES-256-CBC encrypted payload
+  that specifically targeted the Copay bitcoin wallet application. The encrypted
+  code was hidden in the minified bundle and would only decrypt and execute when
+  the Copay wallet's package description matched a known hash, allowing it to
+  steal private keys from wallets with balances over 100 BTC. The attack remained
+  undetected for approximately two months.
+
+cve: ~
+references:
+  - https://github.com/nicedream/flatmap-stream/issues/1
+  - https://blog.npmjs.org/post/180565383195
+
+author: chainwarden
+tags: [backdoor, cryptowallet, encrypted-payload, targeted-attack]

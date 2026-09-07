@@ -1,0 +1,38 @@
+id: CW-rubygems-typosquat-rails
+name: Typosquatting target — rails (300M+ total downloads)
+
+type: typosquatting_target
+ecosystem: rubygems
+severity: HIGH
+
+target: rails
+
+similar_names:
+  - raiils
+  - raills
+  - rials
+  - ralis
+  - railss
+  - rrails
+  - rail
+  - rales
+  - ra1ls
+  - rails_
+  - _rails
+  - railz
+  - raills
+  - rails2
+  - railsrb
+
+description: |
+  rails (Ruby on Rails) is the most popular Ruby web framework with over 300 million total
+  downloads on RubyGems. It powers a massive number of production web applications including
+  GitHub, Shopify, and Basecamp. Its short, common-word name makes it susceptible to
+  typosquatting through simple transpositions and adjacent-key errors that could inject
+  malicious code into Rails application servers.
+
+references:
+  - https://rubygems.org/gems/rails
+
+author: chainwarden
+tags: [typosquatting]

@@ -1,0 +1,19 @@
+id: CW-npm-dydxprotocol-wallet-stealer
+name: dYdX protocol npm wallet stealer
+type: blocklisted_package
+ecosystem: npm
+severity: CRITICAL
+package: "@dydxprotocol/v4-client-js"
+version_range: "=3.4.1||=1.22.1||=1.15.2||=1.0.31"
+description: |
+  Discovered January 27, 2026, four malicious versions of @dydxprotocol/v4-client-js
+  were published to npm via compromised maintainer account. The injected code
+  in registry.ts/registry.js exfiltrated cryptocurrency seed phrases and
+  device fingerprints to the attacker C2 domain dydx.priceoracle.site. The
+  domain was registered January 9, 2026 specifically for this campaign.
+cve: ~
+references:
+  - https://socket.dev/blog/malicious-dydx-packages-published-to-npm-and-pypi
+  - https://thehackernews.com/2026/02/compromised-dydx-npm-and-pypi-packages.html
+author: chainwarden
+tags: [supply-chain, npm, crypto-theft, wallet-stealer, dydx, defi]

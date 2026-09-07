@@ -1,0 +1,28 @@
+id: CW-npm-behavioral-postinstall-dotfile-tamper
+name: postinstall script modifies ~/.ssh/authorized_keys or ~/.npmrc
+
+type: behavioral_rule
+ecosystem: npm
+severity: CRITICAL
+
+rule: |
+  Package has a postinstall lifecycle script defined in package.json
+  AND the script or referenced file contains write operations targeting any of:
+    - ~/.ssh/authorized_keys (fs.writeFile, fs.appendFile, >> redirect)
+    - ~/.npmrc (fs.writeFile, fs.appendFile, >> redirect)
+    - ~/.ssh/config
+    - ~/.gitconfig or ~/.git-credentials
+  AND the operation is an append or overwrite (not a read-only access)
+  AND the package is not a well-known SSH or npm configuration tool
+
+description: |
+  Modifying ~/.ssh/authorized_keys allows an attacker to add their own SSH public key,
+  granting persistent remote access to the developer's machine or any server that trusts
+  those keys. Modifying ~/.npmrc can inject a malicious registry URL or steal auth tokens,
+  enabling further supply chain compromise. Both files are high-value persistence targets.
+  This technique was observed in multiple 2022-2024 npm malware campaigns where attackers
+  appended SSH keys during postinstall to maintain backdoor access to developer workstations
+  and CI/CD runners.
+
+author: chainwarden
+tags: [postinstall, ssh-persistence, npmrc-tamper, credential-theft, backdoor]

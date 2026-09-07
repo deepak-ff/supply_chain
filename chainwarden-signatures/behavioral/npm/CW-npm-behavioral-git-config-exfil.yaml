@@ -1,0 +1,29 @@
+id: CW-npm-behavioral-git-config-exfil
+name: Package reads and exfiltrates .git/config or .gitconfig for repo/credential theft
+
+type: behavioral_rule
+ecosystem: npm
+severity: HIGH
+
+rule: |
+  Package source contains file read operations targeting git configuration:
+    - .git/config (contains remote URLs, potentially with embedded credentials)
+    - ~/.gitconfig or ~/.config/git/config (contains user identity, credential helpers)
+    - .git-credentials or ~/.git-credentials (contains plaintext HTTPS credentials)
+    - .git/HEAD, .git/refs/ (reveals branch structure and commit history)
+  AND contains fs.readFile, fs.readFileSync, or child_process executing git config commands
+  AND the read content is subsequently sent over a network connection:
+    - http/https requests, DNS exfiltration, WebSocket transmission
+    - OR written to a staging file before bulk exfiltration
+
+description: |
+  Git configuration files contain sensitive information including repository URLs (which
+  reveal internal infrastructure), user identity, and potentially plaintext credentials
+  stored via git-credential-store. The .git/config file in particular can contain HTTPS
+  URLs with embedded tokens (https://token@github.com/org/repo). Exfiltrating this data
+  enables attackers to access private repositories, impersonate developers, and map
+  internal infrastructure. This technique has been observed in npm and PyPI malware
+  campaigns targeting open-source contributors.
+
+author: chainwarden
+tags: [git-config, credential-theft, exfiltration, repo-discovery, reconnaissance]

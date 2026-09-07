@@ -1,0 +1,39 @@
+id: CW-pypi-typosquat-numpy
+name: Typosquatting target — numpy (50M+ monthly downloads)
+
+type: typosquatting_target
+ecosystem: pypi
+severity: HIGH
+
+target: numpy
+
+similar_names:
+  - numyp
+  - numppy
+  - numpyy
+  - numby
+  - nummpy
+  - nunpy
+  - nupy
+  - nnumpy
+  - num-py
+  - numpy_
+  - nympy
+  - nupmpy
+  - numpay
+  - numpi
+  - numpy2
+
+description: |
+  numpy is the foundational numerical computing library in Python with over 50 million monthly
+  PyPI downloads. It is a dependency of virtually every data science and machine learning
+  project. Attackers have repeatedly targeted numpy with typosquatting variants, as a
+  compromised installation grants access to scientific computing environments that often
+  contain sensitive research data and cloud credentials.
+
+references:
+  - https://pypi.org/project/numpy/
+  - https://blog.phylum.io/typosquatting-numpy/
+
+author: chainwarden
+tags: [typosquatting]

@@ -1,0 +1,26 @@
+id: CW-crates-rustdecimal-typosquat
+name: rustdecimal typosquat — malware targeting rust_decimal users
+
+type: blocklisted_package
+ecosystem: crates
+severity: CRITICAL
+
+package: rustdecimal
+version_range: ">=1.23.1"
+
+description: |
+  In May 2022, a malicious crate named rustdecimal was discovered on crates.io,
+  typosquatting the legitimate and popular rust_decimal crate (which uses an
+  underscore). The malicious crate contained obfuscated code that downloaded and
+  executed a malware payload. The attack was notable as one of the first confirmed
+  supply chain attacks on the Rust ecosystem via crates.io. The crate was removed
+  from the registry after discovery, prompting discussions about namespace
+  protection policies for crates.io.
+
+cve: ~
+references:
+  - https://blog.rust-lang.org/2022/05/10/malicious-crate-rustdecimal.html
+  - https://www.sentinelone.com/labs/cratedepression-rust-supply-chain-attack-infects-cloud-ci-pipelines-with-go-malware/
+
+author: chainwarden
+tags: [typosquat, malware, crates-io, rust-ecosystem]

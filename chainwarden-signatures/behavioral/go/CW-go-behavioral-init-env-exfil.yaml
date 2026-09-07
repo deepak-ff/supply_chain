@@ -1,0 +1,30 @@
+id: CW-go-behavioral-init-env-exfil
+name: Module with init() function that exfiltrates environment variables
+
+type: behavioral_rule
+ecosystem: go
+severity: CRITICAL
+
+rule: |
+  Go module source contains an init() function that:
+    - Reads environment variables via os.Getenv(), os.Environ(), or os.LookupEnv()
+    - AND makes outbound network requests via:
+      net/http.Get(), net/http.Post(), net/http.NewRequest(),
+      net.Dial(), net.DialTimeout(), or DNS resolution with net.LookupHost()
+    - AND the environment data is included in the request body, URL parameters,
+      HTTP headers, or encoded in DNS query subdomains
+  OR init() spawns a goroutine that performs the above operations asynchronously
+  AND the module is not a well-known configuration/environment library (e.g. viper, envconfig)
+
+description: |
+  Go's init() functions execute automatically when a package is imported, before main()
+  runs, making them ideal for supply chain attacks. Because Go statically links all
+  dependencies, init() functions from every transitively imported package execute in
+  the final binary. Environment variables in Go applications frequently contain database
+  connection strings, API keys, cloud credentials, and service tokens. Exfiltrating
+  these via init() is silent, requires no explicit function call, and executes even in
+  test binaries. This technique has been observed in typosquatted Go modules targeting
+  popular packages.
+
+author: chainwarden
+tags: [init-function, env-exfiltration, credential-theft, auto-execution, go-module]

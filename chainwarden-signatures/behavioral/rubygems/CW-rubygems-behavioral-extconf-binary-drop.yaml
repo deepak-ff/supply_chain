@@ -1,0 +1,31 @@
+id: CW-rubygems-behavioral-extconf-binary-drop
+name: Gem with extconf.rb that downloads and executes external binary
+
+type: behavioral_rule
+ecosystem: rubygems
+severity: CRITICAL
+
+rule: |
+  Gem contains an extconf.rb or ext/*/extconf.rb that:
+    - Downloads files using open-uri, Net::HTTP, URI.open(), or system("curl/wget")
+    - AND the download target is an external URL (not rubygems.org or a known CDN)
+    - AND the downloaded file is executed via:
+      system(), exec(), backticks (`cmd`), IO.popen(), Process.spawn(),
+      Kernel.exec(), or %x{} operator
+    - OR the downloaded file is written to disk with File.open and made executable
+      via File.chmod(0755, ...) or FileUtils.chmod()
+  OR extconf.rb contains eval() with content from an external source
+  AND the gem is not a well-known native extension builder (e.g. nokogiri, ffi, grpc)
+
+description: |
+  extconf.rb is executed during gem install to configure native extensions. Like npm's
+  preinstall scripts, it runs arbitrary Ruby code with the installing user's privileges.
+  A malicious extconf.rb can download and execute any payload, including platform-specific
+  binaries, reverse shells, or infostealers. The RubyGems ecosystem has seen multiple
+  attacks using this vector, including typosquatted gems that download cryptominers via
+  extconf.rb. Legitimate gems that need compiled extensions use mkmf (MakeMakefile) to
+  generate Makefiles from local C source, not to download prebuilt binaries from arbitrary
+  URLs.
+
+author: chainwarden
+tags: [extconf, native-extension, binary-drop, download-execute, rubygems]

@@ -1,0 +1,17 @@
+id: CW-npm-tanstack-typosquat-env-stealer
+name: Fake unscoped tanstack package steals .env files
+type: blocklisted_package
+ecosystem: npm
+severity: HIGH
+package: tanstack
+version_range: ">=2.0.4,<=2.0.7"
+description: |
+  Four versions of a fake unscoped "tanstack" package (typosquatting @tanstack/*) were published
+  in 27 minutes on April 29, 2026. The postinstall.cjs reads .env, .env.local, .env.production,
+  .env.staging, and .env.development files from the developer's working directory and POSTs them
+  as JSON to a Svix webhook endpoint (api.svix.com). Version 2.0.5 also targeted AGENTS.md files.
+cve: ~
+references:
+  - https://www.aikido.dev/blog/fake-tanstack-packages-steal-env-files
+author: chainwarden
+tags: [typosquat, env-theft, dotenv, svix, supply-chain]

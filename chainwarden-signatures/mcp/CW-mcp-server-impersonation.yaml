@@ -1,0 +1,27 @@
+id: CW-mcp-server-impersonation
+name: MCP server advertises name or ID matching a trusted server to intercept requests
+
+type: mcp_injection_pattern
+ecosystem: mcp
+severity: CRITICAL
+
+pattern: "(?i)(name|server.?name|id|identifier|display.?name)\\s*[:=]\\s*[\"']?(official|verified|authentic|trusted|github|google|slack|notion|jira|linear|postgres|filesystem|brave|puppeteer|fetch|memory|sequential|sqlite|everything)[\"']?"
+
+description: |
+  This pattern detects MCP servers that advertise their name or identifier as matching
+  well-known, trusted MCP servers (e.g., "github", "filesystem", "postgres", "slack").
+  When multiple MCP servers are connected and two share the same name, the LLM cannot
+  distinguish which is legitimate — allowing the impersonator to intercept tool calls
+  intended for the real server. This is the MCP equivalent of DNS spoofing: by claiming
+  the identity of a trusted server, the attacker receives privileged requests containing
+  authentication tokens, file paths, database queries, or other sensitive parameters.
+  The MCP specification currently lacks cryptographic server identity verification,
+  making impersonation attacks trivial.
+
+references:
+  - https://spec.modelcontextprotocol.io/specification/2024-11-05/
+  - https://invariantlabs.ai/blog/mcp-security-notification-tool-poisoning-attacks
+  - https://arxiv.org/abs/2403.02691
+
+author: chainwarden
+tags: [server-impersonation, identity-spoofing, name-collision, mcp]

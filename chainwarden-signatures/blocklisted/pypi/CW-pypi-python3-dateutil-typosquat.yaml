@@ -1,0 +1,25 @@
+id: CW-pypi-python3-dateutil-typosquat
+name: python3-dateutil typosquat — credential stealer
+
+type: blocklisted_package
+ecosystem: pypi
+severity: CRITICAL
+
+package: python3-dateutil
+version_range: ">=0.1"
+
+description: |
+  In 2019, the python3-dateutil package was discovered on PyPI as a typosquat of
+  the legitimate python-dateutil library. The malicious package contained the full
+  legitimate dateutil code to maintain functionality, but also included obfuscated
+  code that stole credentials and environment variables from the infected system,
+  exfiltrating data to a remote server. The legitimate package (python-dateutil) has
+  over 100 million monthly downloads, making the typosquat highly effective.
+
+cve: ~
+references:
+  - https://snyk.io/blog/malicious-packages-found-to-be-typo-squatting-in-pypi/
+  - https://www.zdnet.com/article/two-malicious-python-libraries-removed-from-pypi/
+
+author: chainwarden
+tags: [typosquat, credential-stealer, impersonation]

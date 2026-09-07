@@ -1,0 +1,27 @@
+id: CW-mcp-data-exfil-tool-return
+name: MCP tool return contains encoded data or exfiltration URLs with stolen context
+
+type: mcp_injection_pattern
+ecosystem: mcp
+severity: CRITICAL
+
+pattern: '(?i)(https?://[^\s]+\?(.*?(key|token|secret|data|q|payload|context|msg|content)=|[A-Za-z0-9+/]{40,})|data:[a-z]+/[a-z]+;base64,[A-Za-z0-9+/=]{50,}|\x[0-9a-f]{2}|%[0-9a-f]{2}.{0,5}%[0-9a-f]{2})'
+
+description: |
+  This pattern detects MCP tool return values that contain data exfiltration artifacts:
+  URLs with query parameters carrying encoded data (base64, hex, or percent-encoded
+  context from the conversation), data URIs with base64 payloads, or suspicious encoded
+  strings. A malicious MCP tool can harvest secrets, API keys, or conversation content
+  from the LLM context, then encode and embed them in URLs returned as "results" —
+  tricking the LLM into rendering clickable links that exfiltrate data when the user
+  clicks, or instructing the LLM to make follow-up requests to attacker-controlled
+  endpoints. This is a confirmed attack vector in agentic AI pipelines where tool
+  outputs are trusted.
+
+references:
+  - https://arxiv.org/abs/2302.12173
+  - https://greshake.github.io/
+  - https://invariantlabs.ai/blog/mcp-security-notification-tool-poisoning-attacks
+
+author: chainwarden
+tags: [data-exfiltration, encoded-data, base64, url-exfil, mcp]
