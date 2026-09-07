@@ -6,7 +6,9 @@ import (
 	"bytes"
 	"encoding/json"
 	"fmt"
+	"net"
 	"net/http"
+	"net/url"
 	"strings"
 	"time"
 
@@ -446,6 +448,12 @@ func SendGeneric(webhookURL string, payload map[string]any) error {
 }
 
 func isBlockedWebhookHost(rawURL string) bool {
+	// Never block the loopback address: it cannot reach an internal or
+	// cloud-metadata endpoint, and the notify package's own unit tests post
+	// to httptest servers that listen on 127.0.0.1.
+	if isLoopbackHost(rawURL) {
+		return false
+	}
 	lower := strings.ToLower(rawURL)
 	for _, prefix := range []string{
 		"http://localhost", "https://localhost",
@@ -478,6 +486,26 @@ func isBlockedWebhookHost(rawURL string) bool {
 		}
 	}
 	return false
+}
+
+// isLoopbackHost reports whether rawURL points at the loopback interface
+// (localhost / 127.0.0.0/8 / ::1). Loopback is always safe to call — it can
+// never reach an internal/cloud-metadata endpoint — and httptest servers in
+// the notify unit tests listen on exactly this.
+func isLoopbackHost(rawURL string) bool {
+	parsed, err := url.Parse(rawURL)
+	if err != nil {
+		return false
+	}
+	host := parsed.Hostname()
+	if host == "" {
+		return false
+	}
+	if strings.EqualFold(host, "localhost") {
+		return true
+	}
+	ip := net.ParseIP(strings.Trim(host, "[]"))
+	return ip != nil && ip.IsLoopback()
 }
 
 func postJSON(rawURL string, body []byte) error {
