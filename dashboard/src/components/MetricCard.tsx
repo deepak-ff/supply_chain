@@ -66,7 +66,7 @@ export function MetricCard({ label, value, trend, trendValue, variant = 'default
   return (
     <div
       className={cn(
-        'rounded-xl border border-border-color bg-surface shadow-sm relative overflow-hidden',
+        'rounded-lg border border-border-color bg-surface shadow-card relative overflow-hidden',
         className
       )}
       style={{ background: styles.bg }}

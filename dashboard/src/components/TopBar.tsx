@@ -154,14 +154,30 @@ export function TopBar({
     <header className="flex h-[var(--shell-h)] shrink-0 items-center gap-3 border-b border-border-color bg-surface px-4">
       {/* Breadcrumb */}
       <nav aria-label="Breadcrumb" className="flex min-w-0 items-center gap-1.5 text-[0.78rem]">
-        <span className="shrink-0 font-medium uppercase tracking-wide text-text-muted">
+        <span className="shrink-0 font-mono text-[0.66rem] font-semibold uppercase tracking-[0.14em] text-text-muted">
           {section}
         </span>
         <ChevronRight size={13} className="shrink-0 text-text-muted" aria-hidden="true" />
-        <span className="truncate font-semibold text-text-primary">{page}</span>
+        <span className="truncate font-mono text-[0.74rem] font-semibold text-text-primary">{page}</span>
       </nav>
 
       <div className="ml-auto flex shrink-0 items-center gap-2">
+        {/* Live system status rail — the "SYS ONLINE" signature motif */}
+        <div
+          aria-hidden="true"
+          title="All scan engines online"
+          className="cw-scanrail hidden items-center gap-2 rounded border border-border-color bg-bg-base px-2.5 py-1 font-mono text-[0.62rem] uppercase tracking-[0.12em] text-text-muted lg:flex"
+        >
+          <span className="cw-live-dot h-1.5 w-1.5 shrink-0" />
+          <span className="text-success">sys online</span>
+          <span aria-hidden="true" className="text-border-color">·</span>
+          <span>8 engines</span>
+          <span aria-hidden="true" className="text-border-color">·</span>
+          <span>9 ecosystems</span>
+          <span aria-hidden="true" className="text-border-color">·</span>
+          <span>223 sigs</span>
+        </div>
+
         {/* Global search — opens the command palette (Ctrl/Cmd+K) */}
         <button
           type="button"

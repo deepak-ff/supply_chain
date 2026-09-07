@@ -86,7 +86,7 @@ export function PublicDocsPage({ onNavigateHome }: { onNavigateHome?: () => void
   };
 
   return (
-    <div className="min-h-screen bg-bg-base text-text-primary">
+    <div className="min-h-screen text-text-primary">
       {/* Header */}
       <header className="border-b border-border-color bg-surface sticky top-0 z-50 backdrop-blur-sm bg-surface/90">
         <div className="max-w-6xl mx-auto px-6 py-3.5 flex items-center justify-between">

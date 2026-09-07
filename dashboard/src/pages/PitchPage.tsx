@@ -163,7 +163,7 @@ export function PitchPage({ onLoggedIn, onNavigateEnterprise }: PitchPageProps) 
   const illustrativeScore = computeSecurityScore(illustrativeSummary);
 
   return (
-    <div className="min-h-screen overflow-x-hidden bg-bg-base text-text-primary">
+    <div className="min-h-screen overflow-x-hidden text-text-primary">
       {/* 1. Sticky nav */}
       <nav
         className={

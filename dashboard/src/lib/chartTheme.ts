@@ -95,7 +95,7 @@ export const legendProps = {
 const tooltipCard: CSSProperties = {
   background: 'var(--surface)',
   border: '1px solid var(--border-color)',
-  borderRadius: 4,
+  borderRadius: 'var(--radius)',
   boxShadow: 'var(--shadow-card)',
   padding: '8px 10px',
   fontSize: 12,
@@ -104,13 +104,14 @@ const tooltipCard: CSSProperties = {
 };
 
 const tooltipLabel: CSSProperties = {
-  fontSize: 11,
+  fontSize: 10,
   fontWeight: 600,
+  fontFamily: 'var(--font-mono)',
   color: 'var(--text-secondary)',
   margin: 0,
   marginBottom: 4,
   textTransform: 'uppercase',
-  letterSpacing: '0.04em',
+  letterSpacing: '0.08em',
 };
 
 const tooltipItem: CSSProperties = {

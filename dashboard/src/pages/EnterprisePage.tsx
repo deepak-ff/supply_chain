@@ -33,7 +33,7 @@ interface EnterprisePageProps {
 
 export function EnterprisePage({ onNavigateHome }: EnterprisePageProps) {
   return (
-    <div className="min-h-screen bg-bg-base text-text-primary">
+    <div className="min-h-screen text-text-primary">
       <nav className="sticky top-0 z-40 flex items-center justify-between gap-2 border-b border-border-color bg-surface/80 px-4 sm:px-6 py-3.5 backdrop-blur-md">
         <button onClick={onNavigateHome} className="flex items-center gap-2.5 min-w-0 shrink bg-transparent border-none cursor-pointer">
           <img src="/logo-icon.png" alt="ChainWarden" className="shrink-0" style={{ height: 36, objectFit: 'contain' }} />

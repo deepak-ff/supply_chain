@@ -19,7 +19,7 @@ const Card = React.forwardRef<HTMLDivElement, React.HTMLAttributes<HTMLDivElemen
   ({ className, ...props }, ref) => (
     <div
       ref={ref}
-      className={cn('rounded border border-border-color bg-surface shadow-card', className)}
+      className={cn('cw-brackets rounded border border-border-color bg-surface shadow-card', className)}
       {...props}
     />
   ),
@@ -44,7 +44,7 @@ const CardHeader = React.forwardRef<HTMLDivElement, CardHeaderProps>(
         {Icon && <Icon size={16} className="mt-0.5 shrink-0 text-text-muted" aria-hidden="true" />}
         <div className="min-w-0">
           {title && (
-            <h3 className="m-0 truncate text-[0.8rem] font-semibold text-text-primary">{title}</h3>
+            <h3 className="m-0 truncate font-mono text-[0.72rem] font-semibold uppercase tracking-wide text-text-primary">{title}</h3>
           )}
           {description && (
             <p className="m-0 mt-0.5 text-[0.72rem] leading-snug text-text-muted">{description}</p>

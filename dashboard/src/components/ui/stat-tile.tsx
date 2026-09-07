@@ -138,7 +138,7 @@ export function StatTile({
   return (
     <div
       className={cn(
-        'relative overflow-hidden rounded border border-border-color bg-surface shadow-card',
+        'cw-brackets relative rounded border border-border-color bg-surface shadow-card',
         className,
       )}
     >
@@ -151,13 +151,13 @@ export function StatTile({
       <div className={cn('px-4 py-3', accent !== 'neutral' && 'pl-[19px]')}>
         <div className="flex items-center gap-1.5">
           {Icon && <Icon size={13} className="shrink-0 text-text-muted" aria-hidden="true" />}
-          <span className="truncate text-[0.7rem] font-medium text-text-secondary">{label}</span>
+          <span className="truncate font-mono text-[0.66rem] font-medium uppercase tracking-wide text-text-secondary">{label}</span>
         </div>
         {loading ? (
           <Skeleton className="mt-2 h-7 w-16" />
         ) : (
           <div className="mt-1.5 flex items-baseline gap-2">
-            <span className={cn('text-[28px] font-semibold leading-none tabular-nums', tone.value)}>
+            <span className={cn('font-mono text-[26px] font-semibold leading-none tabular-nums tracking-tight', tone.value)}>
               {value}
             </span>
             {delta && <DeltaChip delta={delta} />}
