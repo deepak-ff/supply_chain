@@ -2,6 +2,7 @@ package trust
 
 import (
 	"errors"
+	"fmt"
 	"os"
 	"path/filepath"
 	"strings"
@@ -207,5 +208,88 @@ func TestDiffVersionsExplicitAndErrors(t *testing.T) {
 	}
 	if _, err := store.DiffVersions("npm", "ghost", "", ""); !errors.Is(err, ErrNoObservations) {
 		t.Fatalf("expected ErrNoObservations, got %v", err)
+	}
+}
+
+func TestDiffReportsDirectionality(t *testing.T) {
+	deltas := Diff(
+		Metrics{NetworkCalls: 1, InstallHooks: 2, ArtifactKB: 200},
+		Metrics{NetworkCalls: 5, InstallHooks: 0, ArtifactKB: 200},
+	)
+	by := map[string]MetricDelta{}
+	for _, d := range deltas {
+		by[d.Metric] = d
+	}
+	if len(deltas) != 2 {
+		t.Fatalf("unchanged metrics must not appear: %+v", deltas)
+	}
+	if !by["network_calls"].Riskier {
+		t.Error("more network calls must be riskier")
+	}
+	if by["install_hooks"].Riskier {
+		t.Error("removing install hooks must NOT be riskier")
+	}
+}
+
+// seedStore writes pkgs packages x releases healthy releases each (identical
+// behaviour, monotonically increasing timestamps) into a fresh store. releases
+// must be >= MinObservations+1 so the latest release of every package is scored
+// GREEN rather than LEARNING — that is what lets the cache-invalidation test
+// tell a stale (GREEN) summary apart from a fresh (RED) one.
+func seedStore(t *testing.T, pkgs, releases int) *Store {
+	t.Helper()
+	store, err := NewStore(t.TempDir())
+	if err != nil {
+		t.Fatalf("NewStore: %v", err)
+	}
+	base := time.Date(2026, 1, 1, 0, 0, 0, 0, time.UTC)
+	for p := 0; p < pkgs; p++ {
+		name := fmt.Sprintf("pkg-%03d", p)
+		for r := 0; r < releases; r++ {
+			obs := Observation{
+				Ecosystem:  "npm",
+				Package:    name,
+				Version:    fmt.Sprintf("1.0.%d", r),
+				ObservedAt: base.AddDate(0, 0, 14*r),
+				Source:     "seed",
+				Metrics: Metrics{
+					NetworkCalls:     1,
+					MaintainerCount:  2,
+					ArtifactKB:       200,
+					DependencyCount:  3,
+					ReleaseGapDays:   14,
+					ObfuscationScore: 4,
+				},
+			}
+			if _, err := store.Record(obs); err != nil {
+				t.Fatalf("Record %s@%s: %v", name, obs.Version, err)
+			}
+		}
+	}
+	return store
+}
+
+func TestListInvalidatesCacheOnWrite(t *testing.T) {
+	// 6 releases per package keeps every healthy package GREEN (its latest
+	// release is scored against a >= MinObservations baseline), so a hijacked
+	// pkg-000 dropping to RED is unmistakable — and a stale cache entry would
+	// still report GREEN.
+	store := seedStore(t, 5, 6)
+	if _, err := store.List(); err != nil {
+		t.Fatal(err)
+	}
+	if _, err := store.Record(Observation{
+		Ecosystem: "npm", Package: "pkg-000", Version: "9.0.0",
+		ObservedAt: time.Date(2026, 9, 1, 0, 0, 0, 0, time.UTC),
+		Metrics:    Metrics{NetworkCalls: 9, InstallHooks: 3, ProcessSpawns: 4, ObfuscationScore: 88},
+	}); err != nil {
+		t.Fatal(err)
+	}
+	got, err := store.List()
+	if err != nil {
+		t.Fatal(err)
+	}
+	if got[0].Package != "pkg-000" || got[0].State == StateGreen {
+		t.Fatalf("stale cache served after a write: %+v", got[0])
 	}
 }
