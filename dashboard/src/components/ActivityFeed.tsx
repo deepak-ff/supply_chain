@@ -8,7 +8,7 @@ function severityDot(severity: string) {
     case 'CRITICAL': return '#FF3D3D'
     case 'HIGH':     return '#FF8C00'
     case 'MEDIUM':   return '#FFAB40'
-    case 'LOW':      return '#60A5FA'
+    case 'LOW':      return '#2FD4C2'
     default:         return '#6B7280'
   }
 }

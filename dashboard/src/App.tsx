@@ -252,7 +252,7 @@ function AppShell({ path, setPath }: { path: string; setPath: (p: string) => voi
   }
 
   return (
-    <div className="flex h-screen flex-col overflow-hidden bg-bg-base text-text-primary">
+    <div className="flex h-screen flex-col overflow-hidden text-text-primary">
       <ApiStatusBanner />
       <CommandPalette navigate={setPath} />
       <div className="flex min-h-0 flex-1">

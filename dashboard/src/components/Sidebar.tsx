@@ -46,7 +46,7 @@ function NavButton({
       <span className="flex h-4 w-4 shrink-0 items-center justify-center">
         <item.icon size={16} strokeWidth={1.75} aria-hidden="true" />
       </span>
-      {open && <span className="min-w-0 truncate">{item.label}</span>}
+      {open && <span className="min-w-0 truncate font-mono text-[0.74rem]">{item.label}</span>}
     </button>
   );
 }
@@ -78,8 +78,8 @@ export function Sidebar({ current, onNavigate }: SidebarProps) {
           aria-hidden="true"
           className="h-6 w-6 shrink-0 object-contain" />
         {sidebarOpen && (
-          <span className="truncate text-[0.85rem] font-semibold tracking-tight text-text-primary">
-            ChainWarden
+          <span className="truncate font-mono text-[0.82rem] font-semibold tracking-tight text-text-primary">
+            ChainWarden<span aria-hidden="true" className="cw-blink" />
           </span>
         )}
       </button>
@@ -99,7 +99,7 @@ export function Sidebar({ current, onNavigate }: SidebarProps) {
         {NAV_SECTIONS.map((section) => (
           <div key={section.section} className="mb-1.5">
             {sidebarOpen ? (
-              <p className="m-0 px-[13px] pb-1 pt-3 text-[11px] font-medium uppercase tracking-wide text-text-muted">
+              <p className="m-0 px-[13px] pb-1 pt-3 font-mono text-[10px] font-semibold uppercase tracking-[0.14em] text-text-muted">
                 {section.section}
               </p>
             ) : (
