@@ -4,6 +4,7 @@ import {
   LineChart, Line, BarChart, Bar, XAxis, YAxis, CartesianGrid,
   Tooltip as RechartsTooltip, ResponsiveContainer, Legend,
 } from 'recharts';
+import { axisProps, gridProps, tooltipProps } from '../lib/chartTheme';
 import { GitBranch, TrendingUp, Minus, ArrowUpRight, ArrowDownRight, AlertTriangle, Shield } from 'lucide-react';
 import { getDashboardTimeline, getActiveRisks, padTimeline } from '../lib/api';
 import { cn } from '../components/ui/utils';
@@ -149,8 +150,8 @@ export function DependencyDriftPage() {
   const totalFindings = sevBreakdown.critical + sevBreakdown.high + sevBreakdown.medium + sevBreakdown.low;
 
   return (
-    <div className="flex flex-col h-full overflow-y-auto">
-      <div className="p-5 flex flex-col gap-4">
+    <div className="flex flex-col">
+      <div className="flex flex-col gap-4">
         {/* Header */}
         <div>
           <h1 className="text-[1.1rem] font-bold text-text-primary">Dependency Drift</h1>
@@ -167,8 +168,7 @@ export function DependencyDriftPage() {
             value={totalFindings}
             delta={summary.totalDelta}
             icon={AlertTriangle}
-            color="var(--text-primary)"
-          />
+            color="var(--text-primary)" />
           <KPITile
             className="fg-entrance fg-entrance-delay-1"
             label="Critical"
@@ -176,8 +176,7 @@ export function DependencyDriftPage() {
             delta={summary.critDelta}
             icon={AlertTriangle}
             color="var(--critical)"
-            accentColor="var(--critical)"
-          />
+            accentColor="var(--critical)" />
           <KPITile
             className="fg-entrance fg-entrance-delay-2"
             label="High"
@@ -185,16 +184,14 @@ export function DependencyDriftPage() {
             delta={summary.highDelta}
             icon={AlertTriangle}
             color="#EA580C"
-            accentColor="#EA580C"
-          />
+            accentColor="#EA580C" />
           <KPITile
             className="fg-entrance fg-entrance-delay-3"
             label="Packages at risk"
             value={allRisks.length}
             icon={Shield}
             color="var(--warning)"
-            accentColor="var(--warning)"
-          />
+            accentColor="var(--warning)" />
         </div>
 
         {/* Main chart — stacked area 30d */}
@@ -207,27 +204,16 @@ export function DependencyDriftPage() {
             {pts30.length > 0 ? (
               <ResponsiveContainer width="100%" height={240}>
                 <LineChart data={pts30} margin={{ top: 8, right: 12, left: -16, bottom: 0 }}>
-                  <CartesianGrid strokeDasharray="3 3" stroke="var(--border-color)" vertical={false} />
-                  <XAxis dataKey="date" tick={{ fill: 'var(--text-muted)', fontSize: 10 }}
+                  <CartesianGrid {...gridProps} />
+                  <XAxis dataKey="date" {...axisProps}
                     tickFormatter={(v: string) => v.slice(5)} interval="preserveStartEnd" />
-                  <YAxis tick={{ fill: 'var(--text-muted)', fontSize: 10 }} />
-                  <RechartsTooltip
-                    contentStyle={{ background: 'var(--surface)', border: '1px solid var(--border-color)', borderRadius: 8, fontSize: 11 }}
-                    labelStyle={{ color: 'var(--text-primary)', fontWeight: 600 }}
-                  />
+                  <YAxis {...axisProps} />
+                  <RechartsTooltip {...tooltipProps} />
                   <Legend iconType="plainline" wrapperStyle={{ fontSize: 10, paddingTop: 4 }} />
-                  <Line type="monotone" dataKey="critical" name="Critical" stroke={SEV.critical.hex} strokeWidth={2.5}
-                    dot={{ r: 4, fill: SEV.critical.hex, stroke: SEV.critical.hex, strokeWidth: 1 }}
-                    activeDot={{ r: 6, fill: SEV.critical.hex, stroke: '#fff', strokeWidth: 2 }} />
-                  <Line type="monotone" dataKey="high" name="High" stroke={SEV.high.hex} strokeWidth={2.5}
-                    dot={{ r: 4, fill: SEV.high.hex, stroke: SEV.high.hex, strokeWidth: 1 }}
-                    activeDot={{ r: 6, fill: SEV.high.hex, stroke: '#fff', strokeWidth: 2 }} />
-                  <Line type="monotone" dataKey="medium" name="Medium" stroke={SEV.medium.hex} strokeWidth={2.5}
-                    dot={{ r: 4, fill: SEV.medium.hex, stroke: SEV.medium.hex, strokeWidth: 1 }}
-                    activeDot={{ r: 6, fill: SEV.medium.hex, stroke: '#fff', strokeWidth: 2 }} />
-                  <Line type="monotone" dataKey="low" name="Low" stroke={SEV.low.hex} strokeWidth={2}
-                    dot={{ r: 3.5, fill: SEV.low.hex, stroke: SEV.low.hex, strokeWidth: 1 }}
-                    activeDot={{ r: 5.5, fill: SEV.low.hex, stroke: '#fff', strokeWidth: 2 }} />
+                  <Line type="monotone" dataKey="critical" name="Critical" stroke={SEV.critical.hex} strokeWidth={2} dot={false} isAnimationActive animationDuration={200} />
+                  <Line type="monotone" dataKey="high" name="High" stroke={SEV.high.hex} strokeWidth={2} dot={false} isAnimationActive animationDuration={200} />
+                  <Line type="monotone" dataKey="medium" name="Medium" stroke={SEV.medium.hex} strokeWidth={2} dot={false} isAnimationActive animationDuration={200} />
+                  <Line type="monotone" dataKey="low" name="Low" stroke={SEV.low.hex} strokeWidth={2} dot={false} isAnimationActive animationDuration={200} />
                 </LineChart>
               </ResponsiveContainer>
             ) : (
@@ -251,17 +237,14 @@ export function DependencyDriftPage() {
               {pts7.length > 0 ? (
                 <ResponsiveContainer width="100%" height={200}>
                   <BarChart data={pts7} margin={{ top: 4, right: 8, left: -20, bottom: 0 }}>
-                    <CartesianGrid strokeDasharray="3 3" stroke="var(--border-color)" vertical={false} />
-                    <XAxis dataKey="date" tick={{ fill: 'var(--text-muted)', fontSize: 10 }}
+                    <CartesianGrid {...gridProps} />
+                    <XAxis dataKey="date" {...axisProps}
                       tickFormatter={(v: string) => {
                         const d = new Date(v);
                         return d.toLocaleDateString('en-US', { weekday: 'short' });
                       }} />
-                    <YAxis tick={{ fill: 'var(--text-muted)', fontSize: 10 }} />
-                    <RechartsTooltip
-                      contentStyle={{ background: 'var(--surface)', border: '1px solid var(--border-color)', borderRadius: 8, fontSize: 11 }}
-                      labelStyle={{ color: 'var(--text-primary)', fontWeight: 600 }}
-                    />
+                    <YAxis {...axisProps} />
+                    <RechartsTooltip {...tooltipProps} />
                     <Bar dataKey="critical" stackId="sev" fill={SEV.critical.hex} name="Critical" />
                     <Bar dataKey="high" stackId="sev" fill={SEV.high.hex} name="High" />
                     <Bar dataKey="medium" stackId="sev" fill={SEV.medium.hex} name="Medium" />
@@ -299,8 +282,8 @@ export function DependencyDriftPage() {
                             <span className="text-[0.68rem] text-text-secondary">{g.count} package{g.count !== 1 ? 's' : ''}</span>
                           </div>
                         </div>
-                        <div className="h-1.5 rounded-full overflow-hidden" style={{ background: 'var(--surface-muted)' }}>
-                          <div className="h-full rounded-full transition-[width] duration-300"
+                        <div className="h-1.5 rounded-full overflow-hidden bg-surface-muted">
+                          <div className="h-full rounded-full"
                             style={{ width: `${(g.count / maxCount) * 100}%`, background: color }} />
                         </div>
                       </div>

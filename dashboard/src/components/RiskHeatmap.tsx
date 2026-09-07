@@ -63,7 +63,7 @@ export function RiskHeatmap({ risks }: Props) {
         <p className="text-xs font-semibold mb-3" style={{ color: 'var(--color-muted)', textTransform: 'uppercase', letterSpacing: '0.08em' }}>
           Ecosystem Risk
         </p>
-        <p className="text-xs" style={{ color: 'var(--color-muted)' }}>No risk data yet.</p>
+        <p className="text-xs text-text-secondary">No risk data yet.</p>
       </div>
     )
   }
@@ -107,7 +107,7 @@ export function RiskHeatmap({ risks }: Props) {
               >
                 {eco.grade}
               </span>
-              <span className="text-xs" style={{ color: 'var(--color-muted)' }}>
+              <span className="text-xs text-text-secondary">
                 {eco.packageCount} pkg{eco.packageCount !== 1 ? 's' : ''}
               </span>
             </div>

@@ -4,6 +4,7 @@ import {
   PieChart, Pie, Cell, BarChart, Bar, XAxis, YAxis,
   Tooltip as RechartsTooltip, ResponsiveContainer,
 } from 'recharts';
+import { axisProps, tooltipProps } from '../lib/chartTheme';
 import {
   Network, Package, ShieldAlert, ShieldCheck, X,
   Target, AlertTriangle,
@@ -173,8 +174,8 @@ export function AttackSurfacePage() {
   }, [allRisks]);
 
   return (
-    <div className="flex flex-col h-full overflow-y-auto">
-      <div className="p-5 flex flex-col gap-4">
+    <div className="flex flex-col">
+      <div className="flex flex-col gap-4">
         {/* Header */}
         <div>
           <h1 className="text-[1.1rem] font-bold text-text-primary">Attack Surface</h1>
@@ -320,8 +321,8 @@ export function AttackSurfacePage() {
                             <span className="text-[0.68rem] font-medium text-text-primary">{e.eco}</span>
                             <span className="text-[0.62rem] text-text-muted font-mono">{e.count}</span>
                           </div>
-                          <div className="h-1 rounded-full overflow-hidden" style={{ background: 'var(--surface-muted)' }}>
-                            <div className="h-full rounded-full transition-[width] duration-300"
+                          <div className="h-1 rounded-full overflow-hidden bg-surface-muted">
+                            <div className="h-full rounded-full"
                               style={{ width: `${(e.count / max) * 100}%`, background: e.color }} />
                           </div>
                         </div>
@@ -368,8 +369,8 @@ export function AttackSurfacePage() {
                           </span>
                           <span className="text-[0.6rem] text-text-muted font-mono">@{r.version}</span>
                         </div>
-                        <span className="text-[0.6rem] text-text-muted px-1.5 py-0.5 rounded shrink-0"
-                          style={{ background: 'var(--surface-muted)' }}>
+                        <span className="text-[0.6rem] text-text-muted px-1.5 py-0.5 rounded shrink-0 bg-surface-muted"
+>
                           {r.ecosystem.toLowerCase()}
                         </span>
                         <div className="flex items-center gap-1 shrink-0">
@@ -400,12 +401,9 @@ export function AttackSurfacePage() {
               {ecoBreakdown.length > 0 ? (
                 <ResponsiveContainer width="100%" height={260}>
                   <BarChart data={ecoBreakdown} layout="vertical" margin={{ top: 4, right: 20, left: 10, bottom: 0 }}>
-                    <XAxis type="number" tick={{ fill: 'var(--text-muted)', fontSize: 10 }} />
-                    <YAxis type="category" dataKey="eco" tick={{ fill: 'var(--text-primary)', fontSize: 11 }} width={55} />
-                    <RechartsTooltip
-                      contentStyle={{ background: 'var(--surface)', border: '1px solid var(--border-color)', borderRadius: 8, fontSize: 11 }}
-                      labelStyle={{ color: 'var(--text-primary)', fontWeight: 600 }}
-                    />
+                    <XAxis type="number" {...axisProps} />
+                    <YAxis type="category" dataKey="eco" {...axisProps} width={55} />
+                    <RechartsTooltip {...tooltipProps} />
                     <Bar dataKey="count" name="Packages" radius={[0, 4, 4, 0]}>
                       {ecoBreakdown.map((e, i) => (
                         <Cell key={i} fill={e.color} />

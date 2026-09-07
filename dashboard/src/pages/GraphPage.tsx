@@ -56,7 +56,7 @@ export function GraphPage() {
   }, [])
 
   return (
-    <div className="flex flex-col h-full overflow-hidden">
+    <div className="flex h-[calc(100vh-7rem)] flex-col overflow-hidden">
       {/* Header */}
       <div className="flex items-center justify-between px-6 py-4 border-b border-border-color shrink-0">
         <div>
@@ -136,8 +136,7 @@ export function GraphPage() {
                 type="button"
                 onClick={() => setSelected(null)}
                 className="rounded p-1 text-text-muted hover:bg-surface-muted hover:text-text-primary shrink-0"
-                aria-label="Close"
-              >
+                aria-label="Close" >
                 <X size={14} />
               </button>
             </div>

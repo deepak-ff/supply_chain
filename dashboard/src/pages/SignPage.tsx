@@ -35,41 +35,37 @@ export function SignPage() {
   const copyAtt = () => attestation && navigator.clipboard.writeText(JSON.stringify(attestation, null, 2));
 
   return (
-    <div className="p-6 space-y-6">
-      <h1 className="text-xl font-bold font-mono" style={{ color: 'var(--fg)' }}>Sign & Verify</h1>
-      <p className="text-sm" style={{ color: 'var(--color-muted)' }}>
+    <div className="space-y-6">
+      <h1 className="text-xl font-bold font-mono text-text-primary">Sign & Verify</h1>
+      <p className="text-sm text-text-secondary">
         Sigstore keyless signing with Rekor transparency log. Ephemeral ECDSA P-256 keypair — no long-lived secrets.
       </p>
 
       {/* Sign form */}
-      <div className="rounded-lg p-5 space-y-4" style={{ background: 'var(--surface)', border: '1px solid rgba(255,255,255,0.06)' }}>
-        <h2 className="text-sm font-mono" style={{ color: 'var(--color-muted)' }}>SIGN ARTIFACT</h2>
+      <div className="rounded-lg p-5 space-y-4 bg-surface border border-border-color">
+        <h2 className="text-sm font-mono text-text-secondary">SIGN ARTIFACT</h2>
         <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
           <div>
-            <label className="block text-xs font-mono mb-1" style={{ color: 'var(--color-muted)' }}>ECOSYSTEM</label>
+            <label className="block text-xs font-mono mb-1 text-text-secondary">ECOSYSTEM</label>
             <select value={ecosystem} onChange={e => setEcosystem(e.target.value)}
-              className="w-full rounded px-3 py-2 text-sm font-mono"
-              style={{ background: 'var(--bg-base)', color: 'var(--fg)', border: '1px solid rgba(255,255,255,0.12)' }}>
+              className="w-full rounded px-3 py-2 text-sm font-mono bg-bg-base text-text-primary border border-border-color" >
               {ECOSYSTEMS.map(e => <option key={e}>{e}</option>)}
             </select>
           </div>
           <div>
-            <label className="block text-xs font-mono mb-1" style={{ color: 'var(--color-muted)' }}>PACKAGE</label>
+            <label className="block text-xs font-mono mb-1 text-text-secondary">PACKAGE</label>
             <input value={pkg} onChange={e => setPkg(e.target.value)} placeholder="name"
-              className="w-full rounded px-3 py-2 text-sm font-mono"
-              style={{ background: 'var(--bg-base)', color: 'var(--fg)', border: '1px solid rgba(255,255,255,0.12)' }} />
+              className="w-full rounded px-3 py-2 text-sm font-mono bg-bg-base text-text-primary border border-border-color" />
           </div>
           <div>
-            <label className="block text-xs font-mono mb-1" style={{ color: 'var(--color-muted)' }}>VERSION</label>
+            <label className="block text-xs font-mono mb-1 text-text-secondary">VERSION</label>
             <input value={version} onChange={e => setVersion(e.target.value)} placeholder="version"
-              className="w-full rounded px-3 py-2 text-sm font-mono"
-              style={{ background: 'var(--bg-base)', color: 'var(--fg)', border: '1px solid rgba(255,255,255,0.12)' }} />
+              className="w-full rounded px-3 py-2 text-sm font-mono bg-bg-base text-text-primary border border-border-color" />
           </div>
           <div>
-            <label className="block text-xs font-mono mb-1" style={{ color: 'var(--color-muted)' }}>SHA256</label>
+            <label className="block text-xs font-mono mb-1 text-text-secondary">SHA256</label>
             <input value={sha256} onChange={e => setSha256(e.target.value)} placeholder="hex hash"
-              className="w-full rounded px-3 py-2 text-sm font-mono"
-              style={{ background: 'var(--bg-base)', color: 'var(--fg)', border: '1px solid rgba(255,255,255,0.12)' }} />
+              className="w-full rounded px-3 py-2 text-sm font-mono bg-bg-base text-text-primary border border-border-color" />
           </div>
         </div>
         <button onClick={() => sign.mutate()} disabled={!sha256 || !pkg || !version || sign.isPending}
@@ -78,7 +74,7 @@ export function SignPage() {
           <Key size={14} />{sign.isPending ? 'Signing…' : 'Sign'}
         </button>
         {sign.isError && (
-          <div className="flex items-center gap-2 text-sm" style={{ color: 'var(--color-critical)' }}>
+          <div className="flex items-center gap-2 text-sm text-critical">
             <AlertCircle size={14} />{(sign.error as Error).message}
           </div>
         )}
@@ -87,38 +83,36 @@ export function SignPage() {
       {/* Attestation output */}
       {attestation && (
         <div className="rounded-lg" style={{ background: 'var(--surface)', border: '1px solid rgba(0,255,135,0.2)' }}>
-          <div className="flex items-center justify-between px-4 py-3" style={{ borderBottom: '1px solid rgba(255,255,255,0.06)' }}>
+          <div className="flex items-center justify-between px-4 py-3 border-b border-border-color">
             <div className="flex items-center gap-2">
               <CheckCircle2 size={14} color="var(--color-safe)" />
-              <span className="text-xs font-mono" style={{ color: 'var(--color-safe)' }}>SIGNED</span>
+              <span className="text-xs font-mono text-success">SIGNED</span>
               {attestation.rekor_log_id && (
-                <span className="text-xs" style={{ color: 'var(--color-muted)' }}>Rekor: {attestation.rekor_log_id.slice(0, 16)}…</span>
+                <span className="text-xs text-text-secondary">Rekor: {attestation.rekor_log_id.slice(0, 16)}…</span>
               )}
             </div>
             <button onClick={copyAtt} className="text-xs px-2 py-1 rounded font-mono"
               style={{ background: 'rgba(0,255,135,0.1)', color: 'var(--color-safe)' }}>Copy JSON</button>
           </div>
-          <pre className="p-4 text-xs overflow-auto max-h-60 font-mono" style={{ color: 'var(--fg)' }}>
+          <pre className="p-4 text-xs overflow-auto max-h-60 font-mono text-text-primary">
             {JSON.stringify(attestation, null, 2)}
           </pre>
         </div>
       )}
 
       {/* Verify form */}
-      <div className="rounded-lg p-5 space-y-4" style={{ background: 'var(--surface)', border: '1px solid rgba(255,255,255,0.06)' }}>
-        <h2 className="text-sm font-mono" style={{ color: 'var(--color-muted)' }}>VERIFY ATTESTATION</h2>
+      <div className="rounded-lg p-5 space-y-4 bg-surface border border-border-color">
+        <h2 className="text-sm font-mono text-text-secondary">VERIFY ATTESTATION</h2>
         <div>
-          <label className="block text-xs font-mono mb-1" style={{ color: 'var(--color-muted)' }}>ATTESTATION JSON</label>
+          <label className="block text-xs font-mono mb-1 text-text-secondary">ATTESTATION JSON</label>
           <textarea rows={4} value={verifyInput} onChange={e => setVerifyInput(e.target.value)}
             placeholder='Paste attestation JSON here…'
-            className="w-full rounded px-3 py-2 text-xs font-mono resize-y"
-            style={{ background: 'var(--bg-base)', color: 'var(--fg)', border: '1px solid rgba(255,255,255,0.12)' }} />
+            className="w-full rounded px-3 py-2 text-xs font-mono resize-y bg-bg-base text-text-primary border border-border-color" />
         </div>
         <div>
-          <label className="block text-xs font-mono mb-1" style={{ color: 'var(--color-muted)' }}>EXPECTED SHA256</label>
+          <label className="block text-xs font-mono mb-1 text-text-secondary">EXPECTED SHA256</label>
           <input value={verifySHA} onChange={e => setVerifySHA(e.target.value)} placeholder="expected sha256 hex"
-            className="w-full rounded px-3 py-2 text-sm font-mono"
-            style={{ background: 'var(--bg-base)', color: 'var(--fg)', border: '1px solid rgba(255,255,255,0.12)' }} />
+            className="w-full rounded px-3 py-2 text-sm font-mono bg-bg-base text-text-primary border border-border-color" />
         </div>
         <button onClick={() => verify.mutate()} disabled={!verifyInput || !verifySHA || verify.isPending}
           className="px-4 py-2 rounded text-sm font-mono font-bold disabled:opacity-50"

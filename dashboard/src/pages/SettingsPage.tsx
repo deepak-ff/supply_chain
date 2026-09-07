@@ -83,8 +83,7 @@ function SecuritySection() {
               type="button"
               onClick={() => logoutMutation.mutate()}
               disabled={logoutMutation.isPending}
-              className="flex items-center gap-1.5 text-xs font-medium rounded-md border border-border-color px-3 py-1.5 text-text-primary hover:bg-surface-muted shrink-0 disabled:opacity-50"
-            >
+              className="flex items-center gap-1.5 text-xs font-medium rounded-md border border-border-color px-3 py-1.5 text-text-primary hover:bg-surface-muted shrink-0 disabled:opacity-50" >
               {logoutMutation.isPending ? <Loader size={12} className="animate-spin" /> : <LogOut size={12} />}
               {logoutMutation.isPending ? 'Logging out…' : 'Log out'}
             </button>
@@ -126,8 +125,7 @@ function ChangePasswordSection() {
           e.preventDefault()
           if (canSubmit) mutation.mutate()
         }}
-        className="space-y-3 max-w-sm"
-      >
+        className="space-y-3 max-w-sm" >
         <div>
           <label className="block text-xs font-mono text-text-secondary mb-1">CURRENT PASSWORD</label>
           <Input
@@ -135,8 +133,7 @@ function ChangePasswordSection() {
             value={currentPw}
             onChange={e => setCurrentPw(e.target.value)}
             placeholder="••••••••"
-            autoComplete="current-password"
-          />
+            autoComplete="current-password" />
         </div>
         <div>
           <label className="block text-xs font-mono text-text-secondary mb-1">NEW PASSWORD</label>
@@ -145,8 +142,7 @@ function ChangePasswordSection() {
             value={newPw}
             onChange={e => setNewPw(e.target.value)}
             placeholder="Min. 8 characters"
-            autoComplete="new-password"
-          />
+            autoComplete="new-password" />
           {tooShort && <p className="text-[0.65rem] text-critical mt-1">Must be at least 8 characters.</p>}
         </div>
         <div>
@@ -156,8 +152,7 @@ function ChangePasswordSection() {
             value={confirmPw}
             onChange={e => setConfirmPw(e.target.value)}
             placeholder="••••••••"
-            autoComplete="new-password"
-          />
+            autoComplete="new-password" />
           {mismatch && <p className="text-[0.65rem] text-critical mt-1">Passwords do not match.</p>}
         </div>
 
@@ -174,8 +169,7 @@ function ChangePasswordSection() {
         <Button
           type="submit"
           disabled={!canSubmit}
-          className="bg-primary-blue font-mono text-white hover:bg-primary-blue/90 text-xs"
-        >
+          className="bg-primary-blue font-mono text-white hover:bg-primary-blue/90 text-xs" >
           {mutation.isPending ? <Loader size={13} className="animate-spin" /> : null}
           {mutation.isPending ? 'Updating…' : 'Update Password'}
         </Button>
@@ -323,7 +317,7 @@ function AIProviderSection() {
 
 export function SettingsPage() {
   return (
-    <div className="p-6 space-y-4">
+    <div className="space-y-4">
       <h1 className="text-lg font-bold text-text-primary">Settings</h1>
 
       <GeneralSection />
@@ -336,18 +330,15 @@ export function SettingsPage() {
       <PlaceholderSection
         title="Team"
         icon={Users}
-        reason="No multi-user backend yet — ChainWarden currently runs as a single-tenant, single-credential deployment. Team member management is planned for a future release."
-      />
+        reason="No multi-user backend yet — ChainWarden currently runs as a single-tenant, single-credential deployment. Team member management is planned for a future release." />
       <PlaceholderSection
         title="Billing"
         icon={CreditCard}
-        reason="No billing system exists yet. ChainWarden's core is free and open source; Pro-tier billing infrastructure is not yet built."
-      />
+        reason="No billing system exists yet. ChainWarden's core is free and open source; Pro-tier billing infrastructure is not yet built." />
       <PlaceholderSection
         title="Audit Log"
         icon={ScrollText}
-        reason="No persisted audit trail exists server-side yet. Recent activity (scans, findings) is visible on the System Audit page, but a durable, queryable audit log is not yet implemented."
-      />
+        reason="No persisted audit trail exists server-side yet. Recent activity (scans, findings) is visible on the System Audit page, but a durable, queryable audit log is not yet implemented." />
 
       <div className="rounded-xl border border-border-color bg-surface p-4 flex items-start gap-3 shadow-sm">
         <Info size={14} className="text-text-muted mt-0.5" />

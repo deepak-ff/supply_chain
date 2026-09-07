@@ -2,6 +2,7 @@ import { useMemo, useState } from 'react'
 import { useQuery } from '@tanstack/react-query'
 import * as Dialog from '@radix-ui/react-dialog'
 import { PieChart, Pie, Cell, ResponsiveContainer, Tooltip as RechartsTooltip } from 'recharts'
+import { tooltipProps } from '../lib/chartTheme';
 import { AlertTriangle, X, ArrowRight } from 'lucide-react'
 import { getActiveRisks } from '../lib/api'
 import type { RiskItem } from '../types/api'
@@ -87,8 +88,7 @@ function RiskDetailDrawer({ item, onClose }: { item: RiskItem | null; onClose: (
                   <button
                     type="button"
                     className="rounded-md p-1 text-text-muted hover:bg-surface-muted hover:text-text-primary"
-                    aria-label="Close"
-                  >
+                    aria-label="Close" >
                     <X size={16} />
                   </button>
                 </Dialog.Close>
@@ -153,8 +153,7 @@ function RiskDetailDrawer({ item, onClose }: { item: RiskItem | null; onClose: (
                 <button
                   type="button"
                   onClick={() => { navigate('/scan'); onClose() }}
-                  className="flex w-full items-center justify-center gap-2 rounded-md bg-primary-blue px-4 py-2 text-sm font-medium text-white hover:opacity-90"
-                >
+                  className="flex w-full items-center justify-center gap-2 rounded-md bg-primary-blue px-4 py-2 text-sm font-medium text-white hover:opacity-90" >
                   Run full scan
                   <ArrowRight size={14} />
                 </button>
@@ -188,7 +187,7 @@ export default function RisksPage() {
   const isFiltered = ecoFilter !== '' || sevFilter !== 'all'
 
   return (
-    <div className="flex flex-col gap-5 p-6">
+    <div className="flex flex-col gap-5">
       <div>
         <h1 className="text-lg font-bold text-text-primary">Findings</h1>
         <p className="mt-0.5 text-xs text-text-secondary">
@@ -234,14 +233,14 @@ export default function RisksPage() {
                     <Pie data={sevCounts} dataKey="value" cx="50%" cy="50%" innerRadius={30} outerRadius={48} paddingAngle={2} strokeWidth={0}>
                       {sevCounts.map((d, i) => <Cell key={i} fill={d.color} />)}
                     </Pie>
-                    <RechartsTooltip contentStyle={{ background: 'var(--surface)', border: '1px solid rgba(255,255,255,0.1)', borderRadius: 6, fontSize: '0.75rem', color: 'var(--fg)' }} />
+                    <RechartsTooltip {...tooltipProps} />
                   </PieChart>
                 </ResponsiveContainer>
                 <div style={{ display: 'flex', flexDirection: 'column', gap: 4, flex: 1 }}>
                   {sevCounts.map(d => (
                     <div key={d.name} style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: '0.75rem' }}>
                       <span style={{ width: 8, height: 8, borderRadius: '50%', background: d.color, flexShrink: 0 }} />
-                      <span className="text-text-secondary" style={{ flex: 1 }}>{d.name}</span>
+                      <span className="text-text-secondary flex-1">{d.name}</span>
                       <span className="font-mono font-semibold text-text-primary">{d.value}</span>
                     </div>
                   ))}
@@ -256,14 +255,14 @@ export default function RisksPage() {
                     <Pie data={gradeCounts} dataKey="value" cx="50%" cy="50%" innerRadius={30} outerRadius={48} paddingAngle={2} strokeWidth={0}>
                       {gradeCounts.map((d, i) => <Cell key={i} fill={GRADE_COLORS[d.name] ?? '#666'} />)}
                     </Pie>
-                    <RechartsTooltip contentStyle={{ background: 'var(--surface)', border: '1px solid rgba(255,255,255,0.1)', borderRadius: 6, fontSize: '0.75rem', color: 'var(--fg)' }} />
+                    <RechartsTooltip {...tooltipProps} />
                   </PieChart>
                 </ResponsiveContainer>
                 <div style={{ display: 'flex', flexDirection: 'column', gap: 4, flex: 1 }}>
                   {gradeCounts.map(d => (
                     <div key={d.name} style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: '0.75rem' }}>
                       <span style={{ width: 8, height: 8, borderRadius: '50%', background: GRADE_COLORS[d.name] ?? '#666', flexShrink: 0 }} />
-                      <span className="text-text-secondary" style={{ flex: 1 }}>Grade {d.name}</span>
+                      <span className="text-text-secondary flex-1">Grade {d.name}</span>
                       <span className="font-mono font-semibold text-text-primary">{d.value}</span>
                     </div>
                   ))}
@@ -283,16 +282,14 @@ export default function RisksPage() {
             <select
               value={ecoFilter}
               onChange={e => setEcoFilter(e.target.value)}
-              className="rounded-md border border-border-color bg-bg-base px-2 py-1 text-xs text-text-primary [font-family:inherit]"
-            >
+              className="rounded-md border border-border-color bg-bg-base px-2 py-1 text-xs text-text-primary [font-family:inherit]" >
               <option value="">All ecosystems</option>
               {ECOSYSTEMS.map(e => <option key={e} value={e}>{e}</option>)}
             </select>
             <select
               value={sevFilter}
               onChange={e => setSevFilter(e.target.value as SeverityFilter)}
-              className="rounded-md border border-border-color bg-bg-base px-2 py-1 text-xs text-text-primary [font-family:inherit]"
-            >
+              className="rounded-md border border-border-color bg-bg-base px-2 py-1 text-xs text-text-primary [font-family:inherit]" >
               <option value="all">All severities</option>
               <option value="critical">Critical+</option>
               <option value="high">High+</option>
@@ -315,8 +312,7 @@ export default function RisksPage() {
             <EmptyState
               icon={AlertTriangle}
               title="No active findings"
-              description="Run cwctl scan . to populate this view with real scan results."
-            />
+              description="Run cwctl scan . to populate this view with real scan results." />
           )
         ) : (
           <Table>
@@ -335,8 +331,7 @@ export default function RisksPage() {
                 <TableRow
                   key={`${item.ecosystem}/${item.package_name}@${item.version}`}
                   onClick={() => setSelected(item)}
-                  className="cursor-pointer"
-                >
+                  className="cursor-pointer" >
                   <TableCell>
                     <StatusBadge status={severityToStatus(item.top_severity)} label={item.top_severity} />
                   </TableCell>

@@ -53,7 +53,7 @@ function SeverityBar({ summary }: { summary: ScanSession['summary'] }) {
         {segments.map(s => (
           <div
             key={s.key}
-            className="h-full transition-all"
+            className="h-full"
             style={{ width: `${(s.count / total) * 100}%`, background: s.color }}
           />
         ))}
@@ -148,7 +148,7 @@ export default function ScanSessionsPage() {
   };
 
   return (
-    <div className="p-6 max-w-[1400px] mx-auto">
+    <div className="flex flex-col">
       {/* Header */}
       <div className="flex items-center justify-between mb-6">
         <div>
@@ -168,22 +168,19 @@ export default function ScanSessionsPage() {
                 <span className="text-critical">Clear all sessions?</span>
                 <button
                   onClick={() => { clear(activeId); setConfirmClear(false); }}
-                  className="px-2 py-1 rounded bg-critical text-white text-xs font-medium border-none cursor-pointer [font-family:inherit]"
-                >
+                  className="px-2 py-1 rounded bg-critical text-white text-xs font-medium border-none cursor-pointer [font-family:inherit]" >
                   Confirm
                 </button>
                 <button
                   onClick={() => setConfirmClear(false)}
-                  className="px-2 py-1 rounded border border-border-color bg-transparent text-text-secondary text-xs cursor-pointer [font-family:inherit]"
-                >
+                  className="px-2 py-1 rounded border border-border-color bg-transparent text-text-secondary text-xs cursor-pointer [font-family:inherit]" >
                   Cancel
                 </button>
               </div>
             ) : (
               <button
                 onClick={() => setConfirmClear(true)}
-                className="flex items-center gap-1 px-2.5 py-1.5 rounded-md border border-border-color text-[0.72rem] text-text-secondary hover:text-critical hover:border-critical/40 bg-transparent cursor-pointer [font-family:inherit] transition-colors"
-              >
+                className="flex items-center gap-1 px-2.5 py-1.5 rounded-md border border-border-color text-[0.72rem] text-text-secondary hover:text-critical hover:border-critical/40 bg-transparent cursor-pointer [font-family:inherit] transition-colors" >
                 <Trash2 size={12} /> Clear All
               </button>
             )}
@@ -214,8 +211,7 @@ export default function ScanSessionsPage() {
             value={search}
             onChange={e => setSearch(e.target.value)}
             placeholder="Search sessions..."
-            className="pl-8 h-8 text-xs"
-          />
+            className="pl-8 h-8 text-xs" />
         </div>
         <div className="flex items-center gap-1.5">
           <Filter size={12} className="text-text-muted" />
@@ -322,22 +318,19 @@ export default function ScanSessionsPage() {
                       <button
                         onClick={() => navigate(`/sessions/${session.id}`)}
                         className="p-1.5 rounded text-text-muted hover:text-primary-blue bg-transparent cursor-pointer"
-                        title="View details"
-                      >
+                        title="View details" >
                         <Eye size={13} />
                       </button>
                       <button
                         onClick={() => exportSession(session)}
                         className="p-1.5 rounded text-text-muted hover:text-success bg-transparent cursor-pointer"
-                        title="Export JSON"
-                      >
+                        title="Export JSON" >
                         <Download size={13} />
                       </button>
                       <button
                         onClick={() => remove(session.id)}
                         className="p-1.5 rounded text-text-muted hover:text-critical bg-transparent cursor-pointer"
-                        title="Delete"
-                      >
+                        title="Delete" >
                         <Trash2 size={13} />
                       </button>
                     </div>

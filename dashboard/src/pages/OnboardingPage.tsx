@@ -182,8 +182,7 @@ export function OnboardingPage({ onComplete }: OnboardingPageProps) {
                     <select
                       value={ecosystem}
                       onChange={e => setEcosystem(e.target.value)}
-                      className="rounded-md border border-border-color bg-background px-2 py-2 font-mono text-xs"
-                    >
+                      className="rounded-md border border-border-color bg-background px-2 py-2 font-mono text-xs" >
                       {ECOSYSTEMS.map(e => <option key={e} value={e}>{e}</option>)}
                     </select>
                     <Input value={pkg} onChange={e => setPkg(e.target.value)} placeholder="package" className="text-xs" />

@@ -13,12 +13,12 @@ export function AiSecurityPage() {
   ];
 
   return (
-    <div className="p-6 space-y-6">
+    <div className="space-y-6">
       <div className="flex items-center gap-3">
-        <Bot size={22} style={{ color: 'var(--color-indigo)' }} />
+        <Bot className="text-primary" size={22} />
         <div>
-          <h1 className="text-xl font-bold font-mono" style={{ color: 'var(--fg)' }}>AI Security</h1>
-          <p className="text-sm" style={{ color: 'var(--color-muted)' }}>
+          <h1 className="text-xl font-bold font-mono text-text-primary">AI Security</h1>
+          <p className="text-sm text-text-secondary">
             Detect unsafe AI model usage, pickle files, MCP servers, and agentic risk.
           </p>
         </div>
@@ -28,8 +28,8 @@ export function AiSecurityPage() {
         {stats.map(s => (
           <div
             key={s.label}
-            className="rounded-lg p-4"
-            style={{ background: 'var(--surface)', border: '1px solid rgba(255,255,255,0.06)' }}
+            className="rounded-lg p-4 bg-surface border border-border-color"
+
           >
             <s.icon size={16} style={{ color: s.color, marginBottom: '0.5rem' }} />
             <div style={{ fontSize: '1.75rem', fontWeight: 700, fontFamily: 'var(--font-mono)', color: s.color }}>
@@ -41,17 +41,17 @@ export function AiSecurityPage() {
         ))}
       </div>
 
-      <div className="rounded-lg p-4 space-y-2" style={{ background: 'var(--surface)', border: '1px solid rgba(255,255,255,0.06)' }}>
-        <p className="text-xs font-mono font-bold" style={{ color: 'var(--color-muted)' }}>CLI COMMANDS</p>
-        <code className="text-xs block" style={{ color: 'var(--color-safe)' }}>cwctl scan . --ai</code>
-        <code className="text-xs block" style={{ color: 'var(--color-safe)' }}>cwctl scan huggingface/bert-base-uncased</code>
-        <code className="text-xs block" style={{ color: 'var(--color-safe)' }}>cwctl scan mcp/filesystem@1.0.0</code>
+      <div className="rounded-lg p-4 space-y-2 bg-surface border border-border-color">
+        <p className="text-xs font-mono font-bold text-text-secondary">CLI COMMANDS</p>
+        <code className="text-xs block text-success">cwctl scan . --ai</code>
+        <code className="text-xs block text-success">cwctl scan huggingface/bert-base-uncased</code>
+        <code className="text-xs block text-success">cwctl scan mcp/filesystem@1.0.0</code>
       </div>
 
       <div className="rounded-lg p-4 space-y-2" style={{ background: 'rgba(255,61,61,0.06)', border: '1px solid rgba(255,61,61,0.15)' }}>
-        <p className="text-xs font-mono font-bold" style={{ color: 'var(--color-critical)' }}>UNSAFE PICKLE DETECTION</p>
-        <p className="text-xs" style={{ color: 'var(--color-muted)' }}>
-          Pickle files loaded with <code style={{ color: 'var(--color-warn)' }}>unsafe_pickle.load()</code> can execute arbitrary code during deserialization.
+        <p className="text-xs font-mono font-bold text-critical">UNSAFE PICKLE DETECTION</p>
+        <p className="text-xs text-text-secondary">
+          Pickle files loaded with <code className="text-warning">unsafe_pickle.load()</code> can execute arbitrary code during deserialization.
           ChainWarden detects these patterns in AI model weights and Python scripts.
         </p>
       </div>

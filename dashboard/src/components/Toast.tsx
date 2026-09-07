@@ -22,16 +22,14 @@ export function Toast({ message, variant = 'info', onDismiss }: ToastProps) {
   return (
     <div
       className="fixed bottom-6 right-6 z-50 flex items-center gap-3 rounded-lg border border-border-color bg-surface px-4 py-3 shadow-lg"
-      role="status"
-    >
+      role="status" >
       <Icon size={18} style={{ color }} />
       <span className="text-sm text-text-primary">{message}</span>
       <button
         type="button"
         onClick={onDismiss}
         className={cn('ml-2 text-text-muted hover:text-text-primary')}
-        aria-label="Dismiss"
-      >
+        aria-label="Dismiss" >
         <X size={14} />
       </button>
     </div>

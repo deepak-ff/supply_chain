@@ -31,8 +31,7 @@ export function StatusBadge({ status, label, className }: StatusBadgeProps) {
       <span
         className="inline-block h-2 w-2 shrink-0 rounded-full"
         style={{ backgroundColor: config.color }}
-        aria-hidden="true"
-      />
+        aria-hidden="true" />
       <span style={{ color: config.color }}>{text}</span>
     </span>
   )

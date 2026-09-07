@@ -1,9 +1,8 @@
 import { useState } from 'react';
+import * as Dialog from '@radix-ui/react-dialog';
 import { useMutation } from '@tanstack/react-query';
-import { AlertCircle, Loader, ShieldCheck, Lock } from 'lucide-react';
+import { AlertCircle, Loader, Lock, ShieldCheck } from 'lucide-react';
 import { login } from '../lib/api';
-import { NetworkGraph } from './NetworkGraph';
-import { TopoBackground } from './TopoBackground';
 import { Input } from './ui/input';
 import { Button } from './ui/button';
 
@@ -11,9 +10,14 @@ interface AuthPanelProps {
   onLoggedIn: () => void;
 }
 
-// Full-viewport split-screen auth experience: brand panel (left) + form
-// panel (right). Reuses the exact `login()` call and error handling that
-// existed in the old docked-card version — only the layout changed.
+/**
+ * Compact sign-in card.
+ *
+ * Deliberately *not* a full-viewport split screen: on the landing page auth is
+ * an optional door at the side, reached from the "Sign in" link in the top
+ * bar — never a form competing with the hero. Local/dev installs run with auth
+ * disabled and never see this at all.
+ */
 export function AuthPanel({ onLoggedIn }: AuthPanelProps) {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
@@ -30,94 +34,105 @@ export function AuthPanel({ onLoggedIn }: AuthPanelProps) {
   };
 
   return (
-    <div className="grid min-h-[560px] grid-cols-1 overflow-hidden rounded-2xl border border-border-color bg-surface shadow-sm md:grid-cols-2">
-      {/* Brand panel */}
-      <div className="relative hidden flex-col justify-between overflow-hidden bg-[#0B0D0F] p-10 text-white md:flex">
-        <TopoBackground className="text-white" opacity={0.05} lines={9} />
-        <div className="pointer-events-none absolute inset-0">
-          <NetworkGraph mode="ambient" opacity={0.18} width={640} height={560} />
-        </div>
-        <div className="relative z-10 flex items-center gap-3">
-          <img src="/logo-icon.png" alt="ChainWarden" className="drop-shadow-[0_0_8px_rgba(37,99,235,0.6)]" style={{ height: 48, objectFit: 'contain' }} />
-          <span className="text-xl font-semibold tracking-tight text-white drop-shadow-[0_0_8px_rgba(37,99,235,0.4)]">ChainWarden</span>
-        </div>
-        <div className="relative z-10">
-          <p className="text-2xl font-semibold leading-snug">
-            See threats before they become incidents.
-          </p>
-          <p className="mt-3 max-w-sm text-sm text-white/60">
-            Local-first, AI-native software supply chain security across nine ecosystems —
-            open-source at its core.
-          </p>
-        </div>
+    <div className="w-full">
+      <div className="mb-5 flex items-center gap-2">
+        <Lock size={15} className="text-primary" aria-hidden="true" />
+        <Dialog.Title className="m-0 text-[0.95rem] font-semibold text-text-primary">
+          Sign in
+        </Dialog.Title>
       </div>
+      <Dialog.Description className="m-0 mb-5 text-[0.78rem] leading-relaxed text-text-secondary">
+        Administrator access to this ChainWarden instance.
+      </Dialog.Description>
 
-      {/* Form panel */}
-      <div className="flex flex-col justify-center p-8 md:p-12">
-        <div className="mx-auto w-full max-w-sm">
-          <div className="mb-6 flex items-center gap-2">
-            <Lock size={16} className="text-success" />
-            <h2 className="text-lg font-semibold text-text-primary">Sign in</h2>
+      <form onSubmit={handleSubmit} className="flex flex-col gap-3.5">
+        <div>
+          <label className="mb-1 block font-mono text-[0.65rem] uppercase tracking-wide text-text-muted" htmlFor="signin-email">
+            Email
+          </label>
+          <Input
+            id="signin-email"
+            type="email"
+            value={email}
+            onChange={(e) => setEmail(e.target.value)}
+            placeholder="admin@example.com"
+            autoComplete="email"
+            required
+          />
+        </div>
+        <div>
+          <label className="mb-1 block font-mono text-[0.65rem] uppercase tracking-wide text-text-muted" htmlFor="signin-password">
+            Password
+          </label>
+          <Input
+            id="signin-password"
+            type="password"
+            value={password}
+            onChange={(e) => setPassword(e.target.value)}
+            placeholder="••••••••"
+            autoComplete="current-password"
+            required
+          />
+        </div>
+
+        {loginMutation.isError && (
+          <div
+            role="alert"
+            className="flex items-start gap-2 rounded border border-[color-mix(in_srgb,var(--critical)_25%,transparent)] bg-[color-mix(in_srgb,var(--critical)_10%,transparent)] px-3 py-2 text-[0.74rem] text-critical"
+          >
+            <AlertCircle size={13} className="mt-px shrink-0" />
+            {(loginMutation.error as Error).message}
           </div>
-          <p className="mb-6 text-sm text-text-secondary">
-            Administrator access to this ChainWarden instance.
-          </p>
+        )}
 
-          <form onSubmit={handleSubmit} className="flex flex-col gap-4">
-            <div>
-              <label className="mb-1 block text-xs font-mono text-text-secondary">EMAIL</label>
-              <Input
-                type="email"
-                value={email}
-                onChange={e => setEmail(e.target.value)}
-                placeholder="admin@example.com"
-                autoComplete="email"
-                required
-              />
-            </div>
-            <div>
-              <label className="mb-1 block text-xs font-mono text-text-secondary">PASSWORD</label>
-              <Input
-                type="password"
-                value={password}
-                onChange={e => setPassword(e.target.value)}
-                placeholder="••••••••"
-                autoComplete="current-password"
-                required
-              />
-            </div>
+        <Button type="submit" disabled={!email || !password || loginMutation.isPending} className="mt-1">
+          {loginMutation.isPending ? <Loader size={14} className="animate-spin" /> : <ShieldCheck size={14} />}
+          {loginMutation.isPending ? 'Signing in…' : 'Sign in'}
+        </Button>
+      </form>
 
-            {loginMutation.isError && (
-              <div className="flex items-center gap-2 rounded-md border border-critical/20 bg-critical/10 px-3 py-2 text-xs text-critical">
-                <AlertCircle size={13} className="shrink-0" />
-                {(loginMutation.error as Error).message}
-              </div>
-            )}
-
-            <Button
-              type="submit"
-              disabled={!email || !password || loginMutation.isPending}
-              className="mt-1 bg-primary-blue font-mono font-bold text-white hover:bg-primary-blue/90"
-            >
-              {loginMutation.isPending ? <Loader size={14} className="animate-spin" /> : <ShieldCheck size={14} />}
-              {loginMutation.isPending ? 'Signing in…' : 'Sign in'}
-            </Button>
-          </form>
-
-          <div className="mt-6 rounded-md border border-border-color bg-surface-hover px-3 py-2.5">
-            <p className="text-[0.7rem] font-mono text-text-secondary">
-              First time? Set credentials with:
-            </p>
-            <pre className="mt-1 select-all text-[0.65rem] text-text-muted leading-relaxed">
+      <div className="mt-5 rounded border border-border-color bg-bg-base px-3 py-2.5">
+        <p className="m-0 font-mono text-[0.68rem] text-text-secondary">First time? Set credentials with:</p>
+        <pre className="m-0 mt-1 select-all font-mono text-[0.65rem] leading-relaxed text-text-muted">
 {`cwctl setup        # interactive
 # or set env vars:
 CW_ADMIN_EMAIL=you@example.com
 CW_ADMIN_PASSWORD=your-password
 CW_SESSION_SECRET=$(openssl rand -hex 32)`}
-            </pre>
-          </div>
-        </div>
+        </pre>
       </div>
     </div>
+  );
+}
+
+/** Modal wrapper used by the landing page's top-bar "Sign in" link. */
+export function SignInDialog({
+  open,
+  onOpenChange,
+  onLoggedIn,
+}: {
+  open: boolean;
+  onOpenChange: (open: boolean) => void;
+  onLoggedIn: () => void;
+}) {
+  return (
+    <Dialog.Root open={open} onOpenChange={onOpenChange}>
+      <Dialog.Portal>
+        <Dialog.Overlay className="fixed inset-0 z-50 bg-black/45" />
+        <Dialog.Content
+          className="fixed left-1/2 top-1/2 z-50 w-[calc(100vw-2rem)] max-w-sm -translate-x-1/2 -translate-y-1/2 rounded border border-border-color bg-surface p-6 shadow-card"
+        >
+          <AuthPanel onLoggedIn={onLoggedIn} />
+          <Dialog.Close
+            aria-label="Close"
+            className="wd-hover absolute right-3 top-3 rounded border border-transparent bg-transparent p-1 text-text-muted hover:bg-surface-muted hover:text-text-primary"
+          >
+            <svg width="14" height="14" viewBox="0 0 14 14" aria-hidden="true">
+              <path d="M1 1l12 12M13 1L1 13" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" />
+            </svg>
+          </Dialog.Close>
+        </Dialog.Content>
+      </Dialog.Portal>
+    </Dialog.Root>
   );
 }

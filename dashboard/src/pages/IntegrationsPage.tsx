@@ -103,16 +103,14 @@ function NotificationsCard() {
           type="button"
           onClick={() => test.mutate()}
           disabled={test.isPending}
-          className="text-xs font-medium rounded-md border border-border-color px-3 py-1.5 text-text-primary hover:bg-surface-muted disabled:opacity-50 flex items-center gap-1.5"
-        >
+          className="text-xs font-medium rounded-md border border-border-color px-3 py-1.5 text-text-primary hover:bg-surface-muted disabled:opacity-50 flex items-center gap-1.5" >
           {test.isPending && <Loader2 size={12} className="animate-spin" />}
           Test webhook endpoint
         </button>
         <button
           type="button"
           onClick={() => navigate('/webhooks')}
-          className="text-xs text-primary-blue hover:underline"
-        >
+          className="text-xs text-primary-blue hover:underline" >
           Full webhook settings →
         </button>
       </div>
@@ -143,7 +141,7 @@ function NotificationsCard() {
 
 export function IntegrationsPage() {
   return (
-    <div className="flex flex-col gap-5 p-6">
+    <div className="flex flex-col gap-5">
       <div className="flex items-center gap-3">
         <Puzzle size={20} className="text-primary-blue" />
         <div>

@@ -63,8 +63,7 @@ export function CommandMenu({ open, onOpenChange, commands }: CommandMenuProps) 
               value={filter}
               onChange={(e) => setFilter(e.target.value)}
               placeholder="Type a command..."
-              className="w-full bg-transparent text-sm text-text-primary outline-none placeholder:text-text-muted"
-            />
+              className="w-full bg-transparent text-sm text-text-primary outline-none placeholder:text-text-muted" />
           </div>
           <div className="max-h-80 overflow-y-auto py-2">
             {grouped.size === 0 && (

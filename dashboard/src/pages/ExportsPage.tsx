@@ -80,12 +80,12 @@ export function ExportsPage() {
   ];
 
   return (
-    <div className="p-6 space-y-6">
+    <div className="space-y-6">
       <div className="flex items-center gap-3">
-        <Download size={20} style={{ color: 'var(--color-indigo)' }} />
+        <Download className="text-primary" size={20} />
         <div>
-          <h1 className="text-xl font-bold font-mono" style={{ color: 'var(--fg)' }}>Exports</h1>
-          <p className="text-sm mt-0.5" style={{ color: 'var(--color-muted)' }}>Export scan results, SBOMs, and reports in standard formats.</p>
+          <h1 className="text-xl font-bold font-mono text-text-primary">Exports</h1>
+          <p className="text-sm mt-0.5 text-text-secondary">Export scan results, SBOMs, and reports in standard formats.</p>
         </div>
       </div>
 
@@ -99,7 +99,7 @@ export function ExportsPage() {
               style={{ background: 'var(--surface)', border: '1px solid rgba(255,255,255,0.06)', display: 'flex', gap: '1rem', alignItems: 'flex-start' }}
             >
               <f.icon size={20} style={{ color: f.color, marginTop: 2, flexShrink: 0 }} />
-              <div style={{ flex: 1 }}>
+              <div className="flex-1">
                 <p style={{ fontSize: '0.875rem', fontWeight: 600, color: 'var(--fg)', marginBottom: '0.25rem' }}>{f.title}</p>
                 <p style={{ fontSize: '0.75rem', color: 'var(--color-muted)' }}>{f.desc}</p>
               </div>
@@ -140,7 +140,7 @@ export function ExportsPage() {
               style={{ background: 'var(--surface)', border: '1px solid rgba(255,255,255,0.06)', display: 'flex', gap: '1rem', alignItems: 'flex-start' }}
             >
               <f.icon size={20} style={{ color: f.color, marginTop: 2, flexShrink: 0 }} />
-              <div style={{ flex: 1 }}>
+              <div className="flex-1">
                 <p style={{ fontSize: '0.875rem', fontWeight: 600, color: 'var(--fg)', marginBottom: '0.25rem' }}>{f.title}</p>
                 <p style={{ fontSize: '0.75rem', color: 'var(--color-muted)', marginBottom: '0.5rem' }}>{f.desc}</p>
                 <code style={{ fontSize: '0.72rem', color: 'var(--color-safe)', fontFamily: 'var(--font-mono)' }}>{f.hint}</code>

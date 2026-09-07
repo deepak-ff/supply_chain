@@ -32,7 +32,7 @@ function MonitoringStatusHeader() {
   const reconnecting = health.isLoading && health.failureCount > 0;
 
   return (
-    <div className="rounded-lg p-4 flex items-center gap-3" style={{ background: 'var(--surface)', border: '1px solid rgba(255,255,255,0.06)' }}>
+    <div className="rounded-lg p-4 flex items-center gap-3 bg-surface border border-border-color">
       <span
         className={cn('w-2.5 h-2.5 rounded-full shrink-0', active && 'fg-pulse-healthy')}
         style={{
@@ -44,7 +44,7 @@ function MonitoringStatusHeader() {
         <p className="text-sm font-mono font-bold" style={{ color: active ? 'var(--color-safe)' : 'var(--color-warn)' }}>
           {active ? '● Monitoring active' : reconnecting ? '● Reconnecting…' : '● Monitoring inactive — API unreachable'}
         </p>
-        <p className="text-xs mt-0.5" style={{ color: 'var(--color-muted)' }}>
+        <p className="text-xs mt-0.5 text-text-secondary">
           {active
             ? 'ChainWarden API is reachable — stats below refresh automatically.'
             : 'Could not reach the ChainWarden API. Start it with `make api` or the docker-compose stack.'}
@@ -144,7 +144,7 @@ function AuditRunner() {
   return (
     <div className="space-y-3">
       <div className="flex items-center justify-between">
-        <h2 className="text-sm font-mono flex items-center gap-2" style={{ color: 'var(--color-muted)' }}>
+        <h2 className="text-sm font-mono flex items-center gap-2 text-text-secondary">
           <Terminal size={14} />
           RUN SYSTEM AUDIT
         </h2>
@@ -164,7 +164,7 @@ function AuditRunner() {
         </button>
       </div>
 
-      <p className="text-xs" style={{ color: 'var(--color-muted)' }}>
+      <p className="text-xs text-text-secondary">
         Scans globally installed packages across npm, pip, cargo, go, brew, gem, and Docker for known vulnerabilities and malicious patterns.
       </p>
 
@@ -178,7 +178,7 @@ function AuditRunner() {
       {auditOutput && (
         <div className="rounded-lg" style={{ background: '#0D0D0D', border: '1px solid rgba(255,255,255,0.08)' }}>
           <div style={{ padding: '0.625rem 0.875rem', borderBottom: '1px solid rgba(255,255,255,0.06)', display: 'flex', alignItems: 'center', gap: 8 }}>
-            <CheckCircle size={13} style={{ color: 'var(--color-safe)' }} />
+            <CheckCircle className="text-success" size={13} />
             <span style={{ fontSize: '0.72rem', fontFamily: 'var(--font-mono)', fontWeight: 600, color: 'var(--color-safe)' }}>
               AUDIT COMPLETE
             </span>
@@ -211,11 +211,11 @@ export function SystemAuditPage() {
   });
 
   return (
-    <div className="p-6 space-y-6">
-      <h1 className="text-xl font-bold font-mono" style={{ color: 'var(--fg)' }}>
+    <div className="space-y-6">
+      <h1 className="text-xl font-bold font-mono text-text-primary">
         System Audit
       </h1>
-      <p className="text-sm" style={{ color: 'var(--color-muted)' }}>
+      <p className="text-sm text-text-secondary">
         Audit globally installed packages across all package managers for known vulnerabilities.
       </p>
 
@@ -224,7 +224,7 @@ export function SystemAuditPage() {
 
       {/* Continuous monitoring */}
       <div className="space-y-3">
-        <h2 className="text-sm font-mono flex items-center gap-2" style={{ color: 'var(--color-muted)' }}>
+        <h2 className="text-sm font-mono flex items-center gap-2 text-text-secondary">
           <Activity size={14} />
           CONTINUOUS MONITORING
         </h2>
@@ -243,12 +243,12 @@ export function SystemAuditPage() {
           className="rounded-lg p-4 flex items-center gap-3"
           style={{ background: 'var(--surface)', border: '1px solid rgba(255,61,61,0.2)' }}
         >
-          <AlertCircle size={16} style={{ color: 'var(--color-critical)' }} />
-          <span className="text-sm" style={{ color: 'var(--color-critical)' }}>{(error as Error).message}</span>
+          <AlertCircle className="text-critical" size={16} />
+          <span className="text-sm text-critical">{(error as Error).message}</span>
         </div>
       ) : data ? (
         <div>
-          <h2 className="text-sm font-mono mb-3" style={{ color: 'var(--color-muted)' }}>
+          <h2 className="text-sm font-mono mb-3 text-text-secondary">
             SIGNATURE STORE
           </h2>
           <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
@@ -267,7 +267,7 @@ export function SystemAuditPage() {
               </span>
             ))}
             {data.signatures_updated && (
-              <span className="text-xs" style={{ color: 'var(--color-muted)' }}>
+              <span className="text-xs text-text-secondary">
                 Updated: {new Date(data.signatures_updated).toLocaleDateString()}
               </span>
             )}
@@ -277,41 +277,41 @@ export function SystemAuditPage() {
 
       {/* CLI hints */}
       <div
-        className="rounded-lg p-4 flex items-start gap-3"
-        style={{ background: 'var(--surface)', border: '1px solid rgba(255,255,255,0.06)' }}
+        className="rounded-lg p-4 flex items-start gap-3 bg-surface border border-border-color"
+
       >
         <Terminal size={16} style={{ color: 'var(--color-safe)', marginTop: 2 }} />
         <div>
-          <p className="text-sm font-mono font-bold" style={{ color: 'var(--fg)' }}>
+          <p className="text-sm font-mono font-bold text-text-primary">
             CLI Commands
           </p>
           <div className="mt-2 space-y-2">
             <div>
-              <p className="text-xs" style={{ color: 'var(--color-muted)' }}>Update the signature store:</p>
-              <code className="text-xs mt-0.5 block" style={{ color: 'var(--color-safe)' }}>
+              <p className="text-xs text-text-secondary">Update the signature store:</p>
+              <code className="text-xs mt-0.5 block text-success">
                 cwctl intel update
               </code>
             </div>
             <div>
-              <p className="text-xs" style={{ color: 'var(--color-muted)' }}>Full system audit from CLI:</p>
-              <code className="text-xs mt-0.5 block" style={{ color: 'var(--color-safe)' }}>
+              <p className="text-xs text-text-secondary">Full system audit from CLI:</p>
+              <code className="text-xs mt-0.5 block text-success">
                 cwctl audit system
               </code>
             </div>
             <div>
-              <p className="text-xs mt-2 font-mono font-bold" style={{ color: 'var(--fg)' }}>
+              <p className="text-xs mt-2 font-mono font-bold text-text-primary">
                 Using Docker?
               </p>
-              <p className="text-xs mt-1" style={{ color: 'var(--color-muted)' }}>
-                If you installed ChainWarden via Docker, use <code style={{ color: 'var(--fg)' }}>docker exec</code> to run CLI commands:
+              <p className="text-xs mt-1 text-text-secondary">
+                If you installed ChainWarden via Docker, use <code className="text-text-primary">docker exec</code> to run CLI commands:
               </p>
-              <code className="text-xs mt-1 block" style={{ color: 'var(--color-safe)' }}>
+              <code className="text-xs mt-1 block text-success">
                 docker exec chainwarden cwctl audit system
               </code>
-              <code className="text-xs mt-0.5 block" style={{ color: 'var(--color-safe)' }}>
+              <code className="text-xs mt-0.5 block text-success">
                 docker exec chainwarden cwctl scan npm/lodash@4.17.21
               </code>
-              <code className="text-xs mt-0.5 block" style={{ color: 'var(--color-safe)' }}>
+              <code className="text-xs mt-0.5 block text-success">
                 docker exec -it chainwarden cwctl doctor
               </code>
             </div>
@@ -321,22 +321,22 @@ export function SystemAuditPage() {
 
       {/* Ecosystem cards */}
       <div>
-        <h2 className="text-sm font-mono mb-3" style={{ color: 'var(--color-muted)' }}>
+        <h2 className="text-sm font-mono mb-3 text-text-secondary">
           SCANNED ECOSYSTEMS
         </h2>
         <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
           {ECOSYSTEMS.map(eco => (
             <div
               key={eco.label}
-              className="rounded-lg p-4 flex items-center gap-3"
-              style={{ background: 'var(--surface)', border: '1px solid rgba(255,255,255,0.06)' }}
+              className="rounded-lg p-4 flex items-center gap-3 bg-surface border border-border-color"
+
             >
-              <eco.icon size={20} style={{ color: 'var(--color-muted)' }} />
+              <eco.icon className="text-text-secondary" size={20} />
               <div>
-                <p className="text-sm font-mono font-medium" style={{ color: 'var(--fg)' }}>
+                <p className="text-sm font-mono font-medium text-text-primary">
                   {eco.label}
                 </p>
-                <p className="text-xs font-mono" style={{ color: 'var(--color-muted)' }}>
+                <p className="text-xs font-mono text-text-secondary">
                   {eco.hint}
                 </p>
               </div>
@@ -347,13 +347,13 @@ export function SystemAuditPage() {
 
       {/* PATH check note */}
       <div
-        className="rounded-lg p-4"
-        style={{ background: 'var(--surface)', border: '1px solid rgba(255,255,255,0.06)' }}
+        className="rounded-lg p-4 bg-surface border border-border-color"
+
       >
-        <p className="text-xs font-mono font-bold mb-1" style={{ color: 'var(--color-muted)' }}>
+        <p className="text-xs font-mono font-bold mb-1 text-text-secondary">
           PATH SECURITY CHECK
         </p>
-        <p className="text-sm" style={{ color: 'var(--fg)' }}>
+        <p className="text-sm text-text-primary">
           ChainWarden also checks for world-writable directories in your <code>$PATH</code> that could enable hijacking attacks.
         </p>
       </div>

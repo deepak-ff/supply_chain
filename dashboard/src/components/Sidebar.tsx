@@ -1,303 +1,137 @@
-import {
-  Shield, Search, RefreshCw, HardDrive, Bot, Activity, GitBranch, Bell,
-  FolderOpen, Package, FileText, ListFilter, KeyRound, Download, Webhook,
-  GitMerge, LayoutDashboard, ChevronLeft, ChevronRight, FileCheck, PenTool,
-  LogOut, Network, Puzzle, Globe2, Building2, Sparkles, Cpu,
-  Settings, ClipboardList, Terminal, SquareTerminal, Radar,
-} from 'lucide-react';
-import { useQuery } from '@tanstack/react-query';
+import { PanelLeftClose, PanelLeftOpen } from 'lucide-react';
 import { useUIStore } from '../store/ui';
-import { getAuthStatus, listTrust } from '../lib/api';
 import { cn } from './ui/utils';
 import { WorkspaceSwitcher } from './WorkspaceSwitcher';
-
-export interface NavItem {
-  label: string;
-  icon: React.ElementType;
-  path: string;
-}
-
-export interface NavSection {
-  section: string;
-  items: NavItem[];
-}
-
-export const STANDALONE: NavItem = { label: 'Dashboard', icon: LayoutDashboard, path: '/dashboard' };
-
-export const NAV_SECTIONS: NavSection[] = [
-  {
-    section: 'ANALYZE',
-    items: [
-      { label: 'Scan Now',            icon: Search,       path: '/scan' },
-      { label: 'Scan Sessions',       icon: ClipboardList, path: '/sessions' },
-      { label: 'Recursive Scanning',  icon: RefreshCw,    path: '/recursive' },
-      { label: 'System Audit',        icon: HardDrive,    path: '/audit' },
-      { label: 'AI Security',         icon: Bot,          path: '/ai-security' },
-      { label: 'AI Advisory',         icon: Sparkles,     path: '/advisory' },
-      { label: 'AI Patch Agent',      icon: Cpu,          path: '/agents' },
-      { label: 'Terminal',            icon: SquareTerminal, path: '/terminal' },
-    ],
-  },
-  {
-    section: 'MONITOR',
-    items: [
-      { label: 'Live Monitoring',     icon: Activity,     path: '/monitor' },
-      { label: 'Log Monitor',         icon: Terminal,     path: '/logs' },
-      { label: 'Attack Surface',      icon: Network,      path: '/attack-surface' },
-      { label: 'Trust Score',         icon: Radar,        path: '/trust' },
-      { label: 'Dependency Drift',    icon: GitBranch,    path: '/drift' },
-      { label: 'Alerts',             icon: Bell,          path: '/alerts' },
-    ],
-  },
-  {
-    section: 'INVENTORY',
-    items: [
-      { label: 'Projects',            icon: FolderOpen,   path: '/projects' },
-      { label: 'Dependencies',        icon: Package,      path: '/inventory' },
-      { label: 'SBOM',               icon: FileText,      path: '/sbom' },
-    ],
-  },
-  {
-    section: 'POLICY',
-    items: [
-      { label: 'Policies',            icon: Shield,       path: '/policy' },
-      { label: 'Allowlist/Blocklist', icon: ListFilter,   path: '/allowlist' },
-      { label: 'Signatures',          icon: KeyRound,     path: '/sign' },
-      { label: 'Provenance',          icon: FileCheck,    path: '/provenance' },
-      { label: 'Sig. Authoring',      icon: PenTool,      path: '/intel/new' },
-    ],
-  },
-  {
-    section: 'INTEGRATIONS',
-    items: [
-      { label: 'Integrations',        icon: Puzzle,       path: '/integrations' },
-      { label: 'Exports',             icon: Download,     path: '/exports' },
-      { label: 'Webhooks',            icon: Webhook,      path: '/webhooks' },
-      { label: 'CI/CD',              icon: GitMerge,      path: '/cicd' },
-    ],
-  },
-  {
-    section: 'RESOURCES',
-    items: [
-      { label: 'About ChainWarden', icon: Globe2,       path: '/welcome' },
-      { label: 'Enterprise',          icon: Building2,    path: '/enterprise' },
-    ],
-  },
-];
+import { NAV_SECTIONS, STANDALONE, type NavItem } from './nav';
 
 interface SidebarProps {
   current: string;
   onNavigate: (path: string) => void;
-  onLogout?: () => void;
 }
 
-import React from 'react';
-
-export function Sidebar({ current, onNavigate, onLogout }: SidebarProps) {
-  const { sidebarOpen, setSidebarOpen } = useUIStore();
-
-  function NavBtn({ item }: { item: NavItem }) {
-    const active = current === item.path;
-    return (
-      <button
-        onClick={() => onNavigate(item.path)}
+function NavButton({
+  item,
+  active,
+  open,
+  onNavigate,
+}: {
+  item: NavItem;
+  active: boolean;
+  open: boolean;
+  onNavigate: (path: string) => void;
+}) {
+  return (
+    <button
+      type="button"
+      onClick={() => onNavigate(item.path)}
+      title={open ? undefined : item.label}
+      aria-current={active ? 'page' : undefined}
+      className={cn(
+        // Active = 3px violet rail + tinted background, never a filled block.
+        'wd-hover relative flex w-full items-center rounded-r-sm text-left text-[0.78rem]',
+        open ? 'gap-2.5 py-[7px] pl-[13px] pr-2.5' : 'justify-center py-2.5',
+        active
+          ? 'bg-[color-mix(in_srgb,var(--primary)_10%,transparent)] font-medium text-primary'
+          : 'text-text-secondary hover:bg-surface-muted hover:text-text-primary',
+      )}
+    >
+      <span
+        aria-hidden="true"
         className={cn(
-          'w-full flex items-center gap-2.5 rounded-md text-[0.78rem] [font-family:inherit] transition-colors',
-          sidebarOpen ? 'px-2.5 py-[0.4rem] justify-start' : 'px-2 py-2 justify-center',
-          active ? 'bg-blue-light text-primary-blue' : 'text-text-secondary hover:bg-surface-muted hover:text-text-primary'
+          'absolute bottom-0 left-0 top-0 w-[3px] rounded-r-sm',
+          active ? 'bg-primary' : 'bg-transparent',
         )}
-      >
-        <item.icon size={15} className="shrink-0" />
-        {sidebarOpen && <span className="overflow-hidden text-ellipsis whitespace-nowrap">{item.label}</span>}
-      </button>
-    );
-  }
+      />
+      {/* Fixed 16px box keeps every icon optically aligned with its label. */}
+      <span className="flex h-4 w-4 shrink-0 items-center justify-center">
+        <item.icon size={16} strokeWidth={1.75} aria-hidden="true" />
+      </span>
+      {open && <span className="min-w-0 truncate">{item.label}</span>}
+    </button>
+  );
+}
+
+export function Sidebar({ current, onNavigate }: SidebarProps) {
+  const sidebarOpen = useUIStore((s) => s.sidebarOpen);
+  const setSidebarOpen = useUIStore((s) => s.setSidebarOpen);
 
   return (
     <aside
       className={cn(
-        'flex flex-col shrink-0 min-h-screen bg-surface border-r border-border-color overflow-hidden transition-[width] duration-200',
+        'flex h-full shrink-0 flex-col overflow-hidden border-r border-border-color bg-surface',
+        sidebarOpen ? 'w-[var(--sidebar-w)]' : 'w-[var(--sidebar-w-collapsed)]',
       )}
-      style={{ width: sidebarOpen ? 220 : 56 }}
-    >
-      {/* Logo */}
-      <div
-        className={cn(
-          'flex items-center gap-2 border-b border-border-color cursor-pointer overflow-hidden',
-          sidebarOpen ? 'px-3 pt-3 pb-2.5' : 'px-0 py-3 justify-center'
-        )}
+      aria-label="Primary" >
+      {/* Brand — same 52px height as the top bar so the hairlines line up. */}
+      <button
+        type="button"
         onClick={() => onNavigate('/')}
+        title="ChainWarden — home"
+        className={cn(
+          'wd-hover flex h-[var(--shell-h)] shrink-0 items-center gap-2 border-b border-border-color bg-transparent hover:bg-surface-muted',
+          sidebarOpen ? 'px-3.5' : 'justify-center px-0',
+        )}
       >
         <img
           src="/logo-icon.png"
-          alt="ChainWarden"
-          className="shrink-0 transition-all duration-200"
-          style={{
-            height: sidebarOpen ? 34 : 30,
-            objectFit: 'contain',
-          }}
-        />
+          alt=""
+          aria-hidden="true"
+          className="h-6 w-6 shrink-0 object-contain" />
         {sidebarOpen && (
-          <span className="text-[0.85rem] font-semibold tracking-tight text-text-primary whitespace-nowrap">ChainWarden</span>
+          <span className="truncate text-[0.85rem] font-semibold tracking-tight text-text-primary">
+            ChainWarden
+          </span>
         )}
-      </div>
+      </button>
 
-      {/* Workspace switcher */}
       <WorkspaceSwitcher collapsed={!sidebarOpen} />
 
-      {/* Nav */}
-      <nav className={cn('flex-1 overflow-y-auto', sidebarOpen ? 'p-2' : 'py-2 px-1')}>
-        {/* Standalone Dashboard item */}
-        <div className={sidebarOpen ? 'mb-1' : 'mb-2'}>
-          <NavBtn item={STANDALONE} />
+      <nav className={cn('flex-1 overflow-y-auto pb-2', sidebarOpen ? 'px-2' : 'px-1.5')}>
+        <div className={sidebarOpen ? 'mb-1.5' : 'mb-2'}>
+          <NavButton
+            item={STANDALONE}
+            active={current === STANDALONE.path}
+            open={sidebarOpen}
+            onNavigate={onNavigate}
+          />
         </div>
 
-        {/* Sections */}
-        {NAV_SECTIONS.map(section => (
-          <div key={section.section} className="mb-1">
-            {sidebarOpen && (
-              <p className="text-text-muted text-[0.6rem] font-bold tracking-[0.1em] uppercase px-2 pt-2.5 pb-0.5 m-0">
+        {NAV_SECTIONS.map((section) => (
+          <div key={section.section} className="mb-1.5">
+            {sidebarOpen ? (
+              <p className="m-0 px-[13px] pb-1 pt-3 text-[11px] font-medium uppercase tracking-wide text-text-muted">
                 {section.section}
               </p>
+            ) : (
+              <div aria-hidden="true" className="mx-1 my-2 border-t border-border-color" />
             )}
-            {!sidebarOpen && <div className="border-t border-border-color my-1.5" />}
-            {section.items.map(item => (
-              <NavBtn key={item.path} item={item} />
-            ))}
+            <div className="flex flex-col gap-px">
+              {section.items.map((item) => (
+                <NavButton
+                  key={item.path}
+                  item={item}
+                  active={current === item.path}
+                  open={sidebarOpen}
+                  onNavigate={onNavigate}
+                />
+              ))}
+            </div>
           </div>
         ))}
       </nav>
 
-      {/* Trust pulse — live behavioural-trust status for the whole ledger */}
-      <TrustPulse collapsed={!sidebarOpen} onNavigate={onNavigate} />
-
-      {/* User profile + logout */}
-      <UserProfile sidebarOpen={sidebarOpen} onLogout={onLogout} onNavigate={onNavigate} />
-
-      {/* Collapse toggle */}
       <button
+        type="button"
         onClick={() => setSidebarOpen(!sidebarOpen)}
-        className="flex items-center justify-center py-2.5 text-text-muted border-t border-border-color bg-transparent cursor-pointer w-full hover:bg-surface-muted"
-      >
-        {sidebarOpen ? <ChevronLeft size={15} /> : <ChevronRight size={15} />}
-      </button>
-    </aside>
-  );
-}
-
-const STATE_RANK: Record<string, number> = {
-  LEARNING: 0,
-  GREEN: 1,
-  AMBER: 2,
-  RED: 3,
-};
-
-// TrustPulse replaces the old static "Engine Status: All systems operational"
-// dot with live data from /api/v1/trust: the average trust score across the
-// tracked ledger, coloured by the WORST package state (red/amber/green).
-// Clicking it jumps to the Trust page.
-function TrustPulse({ collapsed, onNavigate }: { collapsed: boolean; onNavigate: (path: string) => void }) {
-  const trust = useQuery({
-    queryKey: ['trust-pulse'],
-    queryFn: listTrust,
-    refetchInterval: 60_000,
-    staleTime: 30_000,
-    retry: 1,
-  });
-
-  const pkgs = trust.data?.packages ?? [];
-  let worst = 'LEARNING';
-  for (const p of pkgs) {
-    if ((STATE_RANK[p.state] ?? 0) > (STATE_RANK[worst] ?? 0)) worst = p.state;
-  }
-  const color =
-    worst === 'RED' ? 'var(--critical)'
-    : worst === 'AMBER' ? 'var(--warning)'
-    : worst === 'GREEN' ? 'var(--success)'
-    : 'var(--text-muted)';
-
-  const average = trust.data?.average_score ?? null;
-  const label = trust.isError
-    ? 'Trust — API unreachable'
-    : pkgs.length === 0
-      ? 'Trust — no data yet'
-      : `Trust ${average ?? '—'} · ${worst.toLowerCase()}`;
-
-  return (
-    <div className={cn('border-t border-border-color', collapsed ? 'py-2.5 justify-center' : 'py-1')}>
-      <button
-        onClick={() => onNavigate('/trust')}
-        title="Dynamic Trust Score — click to open the Trust page"
+        aria-label={sidebarOpen ? 'Collapse sidebar' : 'Expand sidebar'}
         className={cn(
-          'flex w-full items-center gap-2.5 bg-transparent text-left transition-colors hover:bg-surface-muted',
-          collapsed ? 'justify-center px-0 py-2' : 'px-3.5 py-2',
+          'wd-hover flex h-9 shrink-0 items-center justify-center gap-2 border-t border-border-color bg-transparent text-[0.7rem] text-text-muted hover:bg-surface-muted hover:text-text-secondary',
+          sidebarOpen && 'px-3',
         )}
       >
-        <span
-          className="w-[7px] h-[7px] rounded-full shrink-0 fg-pulse-healthy"
-          style={{ background: color, boxShadow: `0 0 5px ${color}` }}
-        />
-        {!collapsed && <span className="text-[0.68rem] text-text-secondary">{label}</span>}
+        {sidebarOpen ? <PanelLeftClose size={15} /> : <PanelLeftOpen size={15} />}
+        {sidebarOpen && <span>Collapse</span>}
       </button>
-    </div>
-  );
-}
-
-function UserProfile({ sidebarOpen, onLogout, onNavigate }: { sidebarOpen: boolean; onLogout?: () => void; onNavigate: (path: string) => void }) {
-  const auth = useQuery({ queryKey: ['auth-me'], queryFn: getAuthStatus, retry: false, staleTime: 60_000 });
-  const email = auth.data?.email ?? 'admin';
-  const initials = email.slice(0, 2).toUpperCase();
-
-  if (sidebarOpen) {
-    return (
-      <div className="border-t border-border-color">
-        <div className="px-3.5 py-2.5 flex items-center gap-2.5">
-          <div className="w-7 h-7 rounded-full bg-primary-blue flex items-center justify-center text-[0.6rem] font-bold text-white shrink-0 font-mono">
-            {initials}
-          </div>
-          <div className="flex-1 min-w-0">
-            <p className="text-[0.75rem] font-semibold text-text-primary m-0 truncate">{email}</p>
-            <p className="text-[0.62rem] text-text-muted m-0">Administrator</p>
-          </div>
-        </div>
-        <div className="flex border-t border-border-color">
-          <button
-            onClick={() => onNavigate('/settings')}
-            className="flex-1 flex items-center justify-center gap-1.5 py-2 text-[0.7rem] text-text-secondary hover:bg-surface-muted bg-transparent cursor-pointer [font-family:inherit]"
-          >
-            <Settings size={13} /> Settings
-          </button>
-          {onLogout && (
-            <button
-              onClick={() => onLogout()}
-              className="flex-1 flex items-center justify-center gap-1.5 py-2 text-[0.7rem] text-text-secondary hover:bg-surface-muted bg-transparent cursor-pointer border-l border-border-color [font-family:inherit]"
-            >
-              <LogOut size={13} /> Log out
-            </button>
-          )}
-        </div>
-      </div>
-    );
-  }
-
-  return (
-    <div className="border-t border-border-color flex flex-col items-center gap-1 py-2">
-      <button
-        onClick={() => onNavigate('/settings')}
-        title="Settings"
-        className="p-2 rounded-md text-text-secondary hover:bg-surface-muted bg-transparent cursor-pointer"
-      >
-        <Settings size={15} />
-      </button>
-      {onLogout && (
-        <button
-          onClick={() => onLogout()}
-          title="Log out"
-          className="p-2 rounded-md text-text-secondary hover:bg-surface-muted bg-transparent cursor-pointer"
-        >
-          <LogOut size={15} />
-        </button>
-      )}
-    </div>
+    </aside>
   );
 }

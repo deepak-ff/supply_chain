@@ -73,11 +73,11 @@ export default function PolicyPage() {
   ]
 
   return (
-    <div style={{ padding: '1.5rem', display: 'flex', flexDirection: 'column', gap: '1.25rem' }}>
+    <div className="flex flex-col gap-5">
       <div>
-        <h1 className="text-lg font-bold font-mono" style={{ color: 'var(--fg)' }}>Security Policy</h1>
-        <p className="text-xs mt-0.5" style={{ color: 'var(--color-muted)' }}>
-          Policy-as-code enforcement — edit below, or use <code style={{ color: 'var(--color-safe)' }}>cwctl policy set</code>
+        <h1 className="text-lg font-bold font-mono text-text-primary">Security Policy</h1>
+        <p className="text-xs mt-0.5 text-text-secondary">
+          Policy-as-code enforcement — edit below, or use <code className="text-success">cwctl policy set</code>
         </p>
       </div>
 
@@ -109,14 +109,14 @@ export default function PolicyPage() {
               : <AlertTriangle size={16} style={{ color: 'var(--color-warn)', flexShrink: 0 }} />
           }
           <div>
-            <p className="text-sm font-semibold" style={{ color: 'var(--fg)' }}>
+            <p className="text-sm font-semibold text-text-primary">
               {!data?.configured
                 ? 'No policy configured yet — showing defaults'
                 : data?.violations == null
                   ? 'Violation count not yet evaluated'
                   : data.violations === 0 ? 'No policy violations detected' : `${data.violations} policy violation(s)`}
             </p>
-            <p className="text-xs" style={{ color: 'var(--color-muted)' }}>
+            <p className="text-xs text-text-secondary">
               Last evaluated: {data?.last_evaluated ? new Date(data.last_evaluated).toLocaleTimeString() : '—'}
             </p>
           </div>
@@ -126,8 +126,8 @@ export default function PolicyPage() {
       {/* Policy rules (read-only summary) */}
       <div style={{ background: 'var(--bg-surface)', border: '1px solid rgba(255,255,255,0.07)', borderRadius: '0.5rem', overflow: 'hidden' }}>
         <div style={{ padding: '0.75rem 1rem', borderBottom: '1px solid rgba(255,255,255,0.07)', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-          <Shield size={14} style={{ color: 'var(--color-muted)' }} />
-          <span className="text-xs font-semibold" style={{ color: 'var(--fg)' }}>Enforcement Rules</span>
+          <Shield className="text-text-secondary" size={14} />
+          <span className="text-xs font-semibold text-text-primary">Enforcement Rules</span>
         </div>
         {isLoading ? (
           <div style={{ padding: '1rem', display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
@@ -147,9 +147,9 @@ export default function PolicyPage() {
                   ? <CheckCircle size={14} style={{ color: 'var(--color-safe)', flexShrink: 0 }} />
                   : <XCircle size={14} style={{ color: 'var(--color-muted)', flexShrink: 0 }} />
                 }
-                <div style={{ flex: 1 }}>
-                  <code className="text-xs" style={{ color: 'var(--fg)' }}>{rule.label}</code>
-                  <p className="text-xs mt-0.5" style={{ color: 'var(--color-muted)' }}>{rule.description}</p>
+                <div className="flex-1">
+                  <code className="text-xs text-text-primary">{rule.label}</code>
+                  <p className="text-xs mt-0.5 text-text-secondary">{rule.description}</p>
                 </div>
                 <span className="text-xs font-mono px-2 py-0.5 rounded" style={{
                   background: rule.active ? 'rgba(0,255,135,0.1)' : 'rgba(255,255,255,0.05)',
@@ -171,7 +171,7 @@ export default function PolicyPage() {
           </p>
 
           <div>
-            <label className="block text-xs font-mono mb-1" style={{ color: 'var(--color-muted)' }}>FAIL ON SEVERITY</label>
+            <label className="block text-xs font-mono mb-1 text-text-secondary">FAIL ON SEVERITY</label>
             <select
               value={form.fail_on}
               onChange={e => setForm(f => ({ ...f, fail_on: e.target.value }))}
@@ -183,7 +183,7 @@ export default function PolicyPage() {
           </div>
 
           <div>
-            <label className="block text-xs font-mono mb-1" style={{ color: 'var(--color-muted)' }}>MAX PACKAGE AGE (DAYS, 0 = unlimited)</label>
+            <label className="block text-xs font-mono mb-1 text-text-secondary">MAX PACKAGE AGE (DAYS, 0 = unlimited)</label>
             <input
               type="number"
               min={0}
@@ -202,8 +202,8 @@ export default function PolicyPage() {
             ].map(({ key, label, description }) => (
               <div key={key} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '1rem' }}>
                 <div>
-                  <p className="text-sm" style={{ color: 'var(--fg)' }}>{label}</p>
-                  <p className="text-xs" style={{ color: 'var(--color-muted)' }}>{description}</p>
+                  <p className="text-sm text-text-primary">{label}</p>
+                  <p className="text-xs text-text-secondary">{description}</p>
                 </div>
                 <Switch checked={form[key]} onCheckedChange={v => setForm(f => ({ ...f, [key]: v }))} />
               </div>
@@ -211,23 +211,21 @@ export default function PolicyPage() {
           </div>
 
           <div>
-            <label className="block text-xs font-mono mb-1" style={{ color: 'var(--color-muted)' }}>DENIED PACKAGES</label>
+            <label className="block text-xs font-mono mb-1 text-text-secondary">DENIED PACKAGES</label>
             <TagInput
               value={form.deny_packages}
               onChange={v => setForm(f => ({ ...f, deny_packages: v }))}
               placeholder="package-name, press Enter"
-              color="#FF3D3D"
-            />
+              color="#FF3D3D" />
           </div>
 
           <div>
-            <label className="block text-xs font-mono mb-1" style={{ color: 'var(--color-muted)' }}>ALLOWED LICENSES</label>
+            <label className="block text-xs font-mono mb-1 text-text-secondary">ALLOWED LICENSES</label>
             <TagInput
               value={form.allow_licenses}
               onChange={v => setForm(f => ({ ...f, allow_licenses: v }))}
               placeholder="MIT, Apache-2.0, …"
-              color="#00FF87"
-            />
+              color="#00FF87" />
           </div>
 
           <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
@@ -240,10 +238,10 @@ export default function PolicyPage() {
               {save.isPending ? 'Saving…' : 'Save Policy'}
             </button>
             {savedMsg && (
-              <span className="text-xs font-mono" style={{ color: 'var(--color-safe)' }}>{savedMsg}</span>
+              <span className="text-xs font-mono text-success">{savedMsg}</span>
             )}
             {save.isError && (
-              <span className="text-xs font-mono" style={{ color: 'var(--color-critical)' }}>
+              <span className="text-xs font-mono text-critical">
                 {(save.error as Error).message}
               </span>
             )}

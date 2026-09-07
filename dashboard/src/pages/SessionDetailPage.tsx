@@ -11,15 +11,32 @@ import {
 } from 'recharts';
 import { useSessionStore, type ScanSession } from '../store/sessions';
 import { useUIStore } from '../store/ui';
-import { SeverityBadge } from '../components/SeverityBadge';
+import { StatusChip } from '../components/ui/status-chip';
 import { FindingsTable } from '../components/FindingsTable';
+import { Card, CardHeader, CardBody, CardFooter } from '../components/ui/card';
+import { StatTile, type StatTileAccent } from '../components/ui/stat-tile';
+import { EmptyState } from '../components/EmptyState';
+import { cn } from '../components/ui/utils';
 import type { Finding } from '../types/api';
-
-const SEV_COLORS: Record<string, string> = {
-  CRITICAL: '#DC2626', HIGH: '#EA580C', MEDIUM: '#D97706', LOW: '#06B6D4', INFORMATIONAL: '#6B7280',
-};
+import {
+  axisProps, barTooltipProps, gridProps, seriesProps, tooltipProps, CHART_CATEGORICAL,
+} from '../lib/chartTheme';
 
 const SEV_ORDER: Record<string, number> = { CRITICAL: 4, HIGH: 3, MEDIUM: 2, LOW: 1, INFORMATIONAL: 0 };
+
+const SEVERITY_TILES: Array<{
+  key: 'critical' | 'high' | 'medium' | 'low'; label: string;
+  fill: string; swatch: string; accent: StatTileAccent;
+}> = [
+  { key: 'critical', label: 'Critical', fill: 'var(--critical)', swatch: 'bg-critical', accent: 'critical' },
+  { key: 'high',     label: 'High',     fill: 'var(--amber)',    swatch: 'bg-amber',    accent: 'amber' },
+  { key: 'medium',   label: 'Medium',   fill: 'var(--warning)',  swatch: 'bg-warning',  accent: 'warning' },
+  { key: 'low',      label: 'Low',      fill: 'var(--teal)',     swatch: 'bg-teal',     accent: 'teal' },
+];
+
+const SEV_COLORS: Record<string, string> = {
+  CRITICAL: 'var(--critical)', HIGH: 'var(--amber)', MEDIUM: 'var(--warning)', LOW: 'var(--teal)',
+};
 
 function formatDate(iso: string): string {
   return new Date(iso).toLocaleString('en-US', {
@@ -28,7 +45,8 @@ function formatDate(iso: string): string {
   });
 }
 
-// Mindmap-style category tree
+// ── mindmap ────────────────────────────────────────────────────────────────
+
 function FindingsMindmap({ findings }: { findings: Finding[] }) {
   const [expanded, setExpanded] = useState<Set<string>>(new Set());
 
@@ -53,66 +71,80 @@ function FindingsMindmap({ findings }: { findings: Finding[] }) {
   }, [findings]);
 
   const toggle = (type: string) => {
-    setExpanded(prev => {
+    setExpanded((prev) => {
       const next = new Set(prev);
       if (next.has(type)) next.delete(type); else next.add(type);
       return next;
     });
   };
 
-  if (tree.length === 0) return null;
+  if (tree.length === 0) {
+    return (
+      <Card>
+        <CardHeader icon={GitBranch} title="Findings mindmap" />
+        <CardBody>
+          <EmptyState
+            icon={GitBranch}
+            title="Nothing to map"
+            description="This session recorded no findings, so there is no category tree to draw." />
+        </CardBody>
+      </Card>
+    );
+  }
 
   return (
-    <div className="rounded-lg border border-border-color bg-surface p-4">
-      <h3 className="text-sm font-semibold text-text-primary m-0 mb-3 flex items-center gap-2">
-        <GitBranch size={14} className="text-primary-blue" />
-        Findings Mindmap
-      </h3>
-      <div className="relative pl-4">
-        <div className="absolute left-[7px] top-0 bottom-0 w-px bg-border-color" />
-        {tree.map(node => {
-          const isOpen = expanded.has(node.type);
-          return (
-            <div key={node.type} className="mb-1.5">
-              <button
-                onClick={() => toggle(node.type)}
-                className="flex items-center gap-1.5 px-2 py-1 rounded hover:bg-surface-muted bg-transparent cursor-pointer [font-family:inherit] text-left w-full transition-colors"
-              >
-                <div className="relative -ml-[calc(1rem+1px)] w-4 h-px bg-border-color" />
-                {isOpen ? <ChevronDown size={12} /> : <ChevronRight size={12} />}
-                <span className="text-xs font-medium text-text-primary">{node.type}</span>
-                <span className="text-[0.62rem] text-text-muted font-mono ml-auto">{node.total}</span>
-              </button>
-              {isOpen && (
-                <div className="pl-8 relative">
-                  <div className="absolute left-[calc(1.5rem+7px)] top-0 bottom-0 w-px bg-border-color/50" />
-                  {node.severities.map(({ sev, items }) => (
-                    <div key={sev} className="flex items-start gap-2 py-0.5 relative">
-                      <div className="absolute left-[calc(-0.5rem+7px)] top-[0.6rem] w-3 h-px bg-border-color/50" />
-                      <SeverityBadge severity={sev as Finding['severity']} />
-                      <div className="flex flex-wrap gap-1">
-                        {items.slice(0, 5).map((f, i) => (
-                          <span key={i} className="text-[0.62rem] text-text-secondary bg-surface-muted px-1.5 py-0.5 rounded truncate max-w-[200px]">
-                            {f.title || f.id}
-                          </span>
-                        ))}
-                        {items.length > 5 && (
-                          <span className="text-[0.62rem] text-text-muted">+{items.length - 5} more</span>
-                        )}
+    <Card>
+      <CardHeader icon={GitBranch} title="Findings mindmap" description="Findings grouped by category, then severity" />
+      <CardBody className="pl-6">
+        <div className="relative">
+          <div aria-hidden="true" className="absolute bottom-0 left-[7px] top-0 w-px bg-border-color" />
+          {tree.map((node) => {
+            const isOpen = expanded.has(node.type);
+            return (
+              <div key={node.type} className="mb-1.5">
+                <button
+                  type="button"
+                  onClick={() => toggle(node.type)}
+                  className="wd-hover flex w-full items-center gap-1.5 rounded bg-transparent px-2 py-1 text-left hover:bg-surface-muted" >
+                  <span aria-hidden="true" className="relative -ml-[calc(1rem+1px)] h-px w-4 bg-border-color" />
+                  {isOpen ? <ChevronDown size={12} /> : <ChevronRight size={12} />}
+                  <span className="text-[0.75rem] font-medium text-text-primary">{node.type}</span>
+                  <span className="ml-auto font-mono text-[0.65rem] tabular-nums text-text-muted">{node.total}</span>
+                </button>
+                {isOpen && (
+                  <div className="relative pl-8">
+                    <div aria-hidden="true" className="absolute bottom-0 left-[calc(1.5rem+7px)] top-0 w-px bg-border-color/50" />
+                    {node.severities.map(({ sev, items }) => (
+                      <div key={sev} className="relative flex items-start gap-2 py-1">
+                        <span aria-hidden="true" className="absolute left-[calc(-0.5rem+7px)] top-[0.65rem] h-px w-3 bg-border-color/50" />
+                        <StatusChip tone={sev} dot={false} />
+                        <div className="flex flex-wrap gap-1">
+                          {items.slice(0, 5).map((f, i) => (
+                            <span
+                              key={i}
+                              className="max-w-[200px] truncate rounded bg-surface-muted px-1.5 py-0.5 text-[0.65rem] text-text-secondary" >
+                              {f.title || f.id}
+                            </span>
+                          ))}
+                          {items.length > 5 && (
+                            <span className="text-[0.65rem] text-text-muted">+{items.length - 5} more</span>
+                          )}
+                        </div>
                       </div>
-                    </div>
-                  ))}
-                </div>
-              )}
-            </div>
-          );
-        })}
-      </div>
-    </div>
+                    ))}
+                  </div>
+                )}
+              </div>
+            );
+          })}
+        </div>
+      </CardBody>
+    </Card>
   );
 }
 
-// Treemap chart for vulnerability categories
+// ── treemap ────────────────────────────────────────────────────────────────
+
 function CategoryTreemap({ findings }: { findings: Finding[] }) {
   const data = useMemo(() => {
     const bySource: Record<string, number> = {};
@@ -123,102 +155,112 @@ function CategoryTreemap({ findings }: { findings: Finding[] }) {
     return Object.entries(bySource).map(([name, size]) => ({ name, size }));
   }, [findings]);
 
-  if (data.length === 0) return null;
-
-  const COLORS_MAP = ['#2563EB', '#7C3AED', '#059669', '#D97706', '#DC2626', '#EC4899', '#06B6D4', '#8B5CF6'];
-
   return (
-    <div className="rounded-lg border border-border-color bg-surface p-4">
-      <h3 className="text-sm font-semibold text-text-primary m-0 mb-3 flex items-center gap-2">
-        <Layers size={14} className="text-primary-blue" />
-        Source Distribution
-      </h3>
-      <ResponsiveContainer width="100%" height={200}>
-        <Treemap
-          data={data}
-          dataKey="size"
-          nameKey="name"
-          stroke="var(--border-color)"
-          content={(({ x, y, width, height, name, index }: { x: number; y: number; width: number; height: number; name: string; index: number }) => {
-            const w = Number(width) || 0;
-            const h = Number(height) || 0;
-            if (w < 30 || h < 20) return <g />;
-            return (
-              <g>
-                <rect
-                  x={x} y={y} width={w} height={h}
-                  fill={COLORS_MAP[(index as number) % COLORS_MAP.length]}
-                  rx={4}
-                  opacity={0.85}
-                />
-                {w > 50 && h > 30 && (
-                  <text
-                    x={Number(x) + w / 2} y={Number(y) + h / 2}
-                    textAnchor="middle" dominantBaseline="central"
-                    fill="#fff" fontSize={10} fontFamily="monospace"
-                  >
-                    {String(name)}
-                  </text>
-                )}
-              </g>
-            );
-            // eslint-disable-next-line @typescript-eslint/no-explicit-any
-          }) as any}
-        />
-      </ResponsiveContainer>
-    </div>
+    <Card>
+      <CardHeader icon={Layers} title="Source distribution" description="Findings per detection engine" />
+      <CardBody>
+        {data.length === 0 ? (
+          <EmptyState icon={Layers} title="No engine attribution" description="Nothing was attributed to a detection engine in this session." />
+        ) : (
+          <ResponsiveContainer width="100%" height={200}>
+            <Treemap
+              data={data}
+              dataKey="size"
+              nameKey="name"
+              stroke="var(--border-color)"
+              isAnimationActive
+              animationDuration={200}
+              content={(({ x, y, width, height, name, index }: {
+                x: number; y: number; width: number; height: number; name: string; index: number;
+              }) => {
+                const w = Number(width) || 0;
+                const h = Number(height) || 0;
+                if (w < 30 || h < 20) return <g />;
+                return (
+                  <g>
+                    <rect
+                      x={x} y={y} width={w} height={h}
+                      fill={CHART_CATEGORICAL[(index as number) % CHART_CATEGORICAL.length]}
+                      rx={4}
+                      opacity={0.85}
+                    />
+                    {w > 50 && h > 30 && (
+                      <text
+                        x={Number(x) + w / 2} y={Number(y) + h / 2}
+                        textAnchor="middle" dominantBaseline="central"
+                        fill="#fff" fontSize={10} fontFamily="monospace"
+                      >
+                        {String(name)}
+                      </text>
+                    )}
+                  </g>
+                );
+                // eslint-disable-next-line @typescript-eslint/no-explicit-any
+              }) as any}
+            />
+          </ResponsiveContainer>
+        )}
+      </CardBody>
+    </Card>
   );
 }
 
-// Severity trend across sessions for the same package
+// ── severity trend ─────────────────────────────────────────────────────────
+
 function SeverityTrendChart({ sessions, currentId }: { sessions: ScanSession[]; currentId: string }) {
-  const data = useMemo(() => {
-    return sessions
-      .slice()
-      .sort((a, b) => new Date(a.created_at).getTime() - new Date(b.created_at).getTime())
-      .map(s => ({
-        date: new Date(s.created_at).toLocaleDateString('en-US', { month: 'short', day: 'numeric' }),
-        critical: s.summary.critical,
-        high: s.summary.high,
-        medium: s.summary.medium,
-        low: s.summary.low,
-        total: s.summary.total,
-        isCurrent: s.id === currentId,
-      }));
-  }, [sessions, currentId]);
+  const data = useMemo(() => sessions
+    .slice()
+    .sort((a, b) => new Date(a.created_at).getTime() - new Date(b.created_at).getTime())
+    .map((s) => ({
+      date: new Date(s.created_at).toLocaleDateString('en-US', { month: 'short', day: 'numeric' }),
+      critical: s.summary.critical,
+      high: s.summary.high,
+      medium: s.summary.medium,
+      low: s.summary.low,
+      total: s.summary.total,
+      isCurrent: s.id === currentId,
+    })), [sessions, currentId]);
 
   if (data.length < 2) return null;
 
   return (
-    <div className="rounded-lg border border-border-color bg-surface p-4">
-      <h3 className="text-sm font-semibold text-text-primary m-0 mb-3 flex items-center gap-2">
-        <Target size={14} className="text-primary-blue" />
-        Severity Trend (Same Package)
-      </h3>
-      <ResponsiveContainer width="100%" height={220}>
-        <LineChart data={data}>
-          <CartesianGrid strokeDasharray="3 3" stroke="var(--border-color)" />
-          <XAxis dataKey="date" tick={{ fontSize: 10, fill: 'var(--text-muted)' }} />
-          <YAxis tick={{ fontSize: 10, fill: 'var(--text-muted)' }} />
-          <RechartsTooltip
-            contentStyle={{ background: 'var(--surface)', border: '1px solid var(--border-color)', borderRadius: 8, fontSize: 11 }}
-          />
-          <Line type="monotone" dataKey="critical" stroke={SEV_COLORS.CRITICAL} strokeWidth={2} dot={{ r: 3 }} />
-          <Line type="monotone" dataKey="high" stroke={SEV_COLORS.HIGH} strokeWidth={2} dot={{ r: 3 }} />
-          <Line type="monotone" dataKey="medium" stroke={SEV_COLORS.MEDIUM} strokeWidth={1.5} dot={{ r: 2 }} />
-          <Line type="monotone" dataKey="low" stroke={SEV_COLORS.LOW} strokeWidth={1.5} dot={{ r: 2 }} />
-        </LineChart>
-      </ResponsiveContainer>
-      <div className="flex items-center gap-4 mt-2 justify-center">
-        {Object.entries(SEV_COLORS).filter(([k]) => k !== 'INFORMATIONAL').map(([label, color]) => (
-          <div key={label} className="flex items-center gap-1">
-            <div className="w-2.5 h-2.5 rounded-full" style={{ background: color }} />
-            <span className="text-[0.6rem] text-text-muted capitalize">{label.toLowerCase()}</span>
-          </div>
-        ))}
-      </div>
-    </div>
+    <Card>
+      <CardHeader icon={Target} title="Severity trend" description="Every recorded session for the same package" />
+      <CardBody>
+        <ResponsiveContainer width="100%" height={220}>
+          <LineChart data={data} margin={{ top: 8, right: 8, left: -18, bottom: 0 }}>
+            <CartesianGrid {...gridProps} />
+            <XAxis dataKey="date" {...axisProps} />
+            <YAxis {...axisProps} width={36} />
+            <RechartsTooltip {...tooltipProps} />
+            <Line type="monotone" dataKey="critical" name="Critical" {...seriesProps(0)} />
+            <Line type="monotone" dataKey="high" name="High" {...seriesProps(1)} />
+            <Line type="monotone" dataKey="medium" name="Medium" {...seriesProps(2)} />
+            <Line type="monotone" dataKey="low" name="Low" stroke="var(--teal)" strokeWidth={2} dot={false} animationDuration={200} />
+          </LineChart>
+        </ResponsiveContainer>
+        <div className="mt-2 flex items-center justify-center gap-4">
+          {SEVERITY_TILES.map((s) => (
+            <div key={s.key} className="flex items-center gap-1.5">
+              <span aria-hidden="true" className={cn('h-2 w-2 rounded-full', s.swatch)} />
+              <span className="text-[0.65rem] text-text-muted">{s.label}</span>
+            </div>
+          ))}
+        </div>
+      </CardBody>
+    </Card>
   );
+}
+
+// ── exports ────────────────────────────────────────────────────────────────
+
+function downloadBlob(blob: Blob, filename: string) {
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = filename;
+  a.click();
+  URL.revokeObjectURL(url);
 }
 
 function exportSessionJSON(session: ScanSession) {
@@ -239,17 +281,16 @@ function exportSessionJSON(session: ScanSession) {
 }
 
 function csvCell(s: string): string {
-  const escaped = s.replace(/"/g, '""');
-  return `"${escaped}"`;
+  return `"${s.replace(/"/g, '""')}"`;
 }
 
 function exportSessionCSV(session: ScanSession) {
   const header = 'ID,Severity,Type,Title,Source,Fixed Version,Description\n';
-  const rows = session.findings.map(f =>
-    [csvCell(f.id), csvCell(f.severity), csvCell(f.type || ''), csvCell(f.title || ''), csvCell(f.source || ''), csvCell(f.fixed_version || ''), csvCell((f.description || '').slice(0, 200))].join(',')
+  const rows = session.findings.map((f) =>
+    [csvCell(f.id), csvCell(f.severity), csvCell(f.type || ''), csvCell(f.title || ''),
+      csvCell(f.source || ''), csvCell(f.fixed_version || ''), csvCell((f.description || '').slice(0, 200))].join(','),
   ).join('\n');
-  const blob = new Blob([header + rows], { type: 'text/csv' });
-  downloadBlob(blob, `scan-${session.id}.csv`);
+  downloadBlob(new Blob([header + rows], { type: 'text/csv' }), `scan-${session.id}.csv`);
 }
 
 function esc(s: string): string {
@@ -257,15 +298,11 @@ function esc(s: string): string {
 }
 
 function exportSessionHTML(session: ScanSession) {
-  const sevCounts = [
-    { label: 'Critical', count: session.summary.critical, color: SEV_COLORS.CRITICAL },
-    { label: 'High', count: session.summary.high, color: SEV_COLORS.HIGH },
-    { label: 'Medium', count: session.summary.medium, color: SEV_COLORS.MEDIUM },
-    { label: 'Low', count: session.summary.low, color: SEV_COLORS.LOW },
-  ];
+  const sevCounts = SEVERITY_TILES.map((s) => ({ label: s.label, count: session.summary[s.key], color: s.fill }));
   const findingsRows = session.findings
+    .slice()
     .sort((a, b) => (SEV_ORDER[b.severity] ?? 0) - (SEV_ORDER[a.severity] ?? 0))
-    .map(f => `<tr>
+    .map((f) => `<tr>
       <td><span style="color:${SEV_COLORS[f.severity] || '#6B7280'};font-weight:600">${esc(f.severity)}</span></td>
       <td><code>${esc(f.id)}</code></td>
       <td>${esc(f.title || '')}</td>
@@ -277,23 +314,23 @@ function exportSessionHTML(session: ScanSession) {
 <html lang="en"><head><meta charset="utf-8"><title>ChainWarden Scan Report — ${esc(session.label)}</title>
 <style>
 *{margin:0;padding:0;box-sizing:border-box}
-body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;background:#0B0D0F;color:#E5E7EB;padding:2rem}
+body{font-family:ui-sans-serif,system-ui,-apple-system,'Segoe UI',Roboto,sans-serif;background:#F4F5F9;color:#15161D;padding:2rem}
 h1{font-size:1.4rem;margin-bottom:0.5rem}
-.meta{color:#9CA3AF;font-size:0.8rem;margin-bottom:1.5rem}
+.meta{color:#575C72;font-size:0.8rem;margin-bottom:1.5rem}
 .cards{display:grid;grid-template-columns:repeat(4,1fr);gap:0.75rem;margin-bottom:2rem}
-.card{background:#161A1E;border:1px solid #2A2F36;border-radius:8px;padding:1rem}
-.card-label{font-size:0.65rem;text-transform:uppercase;color:#6B7280;letter-spacing:0.05em}
-.card-value{font-size:1.5rem;font-weight:700;font-family:monospace;margin-top:0.25rem}
-table{width:100%;border-collapse:collapse;font-size:0.8rem}
-th{text-align:left;padding:0.5rem 0.75rem;border-bottom:1px solid #2A2F36;color:#6B7280;font-size:0.7rem;text-transform:uppercase}
-td{padding:0.5rem 0.75rem;border-bottom:1px solid #1F2328}
-code{background:#1F2328;padding:0.15rem 0.4rem;border-radius:4px;font-size:0.72rem}
-.footer{margin-top:2rem;text-align:center;font-size:0.7rem;color:#4B5563}
+.card{background:#FFFFFF;border:1px solid #DDDFEA;border-radius:4px;padding:1rem;box-shadow:0 1px 2px rgba(16,18,27,0.04)}
+.card-label{font-size:0.65rem;text-transform:uppercase;color:#8A90A8;letter-spacing:0.05em}
+.card-value{font-size:1.5rem;font-weight:600;font-variant-numeric:tabular-nums;margin-top:0.25rem}
+table{width:100%;border-collapse:collapse;font-size:0.8rem;background:#FFFFFF}
+th{text-align:left;padding:0.5rem 0.75rem;border-bottom:1px solid #DDDFEA;color:#8A90A8;font-size:0.7rem;text-transform:uppercase;letter-spacing:0.04em}
+td{padding:0.5rem 0.75rem;border-bottom:1px solid #EDEFF6}
+code{background:#EDEFF6;padding:0.15rem 0.4rem;border-radius:4px;font-size:0.72rem}
+.footer{margin-top:2rem;text-align:center;font-size:0.7rem;color:#8A90A8}
 </style></head><body>
 <h1>ChainWarden Scan Report</h1>
 <p class="meta">${esc(session.label)} &middot; ${esc(session.ecosystem || '')} &middot; ${formatDate(session.created_at)}</p>
 <div class="cards">
-${sevCounts.map(s => `<div class="card"><div class="card-label">${s.label}</div><div class="card-value" style="color:${s.color}">${s.count}</div></div>`).join('\n')}
+${sevCounts.map((s) => `<div class="card"><div class="card-label">${s.label}</div><div class="card-value" style="color:${s.color}">${s.count}</div></div>`).join('\n')}
 </div>
 <table>
 <thead><tr><th>Severity</th><th>ID</th><th>Title</th><th>Source</th><th>Fix</th></tr></thead>
@@ -302,35 +339,30 @@ ${sevCounts.map(s => `<div class="card"><div class="card-label">${s.label}</div>
 <div class="footer">Generated by ChainWarden &middot; ${new Date().toISOString()}</div>
 </body></html>`;
 
-  const blob = new Blob([html], { type: 'text/html' });
-  downloadBlob(blob, `scan-report-${session.id}.html`);
+  downloadBlob(new Blob([html], { type: 'text/html' }), `scan-report-${session.id}.html`);
 }
 
-function downloadBlob(blob: Blob, filename: string) {
-  const url = URL.createObjectURL(blob);
-  const a = document.createElement('a');
-  a.href = url;
-  a.download = filename;
-  a.click();
-  URL.revokeObjectURL(url);
-}
+// ── page ───────────────────────────────────────────────────────────────────
+
+const TABS = ['overview', 'findings', 'mindmap'] as const;
+type Tab = (typeof TABS)[number];
+
+const EXPORT_BTN =
+  'wd-hover flex items-center gap-1.5 rounded border border-border-color bg-surface px-2.5 py-1.5 text-[0.72rem] font-medium text-text-secondary hover:border-text-muted hover:text-text-primary';
 
 export default function SessionDetailPage({ sessionId }: { sessionId: string }) {
-  const navigate = useUIStore(s => s.navigate);
-  const session = useSessionStore(s => s.get(sessionId));
-  const allSessions = useSessionStore(s => s.sessions);
-
-  const [activeTab, setActiveTab] = useState<'overview' | 'findings' | 'mindmap'>('overview');
+  const navigate = useUIStore((s) => s.navigate);
+  const session = useSessionStore((s) => s.get(sessionId));
+  const allSessions = useSessionStore((s) => s.sessions);
+  const [activeTab, setActiveTab] = useState<Tab>('overview');
 
   const relatedSessions = useMemo(() => {
     if (!session?.package_name) return [];
-    return allSessions.filter(
-      s => s.package_name === session.package_name && s.ecosystem === session.ecosystem
-    );
+    return allSessions.filter((s) => s.package_name === session.package_name && s.ecosystem === session.ecosystem);
   }, [allSessions, session]);
 
   const findings = session?.findings ?? [];
-  const summary = session?.summary ?? { critical: 0, high: 0, medium: 0, low: 0, informational: 0, total: 0 };
+  const summary = session?.summary ?? { critical: 0, high: 0, medium: 0, low: 0, informational: 0, total: 0, highest_sev: 'LOW' };
 
   const engineData = useMemo(() => {
     const byEngine: Record<string, number> = {};
@@ -338,9 +370,7 @@ export default function SessionDetailPage({ sessionId }: { sessionId: string }) 
       const engine = f.source || 'unknown';
       byEngine[engine] = (byEngine[engine] || 0) + 1;
     }
-    return Object.entries(byEngine)
-      .map(([engine, count]) => ({ engine, count }))
-      .sort((a, b) => b.count - a.count);
+    return Object.entries(byEngine).map(([engine, count]) => ({ engine, count })).sort((a, b) => b.count - a.count);
   }, [findings]);
 
   const categoryData = useMemo(() => {
@@ -349,287 +379,256 @@ export default function SessionDetailPage({ sessionId }: { sessionId: string }) 
       const type = f.type || 'Unknown';
       byType[type] = (byType[type] || 0) + 1;
     }
-    return Object.entries(byType)
-      .map(([type, count]) => ({ type, count }))
-      .sort((a, b) => b.count - a.count)
-      .slice(0, 10);
+    return Object.entries(byType).map(([type, count]) => ({ type, count })).sort((a, b) => b.count - a.count).slice(0, 10);
   }, [findings]);
 
   if (!session) {
     return (
-      <div className="flex flex-col items-center justify-center min-h-[60vh] text-text-muted">
-        <Shield size={32} className="mb-3 opacity-40" />
-        <p className="text-sm font-medium">Session not found</p>
-        <button
-          onClick={() => navigate('/sessions')}
-          className="mt-2 text-xs text-primary-blue underline bg-transparent border-none cursor-pointer [font-family:inherit]"
-        >
-          Back to sessions
-        </button>
-      </div>
+      <Card>
+        <CardBody>
+          <EmptyState
+            icon={Shield}
+            title="Session not found"
+            description="This scan session is no longer in the local store — it may have been cleared."
+            command="cwctl scan ."
+            action={{ label: 'Back to sessions', onClick: () => navigate('/sessions') }}
+          />
+        </CardBody>
+      </Card>
     );
   }
 
-  const sevPieData = [
-    { name: 'Critical', value: summary.critical, fill: SEV_COLORS.CRITICAL },
-    { name: 'High', value: summary.high, fill: SEV_COLORS.HIGH },
-    { name: 'Medium', value: summary.medium, fill: SEV_COLORS.MEDIUM },
-    { name: 'Low', value: summary.low, fill: SEV_COLORS.LOW },
-  ].filter(d => d.value > 0);
+  const sevPieData = SEVERITY_TILES
+    .map((s) => ({ name: s.label, value: summary[s.key], fill: s.fill, swatch: s.swatch }))
+    .filter((d) => d.value > 0);
 
-  const fixableCount = findings.filter(f => f.fixed_version).length;
-  const uniqueSources = new Set(findings.map(f => f.source)).size;
+  const fixableCount = findings.filter((f) => f.fixed_version).length;
+  const uniqueSources = new Set(findings.map((f) => f.source)).size;
 
   return (
-    <div className="p-6 max-w-[1400px] mx-auto">
+    <div className="space-y-5">
       {/* Header */}
-      <div className="flex items-center gap-3 mb-1">
+      <div className="flex flex-wrap items-start gap-3">
         <button
+          type="button"
           onClick={() => navigate('/sessions')}
-          className="p-1.5 rounded-md hover:bg-surface-muted bg-transparent cursor-pointer text-text-muted"
-        >
+          aria-label="Back to sessions"
+          className="wd-hover rounded border border-transparent bg-transparent p-1.5 text-text-muted hover:bg-surface-muted hover:text-text-primary" >
           <ArrowLeft size={16} />
         </button>
-        <div className="flex-1 min-w-0">
-          <h1 className="text-lg font-bold text-text-primary m-0 truncate">{session.label}</h1>
-          <div className="flex items-center gap-3 text-xs text-text-muted mt-0.5">
-            <span className="flex items-center gap-1">
-              <Clock size={11} />
-              {formatDate(session.created_at)}
-            </span>
-            <span className={`px-1.5 py-0.5 rounded text-[0.62rem] font-medium uppercase ${
-              session.scan_type === 'registry' ? 'bg-primary-blue/10 text-primary-blue' :
-              session.scan_type === 'upload' ? 'bg-[#7C3AED]/10 text-[#7C3AED]' :
-              'bg-[#059669]/10 text-[#059669]'
-            }`}>
-              {session.scan_type}
-            </span>
+        <div className="min-w-0 flex-1">
+          <h1 className="m-0 truncate text-[1.05rem] font-semibold text-text-primary">{session.label}</h1>
+          <div className="mt-1 flex flex-wrap items-center gap-3 text-[0.72rem] text-text-muted">
+            <span className="flex items-center gap-1"><Clock size={11} /> {formatDate(session.created_at)}</span>
+            <StatusChip
+              tone={session.scan_type === 'registry' ? 'INFO' : session.scan_type === 'upload' ? 'LOW' : 'GREEN'}
+              label={session.scan_type}
+              dot={false}
+            />
             {session.ecosystem && <span className="font-mono">{session.ecosystem}</span>}
             {session.version && <span className="font-mono">v{session.version}</span>}
           </div>
         </div>
-
-        {/* Export buttons */}
         <div className="flex items-center gap-1.5">
-          <button
-            onClick={() => exportSessionJSON(session)}
-            className="flex items-center gap-1 px-2.5 py-1.5 rounded-md border border-border-color text-[0.72rem] text-text-secondary hover:text-primary-blue hover:border-primary-blue/40 bg-transparent cursor-pointer [font-family:inherit] transition-colors"
-            title="Export JSON"
-          >
+          <button type="button" onClick={() => exportSessionJSON(session)} className={EXPORT_BTN} title="Export JSON">
             <FileJson size={13} /> JSON
           </button>
-          <button
-            onClick={() => exportSessionCSV(session)}
-            className="flex items-center gap-1 px-2.5 py-1.5 rounded-md border border-border-color text-[0.72rem] text-text-secondary hover:text-success hover:border-success/40 bg-transparent cursor-pointer [font-family:inherit] transition-colors"
-            title="Export CSV"
-          >
+          <button type="button" onClick={() => exportSessionCSV(session)} className={EXPORT_BTN} title="Export CSV">
             <FileSpreadsheet size={13} /> CSV
           </button>
-          <button
-            onClick={() => exportSessionHTML(session)}
-            className="flex items-center gap-1 px-2.5 py-1.5 rounded-md border border-border-color text-[0.72rem] text-text-secondary hover:text-[#7C3AED] hover:border-[#7C3AED]/40 bg-transparent cursor-pointer [font-family:inherit] transition-colors"
-            title="Export HTML Report"
-          >
+          <button type="button" onClick={() => exportSessionHTML(session)} className={EXPORT_BTN} title="Export HTML report">
             <FileText size={13} /> Report
           </button>
         </div>
       </div>
 
-      {/* Severity cards */}
-      <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-3 mt-5 mb-5">
-        {[
-          { label: 'Critical', value: summary.critical, color: SEV_COLORS.CRITICAL },
-          { label: 'High', value: summary.high, color: SEV_COLORS.HIGH },
-          { label: 'Medium', value: summary.medium, color: SEV_COLORS.MEDIUM },
-          { label: 'Low', value: summary.low, color: SEV_COLORS.LOW },
-          { label: 'Total', value: summary.total, color: 'var(--text-primary)' },
-        ].map(s => (
-          <div key={s.label} className="rounded-lg border border-border-color bg-surface p-3">
-            <p className="text-[0.62rem] text-text-muted uppercase tracking-wider m-0">{s.label}</p>
-            <p className="text-2xl font-bold font-mono m-0 mt-0.5" style={{ color: s.color }}>{s.value}</p>
-          </div>
+      {/* KPI row */}
+      <div className="grid grid-cols-2 gap-5 sm:grid-cols-4 lg:grid-cols-5">
+        {SEVERITY_TILES.map((s) => (
+          <StatTile key={s.key} label={s.label} value={summary[s.key]} accent={s.accent} />
         ))}
+        <StatTile label="Total findings" value={summary.total} />
       </div>
 
       {/* Metrics strip */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-3 mb-5">
-        <div className="rounded-lg border border-border-color bg-surface p-3 flex items-center gap-3">
-          <div className="w-8 h-8 rounded-full bg-success/10 flex items-center justify-center">
-            <Shield size={14} className="text-success" />
-          </div>
-          <div>
-            <p className="text-[0.62rem] text-text-muted uppercase m-0">Fixable</p>
-            <p className="text-sm font-bold text-text-primary m-0">{fixableCount} / {findings.length}</p>
-          </div>
-        </div>
-        <div className="rounded-lg border border-border-color bg-surface p-3 flex items-center gap-3">
-          <div className="w-8 h-8 rounded-full bg-primary-blue/10 flex items-center justify-center">
-            <Layers size={14} className="text-primary-blue" />
-          </div>
-          <div>
-            <p className="text-[0.62rem] text-text-muted uppercase m-0">Engines</p>
-            <p className="text-sm font-bold text-text-primary m-0">{uniqueSources}</p>
-          </div>
-        </div>
-        <div className="rounded-lg border border-border-color bg-surface p-3 flex items-center gap-3">
-          <div className="w-8 h-8 rounded-full bg-[#7C3AED]/10 flex items-center justify-center">
-            <Eye size={14} className="text-[#7C3AED]" />
-          </div>
-          <div>
-            <p className="text-[0.62rem] text-text-muted uppercase m-0">Categories</p>
-            <p className="text-sm font-bold text-text-primary m-0">{categoryData.length}</p>
-          </div>
-        </div>
+      <div className="grid grid-cols-1 gap-5 md:grid-cols-3">
+        <StatTile
+          label="Fixable"
+          value={`${fixableCount} / ${findings.length}`}
+          icon={Shield}
+          accent="success"
+          hint="Findings with a known upgrade path" />
+        <StatTile
+          label="Engines"
+          value={uniqueSources}
+          icon={Layers}
+          accent="primary"
+          hint="Distinct engines that reported" />
+        <StatTile
+          label="Categories"
+          value={categoryData.length}
+          icon={Eye}
+          accent="teal"
+          hint="Distinct finding types" />
       </div>
 
-      {/* Tab bar */}
-      <div className="flex items-center gap-1 mb-5 border-b border-border-color">
-        {(['overview', 'findings', 'mindmap'] as const).map(tab => (
+      {/* Tabs */}
+      <div className="flex items-center gap-1 border-b border-border-color">
+        {TABS.map((tab) => (
           <button
             key={tab}
+            type="button"
             onClick={() => setActiveTab(tab)}
-            className={`px-4 py-2 text-[0.78rem] font-medium border-b-2 -mb-px bg-transparent cursor-pointer [font-family:inherit] transition-colors ${
+            aria-current={activeTab === tab ? 'page' : undefined}
+            className={cn(
+              'wd-hover -mb-px border-b-2 bg-transparent px-4 py-2 text-[0.78rem] font-medium capitalize',
               activeTab === tab
-                ? 'text-primary-blue border-primary-blue'
-                : 'text-text-secondary border-transparent hover:text-text-primary'
-            }`}
+                ? 'border-primary text-primary'
+                : 'border-transparent text-text-secondary hover:text-text-primary',
+            )}
           >
-            {tab === 'overview' ? 'Overview' : tab === 'findings' ? `Findings (${findings.length})` : 'Mindmap'}
+            {tab === 'findings' ? `Findings (${findings.length})` : tab}
           </button>
         ))}
       </div>
 
-      {/* Tab content */}
       {activeTab === 'overview' && (
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
-          {/* Severity distribution donut */}
-          {sevPieData.length > 0 && (
-            <div className="rounded-lg border border-border-color bg-surface p-4">
-              <h3 className="text-sm font-semibold text-text-primary m-0 mb-3">Severity Distribution</h3>
-              <ResponsiveContainer width="100%" height={220}>
-                <PieChart>
-                  <Pie
-                    data={sevPieData}
-                    cx="50%"
-                    cy="50%"
-                    innerRadius={55}
-                    outerRadius={85}
-                    dataKey="value"
-                    paddingAngle={2}
-                    stroke="none"
-                  >
-                    {sevPieData.map((d, i) => (
-                      <Cell key={i} fill={d.fill} />
+        <div className="grid grid-cols-1 gap-5 lg:grid-cols-2">
+          <Card>
+            <CardHeader title="Severity distribution" description="Findings in this session" />
+            <CardBody>
+              {sevPieData.length === 0 ? (
+                <EmptyState icon={Shield} title="No findings detected" description="This scan came back clean across every engine." />
+              ) : (
+                <>
+                  <ResponsiveContainer width="100%" height={220}>
+                    <PieChart>
+                      <Pie
+                        data={sevPieData} cx="50%" cy="50%" innerRadius={55} outerRadius={85}
+                        dataKey="value" paddingAngle={2} stroke="none"
+                        isAnimationActive animationDuration={200}
+                      >
+                        {sevPieData.map((d, i) => <Cell key={i} fill={d.fill} />)}
+                      </Pie>
+                      <RechartsTooltip {...tooltipProps} />
+                    </PieChart>
+                  </ResponsiveContainer>
+                  <div className="mt-1 flex flex-wrap items-center justify-center gap-4">
+                    {sevPieData.map((d) => (
+                      <div key={d.name} className="flex items-center gap-1.5">
+                        <span aria-hidden="true" className={cn('h-2.5 w-2.5 rounded-full', d.swatch)} />
+                        <span className="text-[0.68rem] tabular-nums text-text-muted">{d.name}: {d.value}</span>
+                      </div>
                     ))}
-                  </Pie>
-                  <RechartsTooltip
-                    contentStyle={{ background: 'var(--surface)', border: '1px solid var(--border-color)', borderRadius: 8, fontSize: 11 }}
-                  />
-                </PieChart>
-              </ResponsiveContainer>
-              <div className="flex items-center justify-center gap-4 mt-1">
-                {sevPieData.map(d => (
-                  <div key={d.name} className="flex items-center gap-1.5">
-                    <div className="w-2.5 h-2.5 rounded-full" style={{ background: d.fill }} />
-                    <span className="text-[0.65rem] text-text-muted">{d.name}: {d.value}</span>
                   </div>
-                ))}
-              </div>
-            </div>
-          )}
+                </>
+              )}
+            </CardBody>
+          </Card>
 
-          {/* Findings by Engine bar chart */}
-          {engineData.length > 0 && (
-            <div className="rounded-lg border border-border-color bg-surface p-4">
-              <h3 className="text-sm font-semibold text-text-primary m-0 mb-3">Findings by Engine</h3>
-              <ResponsiveContainer width="100%" height={220}>
-                <BarChart data={engineData} layout="vertical" margin={{ left: 10, right: 20 }}>
-                  <XAxis type="number" tick={{ fontSize: 10, fill: 'var(--text-muted)' }} />
-                  <YAxis type="category" dataKey="engine" tick={{ fontSize: 10, fill: 'var(--text-secondary)' }} width={80} />
-                  <RechartsTooltip
-                    contentStyle={{ background: 'var(--surface)', border: '1px solid var(--border-color)', borderRadius: 8, fontSize: 11 }}
-                  />
-                  <Bar dataKey="count" fill="#2563EB" radius={[0, 4, 4, 0]} barSize={16} />
-                </BarChart>
-              </ResponsiveContainer>
-            </div>
-          )}
+          <Card>
+            <CardHeader title="Findings by engine" description="Which detector fired most" />
+            <CardBody>
+              {engineData.length === 0 ? (
+                <EmptyState icon={Layers} title="No engine data" description="Nothing was attributed to a detection engine." />
+              ) : (
+                <ResponsiveContainer width="100%" height={220}>
+                  <BarChart data={engineData} layout="vertical" margin={{ top: 8, right: 16, left: 8, bottom: 0 }}>
+                    <CartesianGrid {...gridProps} horizontal={false} vertical />
+                    <XAxis type="number" {...axisProps} />
+                    <YAxis type="category" dataKey="engine" {...axisProps} width={88} />
+                    <RechartsTooltip {...barTooltipProps} />
+                    <Bar dataKey="count" fill="var(--chart-1)" radius={[0, 4, 4, 0]} barSize={16} isAnimationActive animationDuration={200} />
+                  </BarChart>
+                </ResponsiveContainer>
+              )}
+            </CardBody>
+          </Card>
 
-          {/* Findings by Category bar chart */}
-          {categoryData.length > 0 && (
-            <div className="rounded-lg border border-border-color bg-surface p-4">
-              <h3 className="text-sm font-semibold text-text-primary m-0 mb-3">Findings by Category</h3>
-              <ResponsiveContainer width="100%" height={220}>
-                <BarChart data={categoryData} margin={{ left: 10, right: 20 }}>
-                  <CartesianGrid strokeDasharray="3 3" stroke="var(--border-color)" />
-                  <XAxis dataKey="type" tick={{ fontSize: 9, fill: 'var(--text-muted)' }} interval={0} angle={-30} textAnchor="end" height={50} />
-                  <YAxis tick={{ fontSize: 10, fill: 'var(--text-muted)' }} />
-                  <RechartsTooltip
-                    contentStyle={{ background: 'var(--surface)', border: '1px solid var(--border-color)', borderRadius: 8, fontSize: 11 }}
-                  />
-                  <Bar dataKey="count" fill="#7C3AED" radius={[4, 4, 0, 0]} barSize={24} />
-                </BarChart>
-              </ResponsiveContainer>
-            </div>
-          )}
+          <Card>
+            <CardHeader title="Findings by category" description="Top 10 finding types" />
+            <CardBody>
+              {categoryData.length === 0 ? (
+                <EmptyState icon={Target} title="No categories" description="No finding types were recorded in this session." />
+              ) : (
+                <ResponsiveContainer width="100%" height={220}>
+                  <BarChart data={categoryData} margin={{ top: 8, right: 8, left: -18, bottom: 0 }}>
+                    <CartesianGrid {...gridProps} />
+                    <XAxis
+                      dataKey="type" {...axisProps} interval={0} angle={-30}
+                      textAnchor="end" height={56}
+                    />
+                    <YAxis {...axisProps} width={36} />
+                    <RechartsTooltip {...barTooltipProps} />
+                    <Bar dataKey="count" fill="var(--chart-2)" radius={[4, 4, 0, 0]} barSize={22} isAnimationActive animationDuration={200} />
+                  </BarChart>
+                </ResponsiveContainer>
+              )}
+            </CardBody>
+          </Card>
 
-          {/* Source distribution treemap */}
           <CategoryTreemap findings={findings} />
 
-          {/* Severity trend */}
-          <div className="col-span-1 lg:col-span-2">
+          <div className="lg:col-span-2">
             <SeverityTrendChart sessions={relatedSessions} currentId={session.id} />
           </div>
         </div>
       )}
 
       {activeTab === 'findings' && (
-        <div>
+        <Card>
+          <CardHeader
+            title="Findings"
+            description={`${findings.length} finding${findings.length === 1 ? '' : 's'} — click a row for full metadata`}
+          />
           {findings.length > 0 ? (
             <FindingsTable findings={findings} />
           ) : (
-            <div className="flex flex-col items-center justify-center py-16 text-text-muted">
-              <Shield size={28} className="mb-2 text-success opacity-60" />
-              <p className="text-sm font-medium">No findings detected</p>
-            </div>
+            <CardBody>
+              <EmptyState
+                icon={Shield}
+                title="No findings detected"
+                description="Every engine came back clean for this target."
+                command={`cwctl scan ${session.package_name || '.'}`}
+              />
+            </CardBody>
           )}
-        </div>
+        </Card>
       )}
 
       {activeTab === 'mindmap' && (
-        <div className="grid grid-cols-1 gap-4">
+        <div className="grid grid-cols-1 gap-5">
           <FindingsMindmap findings={findings} />
 
-          {/* Engine effectiveness */}
           {session.result?.engines && session.result.engines.length > 0 && (
-            <div className="rounded-lg border border-border-color bg-surface p-4">
-              <h3 className="text-sm font-semibold text-text-primary m-0 mb-3 flex items-center gap-2">
-                <Target size={14} className="text-primary-blue" />
-                Engine Effectiveness
-              </h3>
-              <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
-                {session.result.engines.map(eng => (
-                  <div key={eng.engine} className="rounded-md border border-border-color p-3">
-                    <div className="flex items-center justify-between mb-1.5">
-                      <span className="text-xs font-medium text-text-primary">{eng.engine}</span>
-                      <span className={`text-[0.6rem] px-1 py-0.5 rounded ${
-                        eng.status === 'ok' ? 'bg-success/10 text-success' : 'bg-surface-muted text-text-muted'
-                      }`}>
-                        {eng.status}
-                      </span>
+            <Card>
+              <CardHeader icon={Target} title="Engine effectiveness" description="Per-engine outcome for this session" />
+              <CardBody className="grid grid-cols-2 gap-3 md:grid-cols-4">
+                {session.result.engines.map((eng) => (
+                  <div key={eng.engine} className="rounded border border-border-color bg-bg-base p-3">
+                    <div className="mb-1.5 flex items-center justify-between gap-2">
+                      <span className="truncate text-[0.75rem] font-medium text-text-primary">{eng.engine}</span>
+                      <StatusChip tone={eng.status === 'ok' ? 'GREEN' : 'LEARNING'} label={eng.status} dot={false} />
                     </div>
-                    <p className="text-lg font-bold font-mono text-text-primary m-0">{eng.findings}</p>
-                    <p className="text-[0.6rem] text-text-muted m-0">findings</p>
-                    {eng.error && (
-                      <p className="text-[0.6rem] text-critical mt-1 m-0 truncate">{eng.error}</p>
-                    )}
+                    <p className="m-0 font-mono text-[1.05rem] font-semibold tabular-nums text-text-primary">
+                      {eng.findings}
+                    </p>
+                    <p className="m-0 text-[0.65rem] text-text-muted">findings</p>
+                    {eng.error && <p className="m-0 mt-1 truncate text-[0.65rem] text-critical">{eng.error}</p>}
                   </div>
                 ))}
-              </div>
-            </div>
+              </CardBody>
+            </Card>
           )}
         </div>
       )}
+
+      <Card>
+        <CardFooter>
+          <span className="truncate font-mono">session {session.id}</span>
+          <span>stored locally in this browser</span>
+        </CardFooter>
+      </Card>
     </div>
   );
 }

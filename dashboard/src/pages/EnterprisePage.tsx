@@ -44,14 +44,12 @@ export function EnterprisePage({ onNavigateHome }: EnterprisePageProps) {
             href={GITHUB_URL}
             target="_blank"
             rel="noreferrer"
-            className="flex items-center gap-1.5 rounded-md border border-border-color px-2.5 sm:px-3.5 py-1.5 text-sm font-medium text-text-primary hover:bg-surface-muted"
-          >
+            className="flex items-center gap-1.5 rounded-md border border-border-color px-2.5 sm:px-3.5 py-1.5 text-sm font-medium text-text-primary hover:bg-surface-muted" >
             <Github size={14} /> <span className="hidden sm:inline">GitHub</span>
           </a>
           <button
             onClick={onNavigateHome}
-            className="whitespace-nowrap rounded-md border border-border-color bg-surface px-3 sm:px-4 py-1.5 text-sm font-medium text-text-primary hover:bg-surface-muted"
-          >
+            className="whitespace-nowrap rounded-md border border-border-color bg-surface px-3 sm:px-4 py-1.5 text-sm font-medium text-text-primary hover:bg-surface-muted" >
             <span className="sm:hidden">Home</span>
             <span className="hidden sm:inline">Back to home</span>
           </button>
@@ -78,8 +76,7 @@ export function EnterprisePage({ onNavigateHome }: EnterprisePageProps) {
               href={`${GITHUB_URL}/issues/new?title=Enterprise%20inquiry&labels=enterprise`}
               target="_blank"
               rel="noreferrer"
-              className="flex items-center gap-2 rounded-md bg-primary-blue px-5 py-2.5 text-sm font-semibold text-white hover:opacity-90"
-            >
+              className="flex items-center gap-2 rounded-md bg-primary-blue px-5 py-2.5 text-sm font-semibold text-white hover:opacity-90" >
               Talk to us <ArrowRight size={14} />
             </a>
           </div>
@@ -131,8 +128,7 @@ export function EnterprisePage({ onNavigateHome }: EnterprisePageProps) {
           href={`${GITHUB_URL}/issues/new?title=Enterprise%20inquiry&labels=enterprise`}
           target="_blank"
           rel="noreferrer"
-          className="mt-6 inline-flex items-center gap-2 rounded-md bg-primary-blue px-6 py-2.5 text-sm font-semibold text-white hover:opacity-90"
-        >
+          className="mt-6 inline-flex items-center gap-2 rounded-md bg-primary-blue px-6 py-2.5 text-sm font-semibold text-white hover:opacity-90" >
           Talk to us <ArrowRight size={14} />
         </a>
       </section>

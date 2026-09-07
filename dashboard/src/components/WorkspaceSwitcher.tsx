@@ -93,8 +93,7 @@ export function WorkspaceSwitcher({ collapsed }: { collapsed: boolean }) {
                   <button
                     onClick={(e) => { e.stopPropagation(); remove(w.id); }}
                     className="hidden group-hover:flex items-center justify-center w-7 h-7 mr-1 text-text-muted hover:text-critical bg-transparent cursor-pointer rounded"
-                    title="Delete workspace"
-                  >
+                    title="Delete workspace" >
                     <Trash2 size={11} />
                   </button>
                 )}
@@ -109,15 +108,14 @@ export function WorkspaceSwitcher({ collapsed }: { collapsed: boolean }) {
                     onKeyDown={e => e.key === 'Enter' && handleCreate()}
                     placeholder="Workspace name"
                     autoFocus
-                    className="h-7 text-xs"
-                  />
+                    className="h-7 text-xs" />
                   <div className="flex gap-1">
                     {WORKSPACE_COLORS.map(c => (
                       <button
                         key={c}
                         onClick={() => setSelectedColor(c)}
                         className={cn(
-                          'w-5 h-5 rounded-full border-2 cursor-pointer transition-transform',
+                          'w-5 h-5 rounded-full border-2 cursor-pointer',
                           selectedColor === c ? 'border-text-primary scale-110' : 'border-transparent'
                         )}
                         style={{ background: c }}
@@ -128,14 +126,12 @@ export function WorkspaceSwitcher({ collapsed }: { collapsed: boolean }) {
                     <button
                       onClick={handleCreate}
                       disabled={!newName.trim()}
-                      className="flex-1 flex items-center justify-center gap-1 h-7 rounded-md bg-primary-blue text-white text-xs font-medium cursor-pointer disabled:opacity-40 border-none [font-family:inherit]"
-                    >
+                      className="flex-1 flex items-center justify-center gap-1 h-7 rounded-md bg-primary-blue text-white text-xs font-medium cursor-pointer disabled:opacity-40 border-none [font-family:inherit]" >
                       <Check size={12} /> Create
                     </button>
                     <button
                       onClick={() => { setCreating(false); setNewName(''); }}
-                      className="flex items-center justify-center w-7 h-7 rounded-md border border-border-color bg-transparent text-text-muted hover:text-text-primary cursor-pointer"
-                    >
+                      className="flex items-center justify-center w-7 h-7 rounded-md border border-border-color bg-transparent text-text-muted hover:text-text-primary cursor-pointer" >
                       <X size={12} />
                     </button>
                   </div>
@@ -143,8 +139,7 @@ export function WorkspaceSwitcher({ collapsed }: { collapsed: boolean }) {
               ) : (
                 <button
                   onClick={() => setCreating(true)}
-                  className="w-full flex items-center gap-1.5 text-[0.72rem] text-text-secondary hover:text-primary-blue bg-transparent cursor-pointer [font-family:inherit] py-0.5"
-                >
+                  className="w-full flex items-center gap-1.5 text-[0.72rem] text-text-secondary hover:text-primary-blue bg-transparent cursor-pointer [font-family:inherit] py-0.5" >
                   <Plus size={12} /> New Workspace
                 </button>
               )}
@@ -159,8 +154,7 @@ export function WorkspaceSwitcher({ collapsed }: { collapsed: boolean }) {
     <div ref={containerRef} className="relative px-2.5 py-2">
       <button
         onClick={() => setOpen(!open)}
-        className="w-full flex items-center gap-2 px-2 py-1.5 rounded-md border border-border-color bg-transparent hover:bg-surface-muted cursor-pointer [font-family:inherit] transition-colors"
-      >
+        className="w-full flex items-center gap-2 px-2 py-1.5 rounded-md border border-border-color bg-transparent hover:bg-surface-muted cursor-pointer [font-family:inherit] transition-colors" >
         <div className="w-4 h-4 rounded-sm shrink-0" style={{ background: active.color }} />
         <span className="flex-1 text-left text-[0.75rem] text-text-primary truncate font-medium">
           {active.name}
@@ -189,8 +183,7 @@ export function WorkspaceSwitcher({ collapsed }: { collapsed: boolean }) {
                   <button
                     onClick={(e) => { e.stopPropagation(); remove(w.id); }}
                     className="hidden group-hover:flex items-center justify-center w-7 h-7 mr-1 text-text-muted hover:text-critical bg-transparent cursor-pointer rounded"
-                    title="Delete workspace"
-                  >
+                    title="Delete workspace" >
                     <Trash2 size={11} />
                   </button>
                 )}
@@ -207,15 +200,14 @@ export function WorkspaceSwitcher({ collapsed }: { collapsed: boolean }) {
                   onKeyDown={e => e.key === 'Enter' && handleCreate()}
                   placeholder="Workspace name"
                   autoFocus
-                  className="h-7 text-xs"
-                />
+                  className="h-7 text-xs" />
                 <div className="flex gap-1">
                   {WORKSPACE_COLORS.map(c => (
                     <button
                       key={c}
                       onClick={() => setSelectedColor(c)}
                       className={cn(
-                        'w-5 h-5 rounded-full border-2 cursor-pointer transition-transform',
+                        'w-5 h-5 rounded-full border-2 cursor-pointer',
                         selectedColor === c ? 'border-text-primary scale-110' : 'border-transparent'
                       )}
                       style={{ background: c }}
@@ -226,14 +218,12 @@ export function WorkspaceSwitcher({ collapsed }: { collapsed: boolean }) {
                   <button
                     onClick={handleCreate}
                     disabled={!newName.trim()}
-                    className="flex-1 flex items-center justify-center gap-1 h-7 rounded-md bg-primary-blue text-white text-xs font-medium cursor-pointer disabled:opacity-40 border-none [font-family:inherit]"
-                  >
+                    className="flex-1 flex items-center justify-center gap-1 h-7 rounded-md bg-primary-blue text-white text-xs font-medium cursor-pointer disabled:opacity-40 border-none [font-family:inherit]" >
                     <Check size={12} /> Create
                   </button>
                   <button
                     onClick={() => { setCreating(false); setNewName(''); }}
-                    className="flex items-center justify-center w-7 h-7 rounded-md border border-border-color bg-transparent text-text-muted hover:text-text-primary cursor-pointer"
-                  >
+                    className="flex items-center justify-center w-7 h-7 rounded-md border border-border-color bg-transparent text-text-muted hover:text-text-primary cursor-pointer" >
                     <X size={12} />
                   </button>
                 </div>
@@ -241,8 +231,7 @@ export function WorkspaceSwitcher({ collapsed }: { collapsed: boolean }) {
             ) : (
               <button
                 onClick={() => setCreating(true)}
-                className="w-full flex items-center gap-1.5 text-[0.72rem] text-text-secondary hover:text-primary-blue bg-transparent cursor-pointer [font-family:inherit] py-0.5"
-              >
+                className="w-full flex items-center gap-1.5 text-[0.72rem] text-text-secondary hover:text-primary-blue bg-transparent cursor-pointer [font-family:inherit] py-0.5" >
                 <Plus size={12} /> New Workspace
               </button>
             )}

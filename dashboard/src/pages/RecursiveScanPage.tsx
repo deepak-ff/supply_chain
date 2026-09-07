@@ -71,19 +71,19 @@ export function RecursiveScanPage() {
   };
 
   return (
-    <div className="p-6 space-y-6">
+    <div className="space-y-6">
       <div className="flex items-center gap-3">
-        <Layers size={20} style={{ color: 'var(--color-indigo)' }} />
+        <Layers className="text-primary" size={20} />
         <div>
-          <h1 className="text-xl font-bold font-mono" style={{ color: 'var(--fg)' }}>Recursive Scanning</h1>
-          <p className="text-sm mt-0.5" style={{ color: 'var(--color-muted)' }}>
+          <h1 className="text-xl font-bold font-mono text-text-primary">Recursive Scanning</h1>
+          <p className="text-sm mt-0.5 text-text-secondary">
             Scan multiple packages at once — surface hidden vulnerabilities across transitive dependencies.
           </p>
         </div>
       </div>
 
       {/* Input form */}
-      <div className="rounded-lg p-5 space-y-4" style={{ background: 'var(--surface)', border: '1px solid rgba(255,255,255,0.06)' }}>
+      <div className="rounded-lg p-5 space-y-4 bg-surface border border-border-color">
         <div className="grid grid-cols-1 sm:grid-cols-[120px_1fr_140px] gap-3 items-end">
           <div>
             <label style={{ fontSize: '0.7rem', color: 'var(--color-muted)', fontFamily: 'var(--font-mono)', display: 'block', marginBottom: 4 }}>ECOSYSTEM</label>
@@ -129,7 +129,7 @@ export function RecursiveScanPage() {
             { label: 'Total findings', val: totalFindings, color: 'var(--color-warn)' },
             { label: 'Critical', val: criticalCount, color: 'var(--color-critical)' },
           ].map(s => (
-            <div key={s.label} className="rounded-lg p-4 flex-1 text-center" style={{ background: 'var(--surface)', border: '1px solid rgba(255,255,255,0.06)' }}>
+            <div key={s.label} className="rounded-lg p-4 flex-1 text-center bg-surface border border-border-color">
               <p style={{ fontSize: '1.5rem', fontWeight: 700, fontFamily: 'var(--font-mono)', color: s.color }}>{s.val}</p>
               <p style={{ fontSize: '0.7rem', color: 'var(--color-muted)', marginTop: 2 }}>{s.label}</p>
             </div>
@@ -139,11 +139,11 @@ export function RecursiveScanPage() {
 
       {/* Per-package results */}
       {results.map((r, i) => (
-        <div key={i} className="rounded-lg overflow-hidden" style={{ background: 'var(--surface)', border: '1px solid rgba(255,255,255,0.06)' }}>
+        <div key={i} className="rounded-lg overflow-hidden bg-surface border border-border-color">
           <div style={{ padding: '0.625rem 0.875rem', borderBottom: '1px solid rgba(255,255,255,0.06)', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
             {(r.findings?.length ?? 0) === 0
-              ? <CheckCircle size={14} style={{ color: 'var(--color-safe)' }} />
-              : <AlertTriangle size={14} style={{ color: 'var(--color-critical)' }} />}
+              ? <CheckCircle className="text-success" size={14} />
+              : <AlertTriangle className="text-critical" size={14} />}
             <span style={{ fontSize: '0.8rem', fontFamily: 'var(--font-mono)', color: 'var(--fg)', fontWeight: 600 }}>{r.package}</span>
             <span style={{ fontSize: '0.72rem', color: 'var(--color-muted)', marginLeft: 'auto' }}>{r.findings?.length ?? 0} findings</span>
           </div>
@@ -158,17 +158,17 @@ export function RecursiveScanPage() {
           ))}
           {(r.findings?.length ?? 0) > 5 && (
             <p style={{ padding: '0.5rem 0.875rem', fontSize: '0.72rem', color: 'var(--color-muted)' }}>
-              + {(r.findings?.length ?? 0) - 5} more — use <code style={{ color: 'var(--color-safe)' }}>cwctl scan</code> for full output
+              + {(r.findings?.length ?? 0) - 5} more — use <code className="text-success">cwctl scan</code> for full output
             </p>
           )}
         </div>
       ))}
 
       {/* CLI hint */}
-      <div className="rounded-lg p-4 space-y-2" style={{ background: 'var(--surface)', border: '1px solid rgba(255,255,255,0.06)' }}>
-        <p className="text-xs font-mono font-bold" style={{ color: 'var(--color-muted)' }}>CLI EQUIVALENT</p>
-        <code className="text-xs block" style={{ color: 'var(--color-safe)' }}>cwctl scan . --recursive</code>
-        <code className="text-xs block" style={{ color: 'var(--color-safe)' }}>cwctl scan . --recursive --depth=all --format json</code>
+      <div className="rounded-lg p-4 space-y-2 bg-surface border border-border-color">
+        <p className="text-xs font-mono font-bold text-text-secondary">CLI EQUIVALENT</p>
+        <code className="text-xs block text-success">cwctl scan . --recursive</code>
+        <code className="text-xs block text-success">cwctl scan . --recursive --depth=all --format json</code>
       </div>
     </div>
   );

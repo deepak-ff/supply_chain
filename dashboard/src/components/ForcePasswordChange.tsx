@@ -35,8 +35,8 @@ export function ForcePasswordChange({ onChanged }: ForcePasswordChangeProps) {
 
   return (
     <div
-      className="flex min-h-screen items-center justify-center px-4"
-      style={{ background: 'var(--bg-base)', color: 'var(--fg)' }}
+      className="flex min-h-screen items-center justify-center px-4 bg-bg-base text-text-primary"
+
     >
       <div className="w-full max-w-md rounded-2xl border border-border-color bg-surface p-8 shadow-sm">
         <div className="mb-2 flex items-center gap-2 text-warning">
@@ -113,8 +113,7 @@ export function ForcePasswordChange({ onChanged }: ForcePasswordChangeProps) {
           <Button
             type="submit"
             disabled={!canSubmit}
-            className="mt-1 bg-primary-blue font-mono font-bold text-white hover:bg-primary-blue/90"
-          >
+            className="mt-1 bg-primary-blue font-mono font-bold text-white hover:bg-primary-blue/90" >
             {mutation.isPending ? (
               <Loader size={14} className="animate-spin" />
             ) : (

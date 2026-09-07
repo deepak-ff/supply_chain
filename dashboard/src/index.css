@@ -21,6 +21,29 @@
   --amber:         #E8A33D;
   --critical:      #D92D20;
 
+  /* ── Shell + component-layer tokens ──────────────────────────────
+     One border, one shadow, one radius (4px, --radius) everywhere.
+     --ring-soft is the single focus-visible ring colour; every
+     interactive element uses it (see the :focus-visible rule below). */
+  --ring-soft:     color-mix(in srgb, var(--primary) 40%, transparent);
+  --shadow-card:   0 1px 2px rgba(16, 18, 27, 0.04),
+                   0 1px 3px rgba(16, 18, 27, 0.06);
+  --skeleton:      color-mix(in srgb, var(--text-muted) 18%, transparent);
+  --row-hover:     color-mix(in srgb, var(--primary) 5%, transparent);
+
+  /* ── Chart series palette (see lib/chartTheme.ts) ─────────────── */
+  --chart-1:       var(--primary);
+  --chart-2:       var(--teal);
+  --chart-3:       var(--amber);
+
+  /* ── Shell metrics ────────────────────────────────────────────── */
+  --shell-h:             52px;
+  --sidebar-w:           232px;
+  --sidebar-w-collapsed: 56px;
+  --page-max-w:          1400px;
+  --page-gutter:         24px;
+  --page-rhythm:         20px;
+
   /* ── Backward-compat aliases (see block below) ──────────────────── */
   --primary-blue:  var(--primary);
   --blue-light:    var(--accent-soft);
@@ -94,6 +117,13 @@
   --warning:       #E8A33D;
   --amber:         #E8A33D;
   --critical:      #FF7A70;
+
+  /* ── Shell + component-layer tokens — dark ────────────────────── */
+  --ring-soft:     color-mix(in srgb, var(--primary) 55%, transparent);
+  --shadow-card:   0 1px 2px rgba(0, 0, 0, 0.45),
+                   0 1px 3px rgba(0, 0, 0, 0.35);
+  --skeleton:      color-mix(in srgb, var(--text-muted) 24%, transparent);
+  --row-hover:     color-mix(in srgb, var(--primary) 9%, transparent);
 
   /* ── Backward-compat aliases (dark) — see :root comment ─────────── */
   --primary-blue:  var(--primary);
@@ -172,6 +202,35 @@ input:focus, select:focus, textarea:focus {
 button { cursor: pointer; border: none; transition: opacity 0.15s; }
 button:hover:not(:disabled) { opacity: 0.85; }
 button:disabled { cursor: not-allowed; }
+
+/* ── Focus ──────────────────────────────────────────────────────────
+   Every interactive element gets the same soft violet ring on keyboard
+   focus. :focus-visible only, so mouse clicks stay clean. */
+:where(a, button, input, select, textarea, summary, [tabindex]):focus-visible {
+  outline: 2px solid var(--ring-soft);
+  outline-offset: 2px;
+}
+
+/* ── Hover/active transitions ─────────────────────────────────────
+   150ms ease, colour-only properties. Never width/height/margin —
+   layout changes stay instantaneous so nothing slides or reflows
+   under the cursor. */
+.wd-hover {
+  transition:
+    background-color 150ms ease,
+    border-color 150ms ease,
+    color 150ms ease,
+    opacity 150ms ease,
+    box-shadow 150ms ease;
+}
+@media (prefers-reduced-motion: reduce) {
+  .wd-hover { transition: none; }
+}
+
+/* DataTable owns its own scroll container, so it opts out of the
+   global `table { display: block }` rule further down (which exists
+   only to give legacy inline tables horizontal scroll). */
+.dt-scroll table { display: table; overflow-x: visible; max-width: none; }
 
 /* ── Developer Docs markdown rendering ────────────────────────────── */
 .fg-docs { color: var(--fg); font-size: 0.875rem; line-height: 1.65; }

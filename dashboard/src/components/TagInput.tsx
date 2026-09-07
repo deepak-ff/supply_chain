@@ -61,8 +61,8 @@ export function TagInput({ value, onChange, placeholder, color = '#FF3D3D' }: Ta
         onKeyDown={handleKeyDown}
         onBlur={() => draft && addTag(draft)}
         placeholder={value.length === 0 ? placeholder : ''}
-        className="flex-1 min-w-[100px] text-sm font-mono bg-transparent outline-none"
-        style={{ color: 'var(--fg)' }}
+        className="flex-1 min-w-[100px] text-sm font-mono bg-transparent outline-none text-text-primary"
+
       />
     </div>
   );
