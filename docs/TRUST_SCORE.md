@@ -132,6 +132,14 @@ cwctl trust show npm:express
 # CI gate — fails the build on behavioural drift, independent of CVEs
 cwctl trust from-scan scan.json --package npm:express --fail-on red
 
+# Behavioural lockfile — freeze current behaviour, verify it later
+cwctl trust lock                       # writes ./chainwarden.lock
+cwctl trust verify --strict            # CI: fails on behaviour drift
+
+# Release-to-release diff
+cwctl trust diff npm:express 4.17.20 4.17.21
+cwctl trust diff npm:express           # previous vs latest
+
 # Demonstrate the engine with no data
 cwctl trust simulate --scenario hijack
 cwctl trust simulate --scenario takeover --save
@@ -142,13 +150,75 @@ cwctl trust simulate --scenario takeover --save
 | Method | Path | Purpose |
 |---|---|---|
 | `GET` | `/api/v1/trust` | Summary for every tracked package + state histogram |
-| `GET` | `/api/v1/trust/:ecosystem/:name` | Baseline, score and full observation history |
+| `GET` | `/api/v1/trust/lock` | Current behavioural lock + verify against `./chainwarden.lock` when present |
+| `GET` | `/api/v1/trust/package/:ecosystem/:name` | Baseline, score and full observation history (per-package route moved under `/package` so `/trust` can host the literal `/lock` route) |
+| `GET` | `/api/v1/trust/diff/:ecosystem/:name` | Metric delta between two releases (`?from=&to=`, defaults to previous vs latest) |
 | `POST` | `/api/v1/trust/observe` | Append an observation (CI, external tooling) |
 | `POST` | `/api/v1/trust/simulate` | Score a synthetic scenario, no persistence |
 
 ```bash
 curl -s localhost:8080/api/v1/trust | jq '.packages[] | select(.state == "RED")'
 ```
+
+## Behavioural lockfile
+
+A trust score answers "how far has this drifted from its own baseline?" — but it moves as the
+ledger grows, so it is a weak *gate*. The behavioural lockfile (`chainwarden.lock`) solves that:
+it pins, per package, the exact behavioural fingerprint (`cw1:` + sha256 over every metric in
+model order) that was approved at a point in time.
+
+```bash
+cwctl trust lock                       # freeze now → ./chainwarden.lock (commit it!)
+cwctl trust verify                     # CI gate: exit non-zero on behaviour-changed / trust-dropped
+cwctl trust verify --strict            # ... also fail on added/removed packages
+```
+
+A lockfile entry records the ecosystem, package, version, fingerprint, trust score/state, the raw
+metrics and when it was locked. Files are JSON, sorted by `eco:pkg`, written atomically `0644`
+(they are meant to be committed to a repo and shared with CI).
+
+`verify` reports four drift kinds:
+
+| Kind | Meaning |
+|---|---|
+| `behaviour-changed` | Latest fingerprint ≠ locked fingerprint — the full metric `Diff` is attached |
+| `trust-dropped` | Behaviour unchanged but the score fell below the locked score (baseline shifted) |
+| `added` | Package tracked now but absent from the lockfile |
+| `removed` | Package pinned in the lockfile but no longer tracked |
+
+The dashboard exposes the same check at `GET /api/v1/trust/lock` (build + verify against
+`./chainwarden.lock` when present), and the Trust page renders the per-drift metric deltas.
+
+## Release-to-release diff
+
+`DiffVersions` (and `cwctl trust diff <eco:pkg> [from] [to]`) compares two releases of one
+package held in the ledger. Empty versions default to *previous vs latest* — the question you ask
+after an upgrade. Each changed metric is reported as a `MetricDelta` with `from`/`to`/`delta`, a
+`riskier` flag (risk-increasing rows are marked `!` in the CLI) and the metric's `weighted` share
+of the trust budget:
+
+```bash
+cwctl trust diff npm:left-pad 1.2.0 1.3.0
+cwctl trust diff npm:left-pad          # previous vs latest
+```
+
+`GET /api/v1/trust/diff/:ecosystem/:name?from=&to=` exposes the same data to the dashboard.
+
+## Performance
+
+Listing every package (`cwctl trust list`, the dashboard's `/api/v1/trust`) used to re-read and
+re-score every ledger file on every call. The store now keeps a summary cache at
+`<root>/.index.json`, keyed by each ledger file's **size + mtime**:
+
+- cache hits cost one `stat` per ledger — no reads, no re-scoring;
+- cache misses are parsed in parallel by a worker pool capped at `min(NumCPU, 8)`;
+- dotfiles are skipped during the ledger walk, so the cache can never be read as a ledger;
+- a corrupt or version-mismatched cache is discarded and rebuilt — `List` never fails because of it;
+- `Save`/`Forget` invalidate the affected entry so a just-recorded observation is never served stale.
+
+The benchmark suite (`internal/trust/index_test.go`) ships `BenchmarkListCold` / `BenchmarkListWarm`
+over 200 packages × 8 releases; warm listings are typically an order of magnitude faster than cold
+ones.
 
 ## Simulation scenarios
 

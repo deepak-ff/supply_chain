@@ -115,7 +115,9 @@ const GROUPS: EndpointGroup[] = [
     title: 'Trust',
     endpoints: [
       { method: 'GET', path: '/api/v1/trust', description: 'Dynamic Trust Score summary for every tracked package' },
-      { method: 'GET', path: '/api/v1/trust/:ecosystem/:name', description: 'Baseline, score and observation history for one package' },
+      { method: 'GET', path: '/api/v1/trust/lock', description: 'Build current behavioural lock + verify against ./chainwarden.lock when present' },
+      { method: 'GET', path: '/api/v1/trust/package/:ecosystem/:name', description: 'Baseline, score and observation history for one package' },
+      { method: 'GET', path: '/api/v1/trust/diff/:ecosystem/:name', description: 'Metric delta between two releases (?from=&to=; default previous vs latest)' },
       { method: 'POST', path: '/api/v1/trust/observe', description: 'Append a behavioural observation' },
       { method: 'POST', path: '/api/v1/trust/simulate', description: 'Score a synthetic compromise scenario' },
     ],

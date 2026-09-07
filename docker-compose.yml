@@ -19,10 +19,16 @@ networks:
   chainwarden:
     driver: bridge
 
+# The ChainWarden data volume was renamed fg_data -> cw_data as part of the
+# rebrand. If you created this stack under the old volume name, migrate the
+# existing data once (stops the service first):
+#   docker compose stop chainwarden
+#   docker run --rm -v fg_data:/from -v cw_data:/to alpine sh -c 'cd /from && cp -a . /to/'
+#   docker compose up -d
 volumes:
   postgres_data:
   redis_data:
-  fg_data:
+  cw_data:
 
 services:
   # ── Metadata store ──────────────────────────────────────────────────────────
@@ -75,7 +81,7 @@ services:
     ports:
       - "3000:3000"
     volumes:
-      - fg_data:/data
+      - cw_data:/data
     networks: [chainwarden]
     depends_on:
       postgres:

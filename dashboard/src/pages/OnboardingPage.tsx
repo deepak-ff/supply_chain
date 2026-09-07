@@ -4,6 +4,7 @@ import {
   ArrowRight, Search, Upload, Terminal, ShieldCheck, AlertCircle, Loader,
 } from 'lucide-react';
 import { triggerScan, scanUpload, getJobStatus } from '../lib/api';
+import { migrateStorageKey } from '../lib/utils';
 import { ProgressScan, type ProgressScanStatus } from '../components/ProgressScan';
 import { SecurityScore, computeSecurityScore } from '../components/SecurityScore';
 import { CopyButton } from '../components/CopyButton';
@@ -75,7 +76,9 @@ export function OnboardingPage({ onComplete }: OnboardingPageProps) {
   const score = useMemo(() => (result ? computeSecurityScore(result.summary) : null), [result]);
 
   const finish = () => {
-    localStorage.setItem('fg_workspace_name', workspaceName);
+    // One-time migration: clear the pre-rebrand key, then store under cw_.
+    migrateStorageKey('fg_workspace_name', 'cw_workspace_name');
+    localStorage.setItem('cw_workspace_name', workspaceName);
     onComplete();
   };
 

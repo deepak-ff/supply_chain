@@ -1,7 +1,9 @@
 package handlers
 
 import (
+	"errors"
 	"net/http"
+	"os"
 	"strings"
 
 	"github.com/gin-gonic/gin"
@@ -60,7 +62,7 @@ func (h *Handler) ListTrust(c *gin.Context) {
 }
 
 // GetTrust returns the baseline plus the latest score for one package.
-// GET /api/v1/trust/:ecosystem/:name
+// GET /api/v1/trust/package/:ecosystem/:name
 func (h *Handler) GetTrust(c *gin.Context) {
 	ecosystem := c.Param("ecosystem")
 	name := strings.TrimPrefix(c.Param("name"), "/")
@@ -95,6 +97,77 @@ func (h *Handler) GetTrust(c *gin.Context) {
 		"score":        score,
 		"observations": ledger.Observations,
 	})
+}
+
+// TrustLock returns the behavioural lockfile currently derivable from the
+// ledger, plus — when a chainwarden.lock exists in the server's working
+// directory — a verification report of the ledger against that lockfile.
+// GET /api/v1/trust/lock
+func (h *Handler) TrustLock(c *gin.Context) {
+	store, err := trustStore()
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		return
+	}
+	lock, err := store.BuildLock()
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		return
+	}
+
+	resp := gin.H{
+		"current":  lock,
+		"tracked":  len(lock.Entries),
+		"lockfile": trust.DefaultLockFile,
+		"present":  false,
+	}
+	if _, statErr := os.Stat(trust.DefaultLockFile); statErr == nil {
+		locked, rerr := trust.ReadLock(trust.DefaultLockFile)
+		if rerr != nil {
+			c.JSON(http.StatusInternalServerError, gin.H{"error": rerr.Error()})
+			return
+		}
+		report, verr := store.Verify(locked)
+		if verr != nil {
+			c.JSON(http.StatusInternalServerError, gin.H{"error": verr.Error()})
+			return
+		}
+		resp["present"] = true
+		resp["lock"] = locked
+		resp["report"] = report
+	}
+	c.JSON(http.StatusOK, resp)
+}
+
+// TrustDiff compares two releases of one package from the ledger. When
+// ?from= or ?to= are omitted they default to previous-vs-latest, which makes
+// the dashboard's "what changed in this update" call a plain GET.
+// GET /api/v1/trust/diff/:ecosystem/:name?from=&to=
+func (h *Handler) TrustDiff(c *gin.Context) {
+	ecosystem := c.Param("ecosystem")
+	name := strings.TrimPrefix(c.Param("name"), "/")
+	if name == "" {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "package name is required"})
+		return
+	}
+
+	store, err := trustStore()
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		return
+	}
+	diff, err := store.DiffVersions(ecosystem, name, c.Query("from"), c.Query("to"))
+	if err != nil {
+		switch {
+		case errors.Is(err, trust.ErrNoObservations), errors.Is(err, trust.ErrVersionNotFound):
+			c.JSON(http.StatusNotFound, gin.H{"error": err.Error()})
+		default:
+			h.log.Error("trust diff failed", "error", err, "ecosystem", ecosystem, "package", name)
+			c.JSON(http.StatusInternalServerError, gin.H{"error": "internal server error"})
+		}
+		return
+	}
+	c.JSON(http.StatusOK, diff)
 }
 
 // RecordTrustObservation appends a behavioural observation and returns the

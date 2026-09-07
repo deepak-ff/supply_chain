@@ -77,7 +77,7 @@ export function DependencyGraph({ data = defaultData, width = 600, height = 400 
     ctx.lineWidth = 2 / globalScale
     ctx.stroke()
 
-    ctx.font = `${fontSize}px JetBrains Mono, monospace`
+    ctx.font = `${fontSize}px ui-monospace, 'SF Mono', Menlo, Consolas, monospace`
     ctx.textAlign = 'center'
     ctx.textBaseline = 'middle'
     ctx.fillStyle = '#F8F9FA'

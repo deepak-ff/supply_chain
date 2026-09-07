@@ -198,16 +198,17 @@ export function PitchPage({ onLoggedIn, onNavigateEnterprise }: PitchPageProps) 
         </div>
         <div className="relative z-10 mx-auto max-w-3xl">
           <p className="mb-4 font-mono text-xs font-semibold uppercase tracking-widest text-primary-blue">
-            Local-first · AI-native · open-core
+            Local-first behavioural supply chain security
           </p>
           <h1 className="text-4xl font-bold leading-tight tracking-tight text-text-primary sm:text-5xl">
-            See threats before they become incidents.
+            Your dependencies are strangers you run as root.
           </h1>
           <p className="mx-auto mt-5 max-w-2xl text-base leading-relaxed text-text-secondary">
-            ChainWarden scans every package you depend on — across nine ecosystems — with eight
-            concurrent detection engines, generates SLSA Level 3 provenance, signs artifacts with
-            Sigstore, and layers an AI reasoning pass on every scan, triage, and patch. The core
-            stays free and open forever.
+            Signatures only catch malware someone has already seen. ChainWarden instead learns how
+            every package behaves and flags the release that stops behaving like <em>itself</em> — a
+            new install hook, an outbound call it never made, a maintainer who appeared yesterday.
+            Eight detection engines across nine ecosystems, scanning, signing and patching locally
+            and free.
           </p>
           <div className="mt-8 flex flex-wrap items-center justify-center gap-3">
             <button

@@ -232,11 +232,16 @@ cwctl trust show npm:express                         # baseline + deviations for
 cwctl trust from-scan scan.json --package npm:express  # learn from `cwctl scan --format json`
 cwctl trust record npm:left-pad --version 1.3.0 --network 1 --hooks 0
 cwctl trust simulate --scenario hijack               # demo the engine with no data
+cwctl trust lock                                     # freeze behaviour into ./chainwarden.lock
+cwctl trust verify --strict                          # CI gate against the lockfile
+cwctl trust diff npm:left-pad 1.2.0 1.3.0            # metric delta between releases
 cwctl trust forget npm:express                       # delete a ledger
 ```
 
 Flags: `--json`, `--fail-on <amber|red>` (CI gate), `--dir <path>` (ledger location,
 default `~/.chainwarden/trust`, override with `$CW_TRUST_DIR`), `--state <state>` (filter `list`).
+Lockfile: `--out <path>` (lock), `--lock <path>` (verify), `--strict` (verify also fails on
+added/removed).
 
 Full model: [Section 25b](#25b-dynamic-trust-score) and [docs/TRUST_SCORE.md](docs/TRUST_SCORE.md).
 
@@ -1339,14 +1344,64 @@ required. Re-recording the same version replaces the previous entry.
 | Method | Path |
 |---|---|
 | `GET` | `/api/v1/trust` |
-| `GET` | `/api/v1/trust/:ecosystem/:name` |
+| `GET` | `/api/v1/trust/lock` |
+| `GET` | `/api/v1/trust/package/:ecosystem/:name` |
+| `GET` | `/api/v1/trust/diff/:ecosystem/:name` |
 | `POST` | `/api/v1/trust/observe` |
 | `POST` | `/api/v1/trust/simulate` |
 
+The per-package wildcard route moved from `/trust/:ecosystem/:name` to
+`/trust/package/:ecosystem/:name` — gin cannot mix a wildcard and the literal `lock` route on the
+same path level, and the package routes had to give way so `/trust/lock` could exist.
+
+### Behavioural lockfile
+
+A score is a poor CI gate because it moves as the ledger grows. `chainwarden.lock` pins, per
+package, the exact behavioural fingerprint (`cw1:` + sha256 over every metric in model order) that
+was approved at a point in time — commit it next to your manifest.
+
+```bash
+cwctl trust lock                       # freeze now → ./chainwarden.lock
+cwctl trust verify                     # exit non-zero on behaviour-changed / trust-dropped
+cwctl trust verify --strict            # ... also fail on added/removed packages
+```
+
+Files are JSON, sorted by `eco:pkg`, written atomically `0644`. Verify reports four drift kinds:
+`behaviour-changed` (fingerprint mismatch, with the full metric diff attached), `trust-dropped`
+(unchanged behaviour but the score fell below the locked score), `added` (tracked but not locked)
+and `removed` (locked but no longer tracked). The dashboard runs the same check via
+`GET /api/v1/trust/lock`.
+
+### Release-to-release diff
+
+`cwctl trust diff <eco:pkg> [from] [to]` compares two releases from the ledger; empty versions
+default to previous-vs-latest. Every changed metric is a `MetricDelta` with `from`/`to`/`delta`, a
+`riskier` flag (risk-increasing rows are marked `!`) and the metric's `weighted` trust budget share:
+
+```bash
+cwctl trust diff npm:left-pad 1.2.0 1.3.0
+cwctl trust diff npm:left-pad          # previous vs latest
+```
+
+The dashboard calls `GET /api/v1/trust/diff/:ecosystem/:name` to render the same table under the
+selected package.
+
+### Performance
+
+Listing every package used to re-read and re-score every ledger on every call. The store now keeps
+a summary cache at `<root>/.index.json` keyed by each ledger's **size + mtime** — hits cost one
+`stat`, misses are parsed in parallel by a worker pool capped at `min(NumCPU, 8)`, dotfiles are
+skipped by the ledger walk (so the cache is never read as a ledger), and a corrupt or
+version-mismatched cache is discarded and rebuilt without ever failing the listing. `Save`/`Forget`
+invalidate the affected entry. Benchmarks: `BenchmarkListCold` / `BenchmarkListWarm` in
+`internal/trust/index_test.go` (200 packages × 8 releases).
+
 ### Dashboard
 
-**Monitor → Trust Score** (`/trust`): state histogram, drift simulator, tracked-package ledger, and
-a per-package view with the learned baseline, metric history chart and ranked deviations.
+**Monitor → Trust Score** (`/trust`): state histogram, drift simulator, tracked-package ledger, a
+behavioural-lockfile panel (verified vs drifted, with per-drift metric deltas) and a per-package
+view with the learned baseline, metric history chart, ranked deviations and a previous-vs-latest
+release delta.
 
 ---
 

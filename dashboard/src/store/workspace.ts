@@ -1,4 +1,5 @@
 import { create } from 'zustand';
+import { migrateStorageKey } from '../lib/utils';
 
 export interface Workspace {
   id: string;
@@ -7,8 +8,13 @@ export interface Workspace {
   created_at: string;
 }
 
-const STORAGE_KEY = 'fg_workspaces';
-const ACTIVE_KEY = 'fg_active_workspace';
+const STORAGE_KEY = 'cw_workspaces';
+const ACTIVE_KEY = 'cw_active_workspace';
+
+// One-time rebrand migration: copy any pre-rebrand fg_* values to the cw_*
+// keys and drop the old keys.
+migrateStorageKey('fg_workspaces', STORAGE_KEY);
+migrateStorageKey('fg_active_workspace', ACTIVE_KEY);
 
 const COLORS = ['#2563EB', '#7C3AED', '#059669', '#D97706', '#DC2626', '#EC4899', '#06B6D4', '#8B5CF6'];
 

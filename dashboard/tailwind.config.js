@@ -68,7 +68,9 @@ export default {
         sm: 'calc(var(--radius) - 4px)',
       },
       fontFamily: {
-        mono: ['JetBrains Mono', 'IBM Plex Mono', 'Fira Code', 'Consolas', 'monospace'],
+        // Local system stacks — no webfont CDN dependency (offline / airgap).
+        sans: ['ui-sans-serif', 'system-ui', '-apple-system', 'Segoe UI', 'Roboto', 'Helvetica Neue', 'Arial', 'sans-serif'],
+        mono: ['ui-monospace', 'SF Mono', 'Cascadia Mono', 'Roboto Mono', 'Menlo', 'Consolas', 'Liberation Mono', 'monospace'],
       },
     },
   },

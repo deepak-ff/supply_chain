@@ -3,46 +3,58 @@
 @tailwind utilities;
 
 :root {
-  /* ── ChainWarden design tokens — "Technical Security OS" (light) ── */
-  --bg-base:       #FAFAF8;
+  /* ── ChainWarden "Warden" design tokens — light ──────────────────
+     No webfonts: the font stacks are system-local so the dashboard (and
+     docs, screenshots and air-gapped installs) never depend on a CDN. */
+  --bg-base:       #F4F5F9;
   --surface:       #FFFFFF;
-  --surface-muted: #F5F6F4;
-  --border-color:  #E6E8E6;
-  --text-primary:  #111315;
-  --text-secondary:#667085;
-  --text-muted:    #98A2B3;
-  --primary-blue:  #2563EB;
-  --blue-light:    #DBEAFE;
-  --cyan:          #06B6D4;
-  --success:       #16A34A;
-  --warning:       #D97706;
-  --critical:      #DC2626;
-  --font-mono:     'JetBrains Mono', 'IBM Plex Mono', 'Fira Code', 'Consolas', monospace;
+  --surface-muted: #EDEFF6;
+  --border-color:  #DDDFEA;
+  --text-primary:  #15161D;
+  --text-secondary:#575C72;
+  --text-muted:    #8A90A8;
+  --primary:       #5B3DF5;   /* Warden violet */
+  --accent-soft:   #EAE5FF;
+  --teal:          #0E9AA7;
+  --success:       #0F9D58;
+  --warning:       #B45309;
+  --amber:         #E8A33D;
+  --critical:      #D92D20;
 
-  /* ── shadcn/ui HSL tokens — recomputed for the light palette ─────── */
-  --background:            60 17% 98%;   /* #FAFAF8 */
-  --foreground:            210 11% 7%;   /* #111315 */
+  /* ── Backward-compat aliases (see block below) ──────────────────── */
+  --primary-blue:  var(--primary);
+  --blue-light:    var(--accent-soft);
+  --cyan:          var(--teal);
+
+  --font-sans:     ui-sans-serif, system-ui, -apple-system, 'Segoe UI', Roboto,
+                   'Helvetica Neue', Arial, 'Noto Sans', sans-serif;
+  --font-mono:     ui-monospace, 'SF Mono', 'Cascadia Mono', 'Roboto Mono',
+                   Menlo, Consolas, 'Liberation Mono', monospace;
+
+  /* ── shadcn/ui HSL tokens — recomputed for the Warden light palette ─ */
+  --background:            228 29% 97%;  /* #F4F5F9 */
+  --foreground:            232 16% 10%;  /* #15161D */
   --card:                  0 0% 100%;    /* #FFFFFF */
-  --card-foreground:       210 11% 7%;   /* #111315 */
+  --card-foreground:       232 16% 10%;  /* #15161D */
   --popover:               0 0% 100%;    /* #FFFFFF */
-  --popover-foreground:    210 11% 7%;   /* #111315 */
-  --primary:               221 83% 53%;  /* #2563EB */
+  --popover-foreground:    232 16% 10%;  /* #15161D */
+  --primary:               250 90% 60%;  /* #5B3DF5 */
   --primary-foreground:    0 0% 100%;    /* #FFFFFF */
-  --secondary:             90 10% 96%;   /* #F5F6F4 */
-  --secondary-foreground:  210 11% 7%;   /* #111315 */
-  --muted:                 90 10% 96%;   /* #F5F6F4 */
-  --muted-foreground:      221 13% 46%;  /* #667085 */
-  --accent:                214 95% 93%;  /* #DBEAFE */
-  --accent-foreground:     221 83% 53%;  /* #2563EB */
-  --destructive:           0 72% 51%;    /* #DC2626 */
+  --secondary:             227 33% 95%;  /* #EDEFF6 */
+  --secondary-foreground:  232 16% 10%;  /* #15161D */
+  --muted:                 227 33% 95%;  /* #EDEFF6 */
+  --muted-foreground:      229 13% 39%;  /* #575C72 */
+  --accent:                252 100% 95%; /* #EAE5FF */
+  --accent-foreground:     250 90% 60%;  /* #5B3DF5 */
+  --destructive:           4 74% 49%;    /* #D92D20 */
   --destructive-foreground:0 0% 100%;    /* #FFFFFF */
-  --border:                120 4% 91%;   /* #E6E8E6 */
-  --input:                 120 4% 91%;   /* #E6E8E6 */
-  --ring:                  221 83% 53%;  /* #2563EB */
-  --radius:                0.75rem;      /* 12px default card radius */
+  --border:                231 24% 89%;  /* #DDDFEA */
+  --input:                 231 24% 89%;  /* #DDDFEA */
+  --ring:                  250 90% 60%;  /* #5B3DF5 */
+  --radius:                0.25rem;      /* 4px — sharp "warden" corners */
 
   /* ── Transitional backward-compat aliases ─────────────────────────
-     These map the OLD dark-theme custom property names (used throughout
+     These map the OLD custom property names (used throughout
      src/pages/* and src/components/* via inline style={{color:'var(--x)'}})
      onto the NEW token set so existing pages keep rendering sanely until
      they are individually reworked in later retheme phases. Remove this
@@ -58,50 +70,56 @@
   --color-text:    var(--text-primary);
   --fg:            var(--text-primary);
   --color-muted:   var(--text-secondary);
-  --color-indigo:  #6366F1;
-  --color-info:    var(--cyan);
-  --color-purple:  #A855F7;
-  --color-high:    #EA580C;
+  --color-indigo:  var(--primary);
+  --color-info:    var(--teal);
+  --color-purple:  #7C6CF0;
+  --color-high:    var(--amber);
   --color-medium:  var(--warning);
-  --color-low:     var(--cyan);
+  --color-low:     var(--teal);
 }
 
 .dark {
-  /* ── ChainWarden design tokens — dark mode ──────────────────────── */
-  --bg-base:       #0B0D0F;
-  --surface:       #111418;
-  --surface-muted: #161A1F;
-  --border-color:  #252A31;
-  --text-primary:  #F5F7FA;
-  --text-secondary:#8B95A5;
-  --text-muted:    #6B7280;
-  --primary-blue:  #4F8CFF;
-  --blue-light:    #1E3A5F;
-  --cyan:          #22D3EE;
-  --success:       #22C55E;
-  --warning:       #F59E0B;
-  --critical:      #F87171;
+  /* ── ChainWarden "Warden" design tokens — dark ──────────────────── */
+  --bg-base:       #08080D;
+  --surface:       #0F0F17;
+  --surface-muted: #171722;
+  --border-color:  #24242F;
+  --text-primary:  #F1F1F7;
+  --text-secondary:#9FA3BB;
+  --text-muted:    #686D85;
+  --primary:       #9B87FF;   /* Warden violet — brightened for dark */
+  --accent-soft:   #251F44;
+  --teal:          #3BC9BF;
+  --success:       #2FBF71;
+  --warning:       #E8A33D;
+  --amber:         #E8A33D;
+  --critical:      #FF7A70;
+
+  /* ── Backward-compat aliases (dark) — see :root comment ─────────── */
+  --primary-blue:  var(--primary);
+  --blue-light:    var(--accent-soft);
+  --cyan:          var(--teal);
 
   /* ── shadcn/ui HSL tokens — dark equivalents ──────────────────────── */
-  --background:            210 15% 5%;   /* #0B0D0F */
-  --foreground:            216 33% 97%;  /* #F5F7FA */
-  --card:                  214 17% 8%;   /* #111418 */
-  --card-foreground:       216 33% 97%;  /* #F5F7FA */
-  --popover:               214 17% 8%;   /* #111418 */
-  --popover-foreground:    216 33% 97%;  /* #F5F7FA */
-  --primary:               219 100% 65%; /* #4F8CFF */
-  --primary-foreground:    210 15% 5%;   /* #0B0D0F */
-  --secondary:             213 17% 10%;  /* #161A1F */
-  --secondary-foreground:  216 33% 97%;  /* #F5F7FA */
-  --muted:                 213 17% 10%;  /* #161A1F */
-  --muted-foreground:      217 13% 60%;  /* #8B95A5 */
-  --accent:                214 52% 25%;  /* #1E3A5F */
-  --accent-foreground:     216 33% 97%;  /* #F5F7FA */
-  --destructive:           0 91% 71%;    /* #F87171 */
-  --destructive-foreground:210 15% 5%;   /* #0B0D0F */
-  --border:                215 14% 17%;  /* #252A31 */
-  --input:                 215 14% 17%;  /* #252A31 */
-  --ring:                  219 100% 65%; /* #4F8CFF */
+  --background:            240 24% 4%;   /* #08080D */
+  --foreground:            240 27% 96%;  /* #F1F1F7 */
+  --card:                  240 21% 7%;   /* #0F0F17 */
+  --card-foreground:       240 27% 96%;  /* #F1F1F7 */
+  --popover:               240 21% 7%;   /* #0F0F17 */
+  --popover-foreground:    240 27% 96%;  /* #F1F1F7 */
+  --primary:               250 100% 76%; /* #9B87FF */
+  --primary-foreground:    240 24% 4%;   /* #08080D */
+  --secondary:             240 19% 11%;  /* #171722 */
+  --secondary-foreground:  240 27% 96%;  /* #F1F1F7 */
+  --muted:                 240 19% 11%;  /* #171722 */
+  --muted-foreground:      231 17% 68%;  /* #9FA3BB */
+  --accent:                250 37% 19%;  /* #251F44 */
+  --accent-foreground:     240 27% 96%;  /* #F1F1F7 */
+  --destructive:           4 100% 72%;   /* #FF7A70 */
+  --destructive-foreground:240 24% 4%;   /* #08080D */
+  --border:                240 13% 16%;  /* #24242F */
+  --input:                 240 13% 16%;  /* #24242F */
+  --ring:                  250 100% 76%; /* #9B87FF */
 
   /* ── Transitional backward-compat aliases (dark) — see :root comment */
   --bg-surface:    var(--surface);
@@ -114,12 +132,12 @@
   --color-text:    var(--text-primary);
   --fg:            var(--text-primary);
   --color-muted:   var(--text-secondary);
-  --color-indigo:  #818CF8;
-  --color-info:    var(--cyan);
-  --color-purple:  #C084FC;
-  --color-high:    #FB923C;
+  --color-indigo:  var(--primary);
+  --color-info:    var(--teal);
+  --color-purple:  #B0A4FF;
+  --color-high:    var(--amber);
   --color-medium:  var(--warning);
-  --color-low:     var(--cyan);
+  --color-low:     var(--teal);
 }
 
 * {
@@ -131,7 +149,7 @@
 body {
   background-color: var(--bg-base);
   color: var(--color-text);
-  font-family: 'Inter', system-ui, sans-serif;
+  font-family: var(--font-sans);
   font-size: 14px;
   line-height: 1.5;
   -webkit-font-smoothing: antialiased;
@@ -147,8 +165,8 @@ code, pre, .mono {
 
 input, select, textarea { outline: none; }
 input:focus, select:focus, textarea:focus {
-  border-color: var(--primary-blue) !important;
-  box-shadow: 0 0 0 1px rgba(37,99,235,0.2);
+  border-color: var(--primary) !important;
+  box-shadow: 0 0 0 1px rgba(91,61,245,0.25);
 }
 
 button { cursor: pointer; border: none; transition: opacity 0.15s; }

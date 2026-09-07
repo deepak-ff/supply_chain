@@ -233,7 +233,8 @@ var authExemptPaths = map[string]bool{
 //     mode) — allow everything.
 //   - If apiKey != "", check X-Api-Key / Authorization: Bearer via
 //     constant-time compare. Success authorizes the request.
-//   - Otherwise, if authEnabled, check the fg_session cookie via
+//   - Otherwise, if authEnabled, check the session cookie (cw_session, or the
+//     legacy fg_session cookie for sessions issued before the rebrand) via
 //     auth.ParseToken. Success authorizes the request.
 //   - If neither path authorized the request and at least one auth
 //     mechanism is actually configured, return 401.
@@ -277,9 +278,15 @@ func DualAuth(apiKey string, sessionSecret []byte, authEnabled bool, adminIdenti
 			}
 		}
 
-		// Fall through to session-cookie auth.
+		// Fall through to session-cookie auth. The legacy fg_session cookie is
+		// still accepted so a rebranded server does not log existing sessions
+		// out; new sessions always use cw_session.
 		if authEnabled {
-			if tok, err := c.Cookie("fg_session"); err == nil {
+			tok, cookieErr := c.Cookie("cw_session")
+			if cookieErr != nil {
+				tok, cookieErr = c.Cookie("fg_session")
+			}
+			if cookieErr == nil {
 				if _, err := auth.ParseToken(tok, sessionSecret); err == nil {
 					// Enforce server-side password change requirement
 					if admin != nil && admin.PasswordMustChange && path != "/api/v1/auth/password" {

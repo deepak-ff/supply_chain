@@ -1,4 +1,5 @@
 import { create } from 'zustand';
+import { migrateStorageKey } from '../lib/utils';
 import type { ScanResult, ProjectScanResult, ScanSummary, Finding } from '../types/api';
 
 export type ScanType = 'registry' | 'upload' | 'remote';
@@ -18,8 +19,11 @@ export interface ScanSession {
   created_at: string;
 }
 
-const STORAGE_KEY = 'fg_scan_sessions';
+const STORAGE_KEY = 'cw_scan_sessions';
 const MAX_SESSIONS = 200;
+
+// One-time rebrand migration: copy pre-rebrand sessions to the cw_ key.
+migrateStorageKey('fg_scan_sessions', STORAGE_KEY);
 
 function generateId(): string {
   return Date.now().toString(36) + Math.random().toString(36).slice(2, 8);

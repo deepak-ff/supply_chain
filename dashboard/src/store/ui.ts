@@ -1,13 +1,20 @@
 import { create } from 'zustand';
+import { migrateStorageKey } from '../lib/utils';
 
 export type Theme = 'light' | 'dark';
+
+const THEME_KEY = 'cw_theme';
+const LEGACY_THEME_KEY = 'fg_theme';
 
 function applyTheme(theme: Theme) {
   document.documentElement.classList.toggle('dark', theme === 'dark');
 }
 
 function getInitialTheme(): Theme {
-  const stored = localStorage.getItem('fg_theme');
+  // One-time migration: read the pre-rebrand fg_theme key, copy it to
+  // cw_theme and drop the old key.
+  const legacy = migrateStorageKey(LEGACY_THEME_KEY, THEME_KEY);
+  const stored = legacy ?? localStorage.getItem(THEME_KEY);
   return stored === 'light' ? 'light' : 'dark';
 }
 
@@ -35,7 +42,7 @@ export const useUIStore = create<UIState>((set, get) => ({
   setCurrentEcosystem: (e) => set({ currentEcosystem: e }),
   toggleTheme: () => {
     const next: Theme = get().theme === 'dark' ? 'light' : 'dark';
-    localStorage.setItem('fg_theme', next);
+    localStorage.setItem(THEME_KEY, next);
     applyTheme(next);
     set({ theme: next });
   },
