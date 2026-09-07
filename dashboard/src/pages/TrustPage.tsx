@@ -5,159 +5,159 @@ import {
   Tooltip as RechartsTooltip, ResponsiveContainer, Legend,
 } from 'recharts';
 import {
-  Gauge, ShieldCheck, ShieldAlert, Activity, FlaskConical, Radar, ChevronRight,
-  Lock, ArrowLeftRight, RefreshCw,
+  Gauge, ShieldCheck, ShieldAlert, Activity, FlaskConical, Radar,
+  Lock, ArrowLeftRight, RefreshCw, AlertTriangle, X,
 } from 'lucide-react';
 import {
   listTrust, getTrust, simulateTrust, getTrustLock, getTrustDiff,
   type TrustSummary, type TrustScore, type TrustBaseline, type TrustObservation,
   type TrustVersionDiff, type TrustDrift, type TrustMetricDelta, type TrustLockView,
 } from '../lib/api';
+import { Card, CardHeader, CardBody, CardFooter } from '../components/ui/card';
+import { StatTile } from '../components/ui/stat-tile';
+import { DataTable, type DataTableColumn } from '../components/ui/data-table';
+import { StatusChip } from '../components/ui/status-chip';
+import { Skeleton } from '../components/ui/skeleton';
+import { EmptyState } from '../components/EmptyState';
 import { cn } from '../components/ui/utils';
+import {
+  axisProps, gridProps, legendProps, seriesProps, tooltipProps, chartMargin,
+} from '../lib/chartTheme';
 
 const SCENARIOS = [
-  { id: 'hijack',   label: 'Publish hijack',     hint: 'Stolen token adds an install hook that phones home' },
-  { id: 'sleeper',  label: 'Sleeper drift',      hint: 'Payload assembled slowly across several releases' },
+  { id: 'hijack',   label: 'Publish hijack',      hint: 'Stolen token adds an install hook that phones home' },
+  { id: 'sleeper',  label: 'Sleeper drift',       hint: 'Payload assembled slowly across several releases' },
   { id: 'takeover', label: 'Maintainer takeover', hint: 'New publisher, then an out-of-cadence release' },
-  { id: 'clean',    label: 'Healthy release',    hint: 'Control case — should stay GREEN' },
+  { id: 'clean',    label: 'Healthy release',     hint: 'Control case — should stay GREEN' },
 ] as const;
 
-const STATE_COLOR: Record<string, string> = {
-  GREEN:    'var(--success)',
-  AMBER:    'var(--warning)',
-  RED:      'var(--critical)',
-  LEARNING: 'var(--text-muted)',
+const STATE_STROKE: Record<string, string> = {
+  GREEN: 'stroke-success', AMBER: 'stroke-warning', RED: 'stroke-critical', LEARNING: 'stroke-text-muted',
 };
 
-const SEVERITY_COLOR: Record<string, string> = {
-  CRITICAL: 'var(--critical)',
-  HIGH:     '#EA580C',
-  MEDIUM:   'var(--warning)',
-  LOW:      'var(--cyan)',
+const DRIFT_TONE: Record<string, string> = {
+  'behaviour-changed': 'RED',
+  'trust-dropped': 'AMBER',
+  'added': 'HIGH',
+  'removed': 'LEARNING',
 };
 
-function Card({ children, className }: { children: React.ReactNode; className?: string }) {
-  return (
-    <div className={cn('rounded-xl border border-border-color bg-surface shadow-sm', className)}>
-      {children}
-    </div>
-  );
-}
+const LEDGER_COMMAND = 'cwctl trust from-scan scan.json --package npm:express';
 
-function KPITile({ label, value, icon: Icon, color }: {
-  label: string; value: number | string; icon: typeof Gauge; color: string;
-}) {
-  return (
-    <Card className="relative overflow-hidden">
-      <div className="absolute left-0 top-2.5 bottom-2.5 w-[3px] rounded-r-sm" style={{ background: color }} />
-      <div className="p-4 pl-5">
-        <div className="flex items-center gap-1.5 mb-1.5">
-          <Icon size={13} className="text-text-muted" />
-          <span className="text-[0.68rem] text-text-secondary">{label}</span>
-        </div>
-        <span className="text-[1.6rem] font-bold tabular-nums leading-none" style={{ color }}>{value}</span>
-      </div>
-    </Card>
-  );
-}
-
-function StateBadge({ state }: { state: string }) {
-  const color = STATE_COLOR[state] ?? 'var(--text-muted)';
-  return (
-    <span
-      className="rounded-full px-2 py-[0.1rem] text-[0.62rem] font-semibold tracking-wide"
-      style={{ color, background: `color-mix(in srgb, ${color} 14%, transparent)` }}
-    >
-      {state}
-    </span>
-  );
-}
+// ── score dial ──────────────────────────────────────────────────────────────
 
 function ScoreDial({ score, state }: { score: number; state: string }) {
-  const color = STATE_COLOR[state] ?? 'var(--text-muted)';
   const pct = Math.max(0, Math.min(100, score));
+  const r = 30;
+  const circumference = 2 * Math.PI * r;
+  const stroke = STATE_STROKE[state] ?? STATE_STROKE.LEARNING;
   return (
     <div className="flex items-center gap-4">
-      <div
-        className="grid h-[76px] w-[76px] shrink-0 place-items-center rounded-full"
-        style={{ background: `conic-gradient(${color} ${pct * 3.6}deg, var(--surface-muted) 0deg)` }}
-      >
-        <div className="grid h-[60px] w-[60px] place-items-center rounded-full bg-surface">
-          <span className="text-[1.1rem] font-bold tabular-nums" style={{ color }}>{score}</span>
+      <svg width={76} height={76} viewBox="0 0 76 76" className="shrink-0" aria-hidden="true">
+        <circle cx={38} cy={38} r={r} fill="none" stroke="var(--surface-muted)" strokeWidth={7} />
+        <circle
+          cx={38} cy={38} r={r} fill="none" strokeWidth={7} strokeLinecap="round"
+          className={stroke}
+          strokeDasharray={circumference}
+          strokeDashoffset={circumference * (1 - pct / 100)}
+          transform="rotate(-90 38 38)" />
+      </svg>
+      <div className="min-w-0">
+        <p className="m-0 text-[28px] font-semibold leading-none tabular-nums text-text-primary">
+          {score}
+        </p>
+        <div className="mt-1.5">
+          <StatusChip tone={state} />
         </div>
-      </div>
-      <div>
-        <StateBadge state={state} />
-        <p className="mt-1 text-[0.68rem] text-text-muted">trust score out of 100</p>
+        <p className="m-0 mt-1 text-[0.68rem] text-text-muted">trust score out of 100</p>
       </div>
     </div>
   );
 }
 
-function DeviationList({ score }: { score: TrustScore }) {
+// ── deviations ──────────────────────────────────────────────────────────────
+
+const deviationColumns: Array<DataTableColumn<{
+  metric: string; label: string; severity: string; deduction: number; z_score: number; reason: string;
+}>> = [
+  {
+    key: 'severity',
+    header: 'Severity',
+    sortable: true,
+    sortValue: (d) => d.severity,
+    render: (d) => <StatusChip tone={d.severity} dot={false} />,
+    className: 'w-[104px]',
+  },
+  {
+    key: 'metric',
+    header: 'Metric',
+    sortable: true,
+    sortValue: (d) => d.label,
+    render: (d) => (
+      <div className="min-w-0">
+        <span className="block text-[0.78rem] font-medium text-text-primary">{d.label}</span>
+        <span className="mt-0.5 block text-[0.7rem] leading-snug text-text-muted">{d.reason}</span>
+      </div>
+    ),
+  },
+  {
+    key: 'deduction',
+    header: 'Deduction',
+    numeric: true,
+    sortable: true,
+    sortValue: (d) => d.deduction,
+    render: (d) => <span className="text-critical">−{d.deduction}</span>,
+    className: 'w-[92px]',
+  },
+  {
+    key: 'z',
+    header: 'z-score',
+    numeric: true,
+    sortable: true,
+    sortValue: (d) => d.z_score,
+    render: (d) => d.z_score.toFixed(1),
+    className: 'w-[80px]',
+  },
+];
+
+function DeviationTable({ score }: { score: TrustScore }) {
   if (score.deviations.length === 0) {
     return (
-      <p className="px-4 pb-4 text-[0.72rem] text-text-muted">
-        No behavioural drift against the learned baseline.
-      </p>
+      <EmptyState
+        icon={ShieldCheck}
+        title="No behavioural drift"
+        description="Every observed metric sits inside the baseline learned from this package's own history." />
     );
   }
-  return (
-    <ul className="space-y-2 px-4 pb-4">
-      {score.deviations.map((d) => (
-        <li key={d.metric} className="rounded-lg border border-border-color/70 p-2.5">
-          <div className="flex items-center justify-between gap-2">
-            <div className="flex items-center gap-2">
-              <span
-                className="rounded px-1.5 py-[0.05rem] text-[0.6rem] font-semibold"
-                style={{
-                  color: SEVERITY_COLOR[d.severity] ?? 'var(--text-muted)',
-                  background: `color-mix(in srgb, ${SEVERITY_COLOR[d.severity] ?? '#888'} 14%, transparent)`,
-                }}
-              >
-                {d.severity}
-              </span>
-              <span className="text-[0.75rem] font-medium text-text-primary">{d.label}</span>
-            </div>
-            <span className="text-[0.7rem] tabular-nums text-text-secondary">
-              −{d.deduction} pts · z={d.z_score.toFixed(1)}
-            </span>
-          </div>
-          <p className="mt-1 text-[0.7rem] leading-snug text-text-muted">{d.reason}</p>
-        </li>
-      ))}
-    </ul>
-  );
+  return <DataTable columns={deviationColumns} rows={score.deviations} rowKey={(d) => d.metric} dense />;
 }
+
+// ── baseline stats ──────────────────────────────────────────────────────────
+
+const baselineColumns: Array<DataTableColumn<TrustBaseline['stats'][number]>> = [
+  { key: 'label',  header: 'Metric',  sortable: true, sortValue: (s) => s.label,  render: (s) => s.label },
+  { key: 'mean',   header: 'Mean',    numeric: true, sortable: true, sortValue: (s) => s.mean,   render: (s) => s.mean.toFixed(2) },
+  { key: 'stddev', header: 'Std dev', numeric: true, sortable: true, sortValue: (s) => s.stddev, render: (s) => s.stddev.toFixed(2) },
+  { key: 'range',  header: 'Range',   numeric: true, sortable: true, sortValue: (s) => s.min,    render: (s) => `${s.min}–${s.max}` },
+];
 
 function BaselineTable({ baseline }: { baseline: TrustBaseline }) {
   const rows = baseline.stats.filter((s) => s.mean !== 0 || s.max !== 0);
   if (rows.length === 0) return null;
   return (
-    <div className="px-4 pb-4">
-      <table className="w-full text-[0.7rem]">
-        <thead>
-          <tr className="text-left text-text-muted">
-            <th className="pb-1 font-medium">Metric</th>
-            <th className="pb-1 text-right font-medium">Mean</th>
-            <th className="pb-1 text-right font-medium">Std dev</th>
-            <th className="pb-1 text-right font-medium">Range</th>
-          </tr>
-        </thead>
-        <tbody className="tabular-nums text-text-secondary">
-          {rows.map((s) => (
-            <tr key={s.metric} className="border-t border-border-color/60">
-              <td className="py-1 text-text-primary">{s.label}</td>
-              <td className="py-1 text-right">{s.mean.toFixed(2)}</td>
-              <td className="py-1 text-right">{s.stddev.toFixed(2)}</td>
-              <td className="py-1 text-right">{s.min}–{s.max}</td>
-            </tr>
-          ))}
-        </tbody>
-      </table>
+    <div className="border-t border-border-color">
+      <DataTable
+        columns={baselineColumns}
+        rows={rows}
+        rowKey={(s) => s.metric}
+        initialSort={{ key: 'label', dir: 'asc' }}
+        dense
+      />
     </div>
   );
 }
+
+// ── observation chart ───────────────────────────────────────────────────────
 
 function ObservationChart({ observations }: { observations: TrustObservation[] }) {
   if (observations.length < 2) return null;
@@ -168,101 +168,137 @@ function ObservationChart({ observations }: { observations: TrustObservation[] }
     obfuscation: o.metrics.obfuscation_score,
   }));
   return (
-    <div className="h-[190px] px-2 pb-3">
+    <div className="h-[200px] border-t border-border-color px-3 py-3">
       <ResponsiveContainer width="100%" height="100%">
-        <LineChart data={data} margin={{ top: 8, right: 12, left: -18, bottom: 0 }}>
-          <CartesianGrid strokeDasharray="3 3" stroke="var(--border-color)" />
-          <XAxis dataKey="version" tick={{ fontSize: 10 }} stroke="var(--text-muted)" />
-          <YAxis tick={{ fontSize: 10 }} stroke="var(--text-muted)" />
-          <RechartsTooltip contentStyle={{ fontSize: '0.7rem', borderRadius: 8 }} />
-          <Legend wrapperStyle={{ fontSize: '0.65rem' }} />
-          <Line type="monotone" dataKey="network" name="Network calls" stroke="#06B6D4" strokeWidth={2} dot={false} />
-          <Line type="monotone" dataKey="hooks" name="Install hooks" stroke="#EA580C" strokeWidth={2} dot={false} />
-          <Line type="monotone" dataKey="obfuscation" name="Obfuscation" stroke="#7C3AED" strokeWidth={2} dot={false} />
+        <LineChart data={data} margin={chartMargin}>
+          <CartesianGrid {...gridProps} />
+          <XAxis dataKey="version" {...axisProps} />
+          <YAxis {...axisProps} width={40} />
+          <RechartsTooltip {...tooltipProps} />
+          <Legend {...legendProps} />
+          <Line type="monotone" dataKey="network" name="Network calls" {...seriesProps(0)} />
+          <Line type="monotone" dataKey="hooks" name="Install hooks" {...seriesProps(1)} />
+          <Line type="monotone" dataKey="obfuscation" name="Obfuscation" {...seriesProps(2)} />
         </LineChart>
       </ResponsiveContainer>
     </div>
   );
 }
 
-const DRIFT_COLOR: Record<string, string> = {
-  'behaviour-changed': 'var(--critical)',
-  'trust-dropped': 'var(--warning)',
-  added: 'var(--amber)',
-  removed: 'var(--text-muted)',
-};
+// ── metric deltas ───────────────────────────────────────────────────────────
+
+const deltaColumns: Array<DataTableColumn<TrustMetricDelta>> = [
+  { key: 'label', header: 'Metric', sortable: true, sortValue: (d) => d.label, render: (d) => d.label },
+  { key: 'from',  header: 'From',   numeric: true, sortable: true, sortValue: (d) => d.from,  render: (d) => d.from.toFixed(2) },
+  { key: 'to',    header: 'To',     numeric: true, sortable: true, sortValue: (d) => d.to,    render: (d) => d.to.toFixed(2) },
+  {
+    key: 'delta', header: 'Δ', numeric: true, sortable: true, sortValue: (d) => d.delta,
+    render: (d) => (
+      <span className={cn('font-semibold', d.riskier ? 'text-warning' : 'text-text-secondary')}>
+        {d.delta > 0 ? '+' : ''}{d.delta.toFixed(2)}
+      </span>
+    ),
+  },
+  {
+    key: 'risk', header: 'Risk', numeric: true, sortable: true, sortValue: (d) => (d.riskier ? 1 : 0),
+    render: (d) => (d.riskier
+      ? <AlertTriangle size={13} className="ml-auto text-warning" aria-label="Riskier" />
+      : <span className="text-text-muted">·</span>),
+    className: 'w-[64px]',
+  },
+];
 
 function DeltaTable({ deltas }: { deltas: TrustMetricDelta[] }) {
   if (deltas.length === 0) {
     return (
-      <p className="px-4 pb-4 text-[0.72rem] text-text-muted">
+      <p className="m-0 px-3 py-6 text-center text-[0.74rem] text-text-muted">
         No metric drift — behaviour is identical between these releases.
       </p>
     );
   }
-  return (
-    <div className="px-4 pb-4">
-      <table className="w-full text-[0.7rem]">
-        <thead>
-          <tr className="text-left text-text-muted">
-            <th className="pb-1 font-medium">Metric</th>
-            <th className="pb-1 text-right font-medium">From</th>
-            <th className="pb-1 text-right font-medium">To</th>
-            <th className="pb-1 text-right font-medium">Δ</th>
-            <th className="pb-1 pl-2 font-medium">Risk</th>
-          </tr>
-        </thead>
-        <tbody className="tabular-nums text-text-secondary">
-          {deltas.map((d) => (
-            <tr key={d.metric} className="border-t border-border-color/60">
-              <td className="py-1 text-text-primary">{d.label}</td>
-              <td className="py-1 text-right">{d.from.toFixed(2)}</td>
-              <td className="py-1 text-right">{d.to.toFixed(2)}</td>
-              <td className="py-1 text-right">{d.delta > 0 ? '+' : ''}{d.delta.toFixed(2)}</td>
-              <td className="py-1 pl-2 text-right">
-                {d.riskier
-                  ? <span className="font-bold" style={{ color: 'var(--warning)' }}>!</span>
-                  : <span className="text-text-muted">·</span>}
-              </td>
-            </tr>
-          ))}
-        </tbody>
-      </table>
-    </div>
-  );
+  return <DataTable columns={deltaColumns} rows={deltas} rowKey={(d) => d.metric} dense />;
 }
 
+// ── lockfile drift rows ─────────────────────────────────────────────────────
+
 function DriftRow({ drift }: { drift: TrustDrift }) {
-  const color = DRIFT_COLOR[drift.kind] ?? 'var(--text-muted)';
   return (
-    <li className="rounded-lg border border-border-color/70 p-2.5">
-      <div className="flex items-center justify-between gap-2">
-        <div className="flex items-center gap-2">
-          <span
-            className="rounded px-1.5 py-[0.05rem] text-[0.6rem] font-semibold"
-            style={{ color, background: `color-mix(in srgb, ${color} 14%, transparent)` }}
-          >
-            {drift.kind}
-          </span>
-          <span className="text-[0.75rem] font-medium text-text-primary">
+    <li className="rounded border border-border-color bg-bg-base p-2.5">
+      <div className="flex flex-wrap items-center justify-between gap-2">
+        <div className="flex min-w-0 items-center gap-2">
+          <StatusChip tone={DRIFT_TONE[drift.kind] ?? 'INFO'} label={drift.kind} dot={false} />
+          <span className="truncate text-[0.78rem] font-medium text-text-primary">
             {drift.ecosystem}:{drift.package}
           </span>
         </div>
         {(drift.from_score !== undefined || drift.to_score !== undefined) && (
-          <span className="text-[0.68rem] tabular-nums text-text-secondary">
+          <span className="text-[0.7rem] tabular-nums text-text-secondary">
             {drift.from_version ?? ''} {drift.from_score !== undefined ? `(${drift.from_score})` : ''}
             {drift.to_version || drift.from_version ? ' → ' : ''}
             {drift.to_version ?? ''} {drift.to_score !== undefined ? `(${drift.to_score})` : ''}
           </span>
         )}
       </div>
-      {drift.message && <p className="mt-1 text-[0.7rem] text-text-muted">{drift.message}</p>}
+      {drift.message && <p className="m-0 mt-1.5 text-[0.72rem] text-text-muted">{drift.message}</p>}
       {drift.metric_deltas && drift.metric_deltas.length > 0 && (
-        <div className="mt-2">
+        <div className="mt-2 overflow-hidden rounded border border-border-color bg-surface">
           <DeltaTable deltas={drift.metric_deltas} />
         </div>
       )}
     </li>
+  );
+}
+
+function LockPanelBody({ data }: { data: TrustLockView }) {
+  const report = data.report;
+  if (!data.present) {
+    return (
+      <CardBody>
+        <EmptyState
+          icon={Lock}
+          title="No behavioural lockfile yet"
+          description={`Nothing is pinned. The ledger currently holds ${data.tracked} package(s) — freeze their behaviour so the next release can be compared against it.`}
+          command="cwctl trust lock" />
+      </CardBody>
+    );
+  }
+
+  const ok = report?.ok ?? false;
+  return (
+    <>
+      <CardBody>
+        <div className="flex flex-wrap items-center gap-x-4 gap-y-2 text-[0.72rem]">
+          <StatusChip tone={ok ? 'GREEN' : 'RED'} label={ok ? 'Verified' : 'Drifted'} />
+          <span className="tabular-nums text-text-secondary">checked {report?.checked ?? 0}</span>
+          <span className="tabular-nums text-text-secondary">matched {report?.matched ?? 0}</span>
+          <span className="tabular-nums text-text-secondary">drifts {report?.drifts.length ?? 0}</span>
+          {data.lock?.generated && (
+            <span className="text-text-muted">
+              generated {new Date(data.lock.generated).toLocaleString()}
+            </span>
+          )}
+        </div>
+
+        {ok && (
+          <p className="m-0 mt-3 text-[0.74rem] leading-relaxed text-text-secondary">
+            Every tracked package still matches the behavioural fingerprint locked at{' '}
+            {data.lock?.generated ? new Date(data.lock.generated).toLocaleString() : 'generation'} time.
+          </p>
+        )}
+
+        {!ok && report?.drifts.length ? (
+          <ul className="m-0 mt-3 list-none space-y-2 p-0">
+            {report.drifts.map((drift, i) => (
+              <DriftRow key={`${drift.kind}-${drift.ecosystem}:${drift.package}-${i}`} drift={drift} />
+            ))}
+          </ul>
+        ) : null}
+      </CardBody>
+      <CardFooter className="font-mono text-[0.68rem]">
+        <span className="truncate">{data.lockfile}</span>
+        <span className="shrink-0">cwctl trust verify</span>
+      </CardFooter>
+    </>
   );
 }
 
@@ -271,82 +307,56 @@ function LockPanel() {
 
   return (
     <Card>
-      <div className="flex items-center justify-between gap-2 px-4 pt-3 pb-2">
-        <div className="flex items-center gap-2">
-          <Lock size={14} className="text-text-muted" />
-          <span className="text-[0.78rem] font-semibold text-text-primary">Behavioural lockfile</span>
-        </div>
-        <button
-          onClick={() => lock.refetch()}
-          title="Re-verify against the lockfile"
-          className="flex items-center gap-1 text-[0.68rem] text-text-muted hover:text-text-primary"
-        >
-          <RefreshCw size={11} /> re-check
-        </button>
-      </div>
-
-      {lock.isLoading && <p className="px-4 pb-4 text-[0.72rem] text-text-muted">Reading ledger…</p>}
+      <CardHeader
+        icon={Lock}
+        title="Behavioural lockfile"
+        description="Pinned fingerprints for every tracked package, re-verified against the live ledger."
+        action={
+          <button
+            type="button"
+            onClick={() => lock.refetch()}
+            title="Re-verify against the lockfile"
+            className="wd-hover flex items-center gap-1.5 rounded border border-border-color bg-surface px-2 py-1 text-[0.7rem] font-medium text-text-secondary hover:bg-surface-muted hover:text-text-primary" >
+            <RefreshCw size={11} aria-hidden="true" /> Re-check
+          </button>
+        }
+      />
+      {lock.isLoading && (
+        <CardBody>
+          <Skeleton className="h-4 w-56" />
+          <Skeleton className="mt-3 h-16 w-full" />
+        </CardBody>
+      )}
       {lock.isError && (
-        <p className="px-4 pb-4 text-[0.72rem]" style={{ color: 'var(--critical)' }}>
-          {(lock.error as Error).message}
-        </p>
+        <CardBody>
+          <p className="m-0 text-[0.74rem] text-critical">{(lock.error as Error).message}</p>
+        </CardBody>
       )}
       {lock.data && <LockPanelBody data={lock.data} />}
     </Card>
   );
 }
 
-function LockPanelBody({ data }: { data: TrustLockView }) {
-  const report = data.report;
-  if (!data.present) {
-    return (
-      <div className="px-4 pb-4">
-        <p className="text-[0.72rem] leading-relaxed text-text-secondary">
-          No <code className="rounded bg-surface-muted px-1 py-[0.05rem]">chainwarden.lock</code> in the
-          server directory yet — the ledger currently holds{' '}
-          <span className="font-semibold text-text-primary">{data.tracked}</span> package(s).
-        </p>
-        <pre className="mt-2 overflow-x-auto rounded-lg bg-surface-muted p-2.5 text-[0.68rem] leading-relaxed">
-{`# freezes current behaviour into ./chainwarden.lock
-cwctl trust lock`}
-        </pre>
-      </div>
-    );
-  }
+// ── release delta ───────────────────────────────────────────────────────────
 
-  const ok = report?.ok ?? false;
-  const summaryColor = ok ? 'var(--success)' : 'var(--critical)';
+function ReleaseDeltaBody({ data }: { data: TrustVersionDiff }) {
   return (
-    <div className="px-4 pb-4">
-      <div className="flex flex-wrap items-center gap-3 text-[0.72rem]">
-        <span
-          className="rounded-full px-2 py-[0.1rem] text-[0.62rem] font-semibold tracking-wide"
-          style={{ color: summaryColor, background: `color-mix(in srgb, ${summaryColor} 14%, transparent)` }}
-        >
-          {ok ? 'VERIFIED' : 'DRIFTED'}
+    <CardBody className="space-y-2">
+      <div className="flex flex-wrap items-center gap-2 text-[0.74rem]">
+        <span className="font-mono text-text-primary">{data.from_version}</span>
+        <span className="text-text-muted">→</span>
+        <span className="font-mono text-text-primary">{data.to_version}</span>
+        <span className="ml-1 flex items-center gap-1.5">
+          <StatusChip tone={data.from_state} dot={false} />
+          <span className="tabular-nums text-text-secondary">{data.from_score}</span>
         </span>
-        <span className="tabular-nums text-text-secondary">checked {report?.checked ?? 0}</span>
-        <span className="tabular-nums text-text-secondary">matched {report?.matched ?? 0}</span>
-        <span className="tabular-nums text-text-secondary">drifts {report?.drifts.length ?? 0}</span>
-        <span className="text-text-muted">{data.lockfile}</span>
-        <span className="text-text-muted">{data.lock?.generated ? `generated ${new Date(data.lock!.generated!).toLocaleString()}` : ''}</span>
+        <span className="text-text-muted">→</span>
+        <span className="flex items-center gap-1.5">
+          <StatusChip tone={data.to_state} dot={false} />
+          <span className="tabular-nums text-text-secondary">{data.to_score}</span>
+        </span>
       </div>
-
-      {ok && (
-        <p className="mt-3 text-[0.72rem] text-text-secondary">
-          Every tracked package still matches the behavioural fingerprint locked at{' '}
-          {data.lock?.generated ? new Date(data.lock!.generated!).toLocaleString() : 'generation'} time.
-        </p>
-      )}
-
-      {!ok && report?.drifts.length ? (
-        <ul className="mt-3 space-y-2">
-          {report.drifts.map((drift, i) => (
-            <DriftRow key={`${drift.kind}-${drift.ecosystem}:${drift.package}-${i}`} drift={drift} />
-          ))}
-        </ul>
-      ) : null}
-    </div>
+    </CardBody>
   );
 }
 
@@ -359,40 +369,67 @@ function ReleaseDelta({ ecosystem, pkg }: { ecosystem: string; pkg: string }) {
 
   return (
     <Card>
-      <div className="flex items-center gap-2 px-4 pt-3 pb-2">
-        <ArrowLeftRight size={14} className="text-text-muted" />
-        <span className="text-[0.78rem] font-semibold text-text-primary">
-          Release delta — previous → current
-        </span>
-      </div>
-
-      {diff.isLoading && <p className="px-4 pb-4 text-[0.72rem] text-text-muted">Comparing releases…</p>}
-      {diff.isError && (
-        <p className="px-4 pb-4 text-[0.72rem] text-text-muted">
-          {(diff.error as Error).message}
-        </p>
+      <CardHeader
+        icon={ArrowLeftRight}
+        title="Release delta"
+        description="Previous release versus the current one, metric by metric." />
+      {diff.isLoading && (
+        <CardBody>
+          <Skeleton className="h-4 w-64" />
+          <Skeleton className="mt-3 h-24 w-full" />
+        </CardBody>
       )}
-      {diff.data && <ReleaseDeltaBody data={diff.data} />}
+      {diff.isError && (
+        <CardBody>
+          <p className="m-0 text-[0.74rem] text-text-muted">{(diff.error as Error).message}</p>
+        </CardBody>
+      )}
+      {diff.data && (
+        <>
+          <ReleaseDeltaBody data={diff.data} />
+          <div className="border-t border-border-color">
+            <DeltaTable deltas={diff.data.metric_deltas} />
+          </div>
+        </>
+      )}
     </Card>
   );
 }
 
-function ReleaseDeltaBody({ data }: { data: TrustVersionDiff }) {
-  return (
-    <div className="px-4 pb-3">
-      <p className="text-[0.72rem] text-text-secondary">
-        <span className="tabular-nums">{data.from_version}</span> →{' '}
-        <span className="tabular-nums">{data.to_version}</span>
-        <span className="ml-2 tabular-nums">
-          {data.from_score} ({data.from_state.toLowerCase()}) → {data.to_score} ({data.to_state.toLowerCase()})
-        </span>
-      </p>
-      <div className="mt-2">
-        <DeltaTable deltas={data.metric_deltas} />
-      </div>
-    </div>
-  );
-}
+// ── ledger table ────────────────────────────────────────────────────────────
+
+const ledgerColumns: Array<DataTableColumn<TrustSummary>> = [
+  {
+    key: 'package', header: 'Package', sortable: true, sortValue: (p) => `${p.ecosystem}:${p.package}`,
+    render: (p) => (
+      <span className="font-medium text-text-primary">
+        <span className="text-text-muted">{p.ecosystem}:</span>{p.package}
+      </span>
+    ),
+  },
+  {
+    key: 'version', header: 'Version', sortable: true, sortValue: (p) => p.version ?? '',
+    render: (p) => <span className="font-mono text-[0.72rem] text-text-secondary">{p.version || '—'}</span>,
+    className: 'w-[120px]',
+  },
+  {
+    key: 'samples', header: 'Obs', numeric: true, sortable: true, sortValue: (p) => p.samples,
+    render: (p) => p.samples,
+    className: 'w-[64px]',
+  },
+  {
+    key: 'score', header: 'Score', numeric: true, sortable: true, sortValue: (p) => p.score,
+    render: (p) => <span className="font-semibold">{p.score}</span>,
+    className: 'w-[72px]',
+  },
+  {
+    key: 'state', header: 'State', sortable: true, sortValue: (p) => p.state,
+    render: (p) => <StatusChip tone={p.state} />,
+    className: 'w-[116px]',
+  },
+];
+
+// ── page ────────────────────────────────────────────────────────────────────
 
 export function TrustPage() {
   const [scenario, setScenario] = useState<string>('hijack');
@@ -406,199 +443,236 @@ export function TrustPage() {
     enabled: !!selected,
   });
 
-  const simulation = useMutation({
-    mutationFn: (id: string) => simulateTrust(id),
-  });
+  const simulation = useMutation({ mutationFn: (id: string) => simulateTrust(id) });
 
   const states = tracked.data?.states ?? {};
+  const packages = tracked.data?.packages ?? [];
 
   return (
-    <div className="space-y-4 p-4">
-      <header className="flex items-start justify-between gap-4">
-        <div>
-          <h1 className="flex items-center gap-2 text-[1.05rem] font-semibold text-text-primary">
-            <Radar size={17} className="text-primary-blue" />
-            Dynamic Trust Score
-          </h1>
-          <p className="mt-1 max-w-3xl text-[0.74rem] leading-relaxed text-text-secondary">
-            Signature scanning catches malware we have already seen. The trust engine catches a package that
-            stops behaving like <em>itself</em> — a new install hook, an outbound call it never made, a
-            maintainer who appeared yesterday. Every release is scored against the statistical baseline learned
-            from its own history.
-          </p>
-        </div>
+    <div className="space-y-5">
+      <header>
+        <h1 className="m-0 flex items-center gap-2 text-[1.05rem] font-semibold text-text-primary">
+          <Radar size={18} className="text-primary" aria-hidden="true" />
+          Dynamic Trust Score
+        </h1>
+        <p className="m-0 mt-1.5 max-w-3xl text-[0.78rem] leading-relaxed text-text-secondary">
+          Signature scanning catches malware we have already seen. The trust engine catches a package
+          that stops behaving like <em>itself</em> — a new install hook, an outbound call it never
+          made, a maintainer who appeared yesterday. Every release is scored against the statistical
+          baseline learned from its own history.
+        </p>
       </header>
 
-      <div className="grid grid-cols-2 gap-3 lg:grid-cols-4">
-        <KPITile label="Packages tracked" value={tracked.data?.tracked ?? 0} icon={Activity} color="var(--primary)" />
-        <KPITile label="Average trust" value={tracked.data?.average_score ?? 100} icon={Gauge} color="var(--teal)" />
-        <KPITile label="Amber" value={states.AMBER ?? 0} icon={ShieldAlert} color="var(--warning)" />
-        <KPITile label="Red" value={states.RED ?? 0} icon={ShieldAlert} color="var(--critical)" />
+      {/* KPI row */}
+      <div className="grid grid-cols-2 gap-5 lg:grid-cols-4">
+        <StatTile
+          label="Packages tracked"
+          value={tracked.data?.tracked ?? 0}
+          icon={Activity}
+          accent="primary"
+          loading={tracked.isLoading}
+        />
+        <StatTile
+          label="Average trust"
+          value={tracked.data?.average_score ?? 100}
+          icon={Gauge}
+          accent="teal"
+          hint="Mean score across the ledger"
+          loading={tracked.isLoading}
+        />
+        <StatTile
+          label="Amber"
+          value={states.AMBER ?? 0}
+          icon={ShieldAlert}
+          accent="warning"
+          hint="Drifting, not yet blocked"
+          loading={tracked.isLoading}
+        />
+        <StatTile
+          label="Red"
+          value={states.RED ?? 0}
+          icon={ShieldAlert}
+          accent="critical"
+          hint="Behaviour changed materially"
+          loading={tracked.isLoading}
+        />
       </div>
 
-      {/* Behavioural lockfile: verified vs drifted, with per-drift metric deltas */}
       <LockPanel />
 
-      <div className="grid gap-4 lg:grid-cols-2">
-        {/* ── Simulation ── */}
+      <div className="grid gap-5 lg:grid-cols-2">
+        {/* Drift simulator */}
         <Card>
-          <div className="flex items-center gap-2 px-4 pt-3 pb-2">
-            <FlaskConical size={14} className="text-text-muted" />
-            <span className="text-[0.78rem] font-semibold text-text-primary">Drift simulator</span>
-          </div>
-          <p className="px-4 pb-3 text-[0.7rem] text-text-muted">
-            Replay a compromise pattern against a synthetic release history — no data required.
-          </p>
-          <div className="grid grid-cols-2 gap-2 px-4 pb-3">
-            {SCENARIOS.map((s) => (
-              <button
-                key={s.id}
-                onClick={() => { setScenario(s.id); simulation.mutate(s.id); }}
-                title={s.hint}
-                className={cn(
-                  'rounded-lg border px-2.5 py-2 text-left text-[0.7rem] transition-colors',
-                  scenario === s.id
-                    ? 'border-primary-blue bg-blue-light text-primary-blue'
-                    : 'border-border-color text-text-secondary hover:bg-surface-muted',
-                )}
-              >
-                <span className="block font-medium">{s.label}</span>
-                <span className="mt-0.5 block text-[0.62rem] leading-snug text-text-muted">{s.hint}</span>
-              </button>
-            ))}
-          </div>
-
-          {simulation.isPending && (
-            <p className="px-4 pb-4 text-[0.72rem] text-text-muted">Running simulation…</p>
-          )}
-          {simulation.isError && (
-            <p className="px-4 pb-4 text-[0.72rem]" style={{ color: 'var(--critical)' }}>
-              {(simulation.error as Error).message}
-            </p>
-          )}
-          {simulation.data && !simulation.isPending && (
-            <>
-              <div className="px-4 pb-3">
-                <ScoreDial score={simulation.data.score.score} state={simulation.data.score.state} />
-                <p className="mt-2 text-[0.7rem] text-text-secondary">
-                  {simulation.data.release.package}@{simulation.data.release.version} scored against{' '}
-                  {simulation.data.baseline.samples} prior release(s) — {simulation.data.score.summary}
-                </p>
-              </div>
-              <BaselineTable baseline={simulation.data.baseline} />
-              <DeviationList score={simulation.data.score} />
-            </>
-          )}
-          {!simulation.data && !simulation.isPending && (
-            <p className="px-4 pb-4 text-[0.72rem] text-text-muted">
-              Pick a scenario to score it. Equivalent CLI:{' '}
-              <code className="rounded bg-surface-muted px-1 py-[0.05rem]">cwctl trust simulate --scenario {scenario}</code>
-            </p>
-          )}
-        </Card>
-
-        {/* ── Tracked packages ── */}
-        <Card>
-          <div className="flex items-center gap-2 px-4 pt-3 pb-2">
-            <ShieldCheck size={14} className="text-text-muted" />
-            <span className="text-[0.78rem] font-semibold text-text-primary">Tracked packages</span>
-          </div>
-
-          {tracked.isLoading && <p className="px-4 pb-4 text-[0.72rem] text-text-muted">Loading ledger…</p>}
-          {tracked.isError && (
-            <p className="px-4 pb-4 text-[0.72rem]" style={{ color: 'var(--critical)' }}>
-              {(tracked.error as Error).message}
-            </p>
-          )}
-
-          {tracked.data && tracked.data.packages.length === 0 && (
-            <div className="px-4 pb-4 text-[0.72rem] text-text-muted">
-              <p>No observations recorded yet. Feed the ledger from a scan:</p>
-              <pre className="mt-2 overflow-x-auto rounded-lg bg-surface-muted p-2.5 text-[0.68rem] leading-relaxed">
-{`cwctl scan . --format json > scan.json
-cwctl trust from-scan scan.json --package npm:express
-cwctl trust list`}
-              </pre>
-            </div>
-          )}
-
-          {tracked.data && tracked.data.packages.length > 0 && (
-            <ul className="pb-2">
-              {tracked.data.packages.map((pkg) => (
-                <li key={`${pkg.ecosystem}:${pkg.package}`}>
-                  <button
-                    onClick={() => setSelected(pkg)}
+          <CardHeader
+            icon={FlaskConical}
+            title="Drift simulator"
+            description="Replay a compromise pattern against a synthetic release history — no data required."
+            action={
+              <code className="hidden rounded bg-surface-muted px-1.5 py-0.5 font-mono text-[0.65rem] text-text-muted sm:inline">
+                cwctl trust simulate --scenario {scenario}
+              </code>
+            }
+          />
+          <CardBody className="space-y-3">
+            <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
+              {SCENARIOS.map((s) => (
+                <button
+                  key={s.id}
+                  type="button"
+                  onClick={() => { setScenario(s.id); simulation.mutate(s.id); }}
+                  title={s.hint}
+                  className={cn(
+                    'wd-hover rounded border px-2.5 py-2 text-left hover:bg-surface-muted',
+                    scenario === s.id
+                      ? 'border-primary bg-[color-mix(in_srgb,var(--primary)_8%,transparent)]'
+                      : 'border-border-color',
+                  )}
+                >
+                  <span
                     className={cn(
-                      'flex w-full items-center justify-between gap-3 px-4 py-2 text-left transition-colors hover:bg-surface-muted',
-                      selected?.package === pkg.package && selected?.ecosystem === pkg.ecosystem && 'bg-surface-muted',
+                      'block text-[0.76rem] font-medium',
+                      scenario === s.id ? 'text-primary' : 'text-text-primary',
                     )}
                   >
-                    <div className="min-w-0">
-                      <span className="block truncate text-[0.75rem] font-medium text-text-primary">
-                        {pkg.ecosystem}:{pkg.package}
-                      </span>
-                      <span className="block truncate text-[0.66rem] text-text-muted">
-                        {pkg.version ? `${pkg.version} · ` : ''}{pkg.samples} observation(s) · {pkg.summary}
-                      </span>
-                    </div>
-                    <div className="flex shrink-0 items-center gap-2">
-                      <span
-                        className="text-[0.85rem] font-bold tabular-nums"
-                        style={{ color: STATE_COLOR[pkg.state] ?? 'var(--text-muted)' }}
-                      >
-                        {pkg.score}
-                      </span>
-                      <StateBadge state={pkg.state} />
-                      <ChevronRight size={13} className="text-text-muted" />
-                    </div>
-                  </button>
-                </li>
+                    {s.label}
+                  </span>
+                  <span className="mt-0.5 block text-[0.68rem] leading-snug text-text-muted">
+                    {s.hint}
+                  </span>
+                </button>
               ))}
-            </ul>
-          )}
+            </div>
 
+            {simulation.isPending && (
+              <div className="space-y-2 pt-1">
+                <Skeleton className="h-16 w-44" />
+                <Skeleton className="h-24 w-full" />
+              </div>
+            )}
+            {simulation.isError && (
+              <p className="m-0 text-[0.74rem] text-critical">{(simulation.error as Error).message}</p>
+            )}
+            {simulation.data && !simulation.isPending && (
+              <div className="space-y-3 border-t border-border-color pt-3">
+                <ScoreDial score={simulation.data.score.score} state={simulation.data.score.state} />
+                <p className="m-0 text-[0.74rem] leading-relaxed text-text-secondary">
+                  <span className="font-mono text-text-primary">
+                    {simulation.data.release.package}@{simulation.data.release.version}
+                  </span>{' '}
+                  scored against {simulation.data.baseline.samples} prior release(s) —{' '}
+                  {simulation.data.score.summary}
+                </p>
+                <DeviationTable score={simulation.data.score} />
+              </div>
+            )}
+            {!simulation.data && !simulation.isPending && (
+              <EmptyState
+                icon={FlaskConical}
+                title="Pick a scenario to score it"
+                description="Runs entirely against synthetic history — nothing is written to your ledger."
+                command={`cwctl trust simulate --scenario ${scenario}`}
+              />
+            )}
+          </CardBody>
+        </Card>
+
+        {/* Tracked packages — the ledger */}
+        <Card>
+          <CardHeader
+            icon={ShieldCheck}
+            title="Tracked packages"
+            description="Every package the ledger has observed, worst state first."
+            action={
+              selected && (
+                <button
+                  type="button"
+                  onClick={() => setSelected(null)}
+                  className="wd-hover flex items-center gap-1 rounded border border-border-color bg-surface px-2 py-1 text-[0.7rem] font-medium text-text-secondary hover:bg-surface-muted hover:text-text-primary" >
+                  <X size={11} aria-hidden="true" /> Clear
+                </button>
+              )
+            }
+          />
+          {tracked.isError && (
+            <CardBody>
+              <p className="m-0 text-[0.74rem] text-critical">{(tracked.error as Error).message}</p>
+            </CardBody>
+          )}
+          <DataTable
+            columns={ledgerColumns}
+            rows={packages}
+            rowKey={(p) => `${p.ecosystem}:${p.package}`}
+            loading={tracked.isLoading}
+            skeletonRows={6}
+            onRowClick={(p) => setSelected(p)}
+            initialSort={{ key: 'score', dir: 'asc' }}
+            maxHeightClass="max-h-[420px]"
+            rowClassName={(p) =>
+              selected?.package === p.package && selected?.ecosystem === p.ecosystem
+                ? 'bg-[color-mix(in_srgb,var(--primary)_8%,transparent)]'
+                : undefined
+            }
+            empty={{
+              icon: ShieldCheck,
+              title: 'No observations recorded yet',
+              description: 'The ledger learns from scan output — feed it one scan and it starts tracking.',
+              command: LEDGER_COMMAND,
+            }}
+          />
           {tracked.data?.store && (
-            <p className="px-4 pb-3 text-[0.62rem] text-text-muted">Ledger: {tracked.data.store}</p>
+            <CardFooter className="font-mono text-[0.68rem]">
+              <span className="truncate">Ledger: {tracked.data.store}</span>
+              <span className="shrink-0">cwctl trust list</span>
+            </CardFooter>
           )}
         </Card>
       </div>
 
-      {/* ── Selected package detail ── */}
+      {/* Selected package detail */}
       {selected && (
         <Card>
-          <div className="flex items-center justify-between px-4 pt-3 pb-2">
-            <span className="text-[0.78rem] font-semibold text-text-primary">
-              {selected.ecosystem}:{selected.package}
-            </span>
-            <button
-              onClick={() => setSelected(null)}
-              className="text-[0.68rem] text-text-muted hover:text-text-primary"
-            >
-              Close
-            </button>
-          </div>
-
-          {detail.isLoading && <p className="px-4 pb-4 text-[0.72rem] text-text-muted">Loading baseline…</p>}
+          <CardHeader
+            icon={Radar}
+            title={`${selected.ecosystem}:${selected.package}`}
+            description="Learned baseline, observed history and the deviations behind the current score."
+            action={
+              <button
+                type="button"
+                onClick={() => setSelected(null)}
+                className="wd-hover flex items-center gap-1 rounded border border-border-color bg-surface px-2 py-1 text-[0.7rem] font-medium text-text-secondary hover:bg-surface-muted hover:text-text-primary" >
+                <X size={11} aria-hidden="true" /> Close
+              </button>
+            }
+          />
+          {detail.isLoading && (
+            <CardBody>
+              <Skeleton className="h-16 w-44" />
+              <Skeleton className="mt-3 h-40 w-full" />
+            </CardBody>
+          )}
           {detail.isError && (
-            <p className="px-4 pb-4 text-[0.72rem]" style={{ color: 'var(--critical)' }}>
-              {(detail.error as Error).message}
-            </p>
+            <CardBody>
+              <p className="m-0 text-[0.74rem] text-critical">{(detail.error as Error).message}</p>
+            </CardBody>
           )}
           {detail.data && (
             <>
-              <div className="px-4 pb-3">
+              <CardBody className="space-y-3">
                 <ScoreDial score={detail.data.score.score} state={detail.data.score.state} />
-                <p className="mt-2 text-[0.7rem] text-text-secondary">{detail.data.score.summary}</p>
-              </div>
+                <p className="m-0 text-[0.74rem] leading-relaxed text-text-secondary">
+                  {detail.data.score.summary}
+                </p>
+              </CardBody>
               <ObservationChart observations={detail.data.observations} />
               <BaselineTable baseline={detail.data.baseline} />
-              <DeviationList score={detail.data.score} />
+              <div className="border-t border-border-color">
+                <DeviationTable score={detail.data.score} />
+              </div>
             </>
           )}
         </Card>
       )}
 
-      {/* Release delta for the selected package (previous vs latest) */}
       {selected && <ReleaseDelta ecosystem={selected.ecosystem} pkg={selected.package} />}
     </div>
   );

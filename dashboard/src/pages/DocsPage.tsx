@@ -192,8 +192,7 @@ export function DocsPage() {
             onKeyDown={handleSearchSubmit}
             placeholder="Search this page…"
             aria-label="Search this page"
-            className="w-full rounded-md border border-border-color bg-surface pl-7 pr-2 py-1.5 text-xs text-text-primary placeholder:text-text-muted focus-visible:ring-2 focus-visible:ring-primary-blue focus-visible:outline-none"
-          />
+            className="w-full rounded-md border border-border-color bg-surface pl-7 pr-2 py-1.5 text-xs text-text-primary placeholder:text-text-muted focus-visible:ring-2 focus-visible:ring-primary-blue focus-visible:outline-none" />
         </div>
         {query.trim() && (
           <p className="text-[0.68rem] text-text-secondary mb-3 -mt-2">
@@ -233,8 +232,7 @@ export function DocsPage() {
           <button
             type="button"
             onClick={() => setTocOpen(v => !v)}
-            className="lg:hidden inline-flex items-center gap-1.5 text-xs text-text-secondary hover:text-text-primary rounded-md px-2 py-1 focus-visible:ring-2 focus-visible:ring-primary-blue focus-visible:outline-none"
-          >
+            className="lg:hidden inline-flex items-center gap-1.5 text-xs text-text-secondary hover:text-text-primary rounded-md px-2 py-1 focus-visible:ring-2 focus-visible:ring-primary-blue focus-visible:outline-none" >
             <List size={13} /> On this page
           </button>
         </div>
@@ -265,16 +263,14 @@ export function DocsPage() {
             {prevDoc ? (
               <button
                 onClick={() => setSelected(prevDoc.key)}
-                className="inline-flex items-center gap-1.5 rounded-md border border-border-color bg-surface px-3 py-2 text-xs font-medium text-text-secondary hover:bg-surface-muted hover:text-text-primary focus-visible:ring-2 focus-visible:ring-primary-blue focus-visible:outline-none"
-              >
+                className="inline-flex items-center gap-1.5 rounded-md border border-border-color bg-surface px-3 py-2 text-xs font-medium text-text-secondary hover:bg-surface-muted hover:text-text-primary focus-visible:ring-2 focus-visible:ring-primary-blue focus-visible:outline-none" >
                 <ChevronLeft size={13} /> {prevDoc.label}
               </button>
             ) : <span />}
             {nextDoc ? (
               <button
                 onClick={() => setSelected(nextDoc.key)}
-                className="inline-flex items-center gap-1.5 rounded-md border border-border-color bg-surface px-3 py-2 text-xs font-medium text-text-secondary hover:bg-surface-muted hover:text-text-primary focus-visible:ring-2 focus-visible:ring-primary-blue focus-visible:outline-none"
-              >
+                className="inline-flex items-center gap-1.5 rounded-md border border-border-color bg-surface px-3 py-2 text-xs font-medium text-text-secondary hover:bg-surface-muted hover:text-text-primary focus-visible:ring-2 focus-visible:ring-primary-blue focus-visible:outline-none" >
                 {nextDoc.label} <ChevronRight size={13} />
               </button>
             ) : <span />}
@@ -291,8 +287,7 @@ export function DocsPage() {
               type="button"
               onClick={() => setTocOpen(false)}
               className="text-text-muted hover:text-text-primary lg:hidden"
-              aria-label="Close table of contents"
-            >
+              aria-label="Close table of contents" >
               <X size={13} />
             </button>
           </div>

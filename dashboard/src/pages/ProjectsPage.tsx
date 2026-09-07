@@ -1,4 +1,5 @@
 import { useQuery } from '@tanstack/react-query';
+import { Skeleton } from '../components/ui/skeleton';
 import { getActiveRisks } from '../lib/api';
 import { FolderOpen } from 'lucide-react';
 
@@ -37,21 +38,21 @@ export function ProjectsPage() {
     .sort(([, a], [, b]) => b.total - a.total);
 
   return (
-    <div className="p-6 space-y-5">
+    <div className="space-y-5">
       <div className="flex items-center gap-3">
-        <FolderOpen size={20} style={{ color: 'var(--color-indigo)' }} />
+        <FolderOpen className="text-primary" size={20} />
         <div>
-          <h1 className="text-xl font-bold font-mono" style={{ color: 'var(--fg)' }}>Projects</h1>
-          <p className="text-sm mt-0.5" style={{ color: 'var(--color-muted)' }}>
+          <h1 className="text-xl font-bold font-mono text-text-primary">Projects</h1>
+          <p className="text-sm mt-0.5 text-text-secondary">
             Scanned packages and their risk posture.
           </p>
         </div>
       </div>
 
-      <div className="rounded-lg overflow-hidden" style={{ background: 'var(--surface)', border: '1px solid rgba(255,255,255,0.06)' }}>
+      <div className="rounded-lg overflow-hidden bg-surface border border-border-color">
         <table style={{ width: '100%', borderCollapse: 'collapse' }}>
           <thead>
-            <tr style={{ borderBottom: '1px solid rgba(255,255,255,0.06)' }}>
+            <tr className="border-b border-border-color">
               {['Project', 'Ecosystem', 'Risk Grade', 'Critical', 'Total Findings'].map(h => (
                 <th key={h} style={{ padding: '0.625rem 0.875rem', textAlign: 'left', fontSize: '0.7rem', color: 'var(--color-muted)', fontFamily: 'var(--font-mono)', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.06em' }}>
                   {h}
@@ -61,10 +62,10 @@ export function ProjectsPage() {
           </thead>
           <tbody>
             {isLoading && (
-              <tr><td colSpan={5} style={{ padding: '2rem', textAlign: 'center', color: 'var(--color-muted)', fontSize: '0.8rem' }}>Loading...</td></tr>
+              <tr><td colSpan={5} className="p-5"><Skeleton className="h-4 w-full" /></td></tr>
             )}
             {!isLoading && projects.length === 0 && (
-              <tr><td colSpan={5} style={{ padding: '2rem', textAlign: 'center', color: 'var(--color-muted)', fontSize: '0.8rem' }}>No projects scanned yet. Run <code style={{ color: 'var(--color-safe)' }}>cwctl scan .</code></td></tr>
+              <tr><td colSpan={5} style={{ padding: '2rem', textAlign: 'center', color: 'var(--color-muted)', fontSize: '0.8rem' }}>No projects scanned yet. Run <code className="text-success">cwctl scan .</code></td></tr>
             )}
             {projects.map(([name, p], i) => (
               <tr key={name} style={{ borderBottom: i < projects.length - 1 ? '1px solid rgba(255,255,255,0.04)' : 'none' }}>

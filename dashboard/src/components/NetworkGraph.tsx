@@ -248,8 +248,7 @@ export function NetworkGraph({ mode, data, opacity = 0.08, width = 600, height =
       <div
         className="pointer-events-none select-none"
         style={{ opacity, width, height }}
-        aria-hidden="true"
-      >
+        aria-hidden="true" >
         <ForceGraph2D
           ref={graphRef}
           graphData={graphData}

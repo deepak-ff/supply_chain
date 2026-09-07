@@ -143,7 +143,7 @@ export function LogMonitorPage() {
   };
 
   return (
-    <div className="flex flex-col h-[calc(100vh-2rem)] p-6 max-w-[1600px] mx-auto">
+    <div className="flex flex-col h-[calc(100vh-7rem)] max-w-[1600px] mx-auto">
       {/* Header */}
       <div className="flex items-center justify-between mb-4">
         <div>
@@ -175,8 +175,7 @@ export function LogMonitorPage() {
           </button>
           <button
             onClick={exportLogs}
-            className="flex items-center gap-1.5 px-3 py-1.5 rounded-md text-[0.72rem] text-text-secondary border border-border-color hover:text-primary-blue hover:border-primary-blue/40 bg-transparent cursor-pointer [font-family:inherit] transition-colors"
-          >
+            className="flex items-center gap-1.5 px-3 py-1.5 rounded-md text-[0.72rem] text-text-secondary border border-border-color hover:text-primary-blue hover:border-primary-blue/40 bg-transparent cursor-pointer [font-family:inherit] transition-colors" >
             <Download size={13} /> Export
           </button>
         </div>
@@ -205,8 +204,7 @@ export function LogMonitorPage() {
             value={search}
             onChange={e => setSearch(e.target.value)}
             placeholder="Search logs..."
-            className="pl-8 h-8 text-xs"
-          />
+            className="pl-8 h-8 text-xs" />
         </div>
         <div className="flex items-center gap-1.5">
           <Filter size={12} className="text-text-muted" />
@@ -230,8 +228,7 @@ export function LogMonitorPage() {
       <div
         ref={scrollRef}
         onScroll={handleScroll}
-        className="flex-1 overflow-auto rounded-lg border border-border-color bg-[#0a0c0e] font-mono text-[0.72rem]"
-      >
+        className="flex-1 overflow-auto rounded-lg border border-border-color bg-[#0a0c0e] font-mono text-[0.72rem]" >
         {filtered.length === 0 ? (
           <div className="flex flex-col items-center justify-center py-20 text-text-muted">
             <Terminal size={32} className="mb-3 opacity-40" />
@@ -310,8 +307,7 @@ export function LogMonitorPage() {
                 setAutoScroll(true);
                 if (scrollRef.current) scrollRef.current.scrollTop = scrollRef.current.scrollHeight;
               }}
-              className="text-primary-blue hover:underline bg-transparent border-none cursor-pointer [font-family:inherit] text-[0.65rem]"
-            >
+              className="text-primary-blue hover:underline bg-transparent border-none cursor-pointer [font-family:inherit] text-[0.65rem]" >
               Jump to latest
             </button>
           )}

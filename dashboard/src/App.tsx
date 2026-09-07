@@ -5,6 +5,7 @@ import { useUIStore } from './store/ui';
 import { getAuthStatus, logout } from './lib/api';
 import { migrateStorageKey } from './lib/utils';
 import { ForcePasswordChange } from './components/ForcePasswordChange';
+import { Skeleton } from './components/ui/skeleton';
 
 class ErrorBoundary extends React.Component<
   { children: React.ReactNode },
@@ -15,15 +16,15 @@ class ErrorBoundary extends React.Component<
   render() {
     if (this.state.error) {
       return (
-        <div style={{ padding: '2rem', color: '#FF3D3D', fontFamily: 'monospace' }}>
-          <p style={{ fontWeight: 'bold' }}>Something went wrong</p>
-          <p style={{ fontSize: '0.85rem', color: '#6B7280', marginTop: '0.5rem' }}>
+        <div className="p-8 font-mono text-critical">
+          <p className="m-0 font-bold">Something went wrong</p>
+          <p className="m-0 mt-2 text-[0.85rem] text-text-muted">
             {(this.state.error as Error).message}
           </p>
           <button
+            type="button"
             onClick={() => this.setState({ error: null })}
-            style={{ marginTop: '1rem', padding: '0.4rem 1rem', background: 'rgba(255,255,255,0.1)', border: 'none', color: '#F8F9FA', borderRadius: '0.25rem', cursor: 'pointer' }}
-          >
+            className="wd-hover mt-4 rounded border border-border-color bg-surface px-4 py-1.5 text-[0.78rem] text-text-primary hover:bg-surface-muted" >
             Retry
           </button>
         </div>
@@ -33,7 +34,10 @@ class ErrorBoundary extends React.Component<
   }
 }
 
-import { Sidebar, NAV_SECTIONS, STANDALONE } from './components/Sidebar';
+import { Sidebar } from './components/Sidebar';
+import { NAV_SECTIONS, STANDALONE } from './components/nav';
+import { TopBar } from './components/TopBar';
+import { PageContainer } from './components/PageContainer';
 import { ApiStatusBanner } from './components/ApiStatusBanner';
 import { CommandMenu, type Command } from './components/CommandMenu';
 import { ToastProvider } from './components/Toast';
@@ -79,7 +83,30 @@ const TerminalPage          = lazy(() => import('./pages/TerminalPage').then(m =
 const PublicDocsPage        = lazy(() => import('./pages/PublicDocsPage').then(m => ({ default: m.PublicDocsPage })));
 
 function RouteFallback() {
-  return <div style={{ minHeight: '60vh' }} />;
+  return (
+    <PageContainer>
+      <div className="flex flex-col gap-5" aria-busy="true">
+        <div className="grid grid-cols-2 gap-5 lg:grid-cols-4">
+          {[0, 1, 2, 3].map((i) => (
+            <div key={i} className="rounded border border-border-color bg-surface shadow-card">
+              <div className="px-4 py-3">
+                <Skeleton className="h-3 w-24" />
+                <Skeleton className="mt-3 h-7 w-16" />
+              </div>
+            </div>
+          ))}
+        </div>
+        <div className="rounded border border-border-color bg-surface shadow-card">
+          <div className="border-b border-border-color px-4 py-3">
+            <Skeleton className="h-3.5 w-40" />
+          </div>
+          <div className="px-4 py-3">
+            <Skeleton className="h-40 w-full" />
+          </div>
+        </div>
+      </div>
+    </PageContainer>
+  );
 }
 
 const qc = new QueryClient({
@@ -225,25 +252,30 @@ function AppShell({ path, setPath }: { path: string; setPath: (p: string) => voi
   }
 
   return (
-    <div className="flex flex-col min-h-screen" style={{ background: 'var(--bg-base)', color: 'var(--fg)' }}>
+    <div className="flex h-screen flex-col overflow-hidden bg-bg-base text-text-primary">
       <ApiStatusBanner />
       <CommandPalette navigate={setPath} />
-      <div className="flex flex-1 overflow-hidden">
-        <Sidebar
-          current={path}
-          onNavigate={setPath}
-          onLogout={async () => {
-            await logout();
-            qc.setQueryData(['auth-me'], null);
-            qc.invalidateQueries({ queryKey: ['auth-me'] });
-            setPath('/');
-          }}
-        />
-        <main className="flex-1 overflow-auto">
-          <Suspense fallback={<RouteFallback />}>
-            <Router path={path} />
-          </Suspense>
-        </main>
+      <div className="flex min-h-0 flex-1">
+        <Sidebar current={path} onNavigate={setPath} />
+        <div className="flex min-w-0 flex-1 flex-col">
+          <TopBar
+            path={path}
+            onNavigate={setPath}
+            onLogout={async () => {
+              await logout();
+              qc.setQueryData(['auth-me'], null);
+              qc.invalidateQueries({ queryKey: ['auth-me'] });
+              setPath('/');
+            }}
+          />
+          <main className="min-h-0 flex-1 overflow-y-auto">
+            <Suspense fallback={<RouteFallback />}>
+              <PageContainer>
+                <Router path={path} />
+              </PageContainer>
+            </Suspense>
+          </main>
+        </div>
       </div>
     </div>
   );

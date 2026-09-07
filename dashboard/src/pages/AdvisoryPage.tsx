@@ -19,33 +19,30 @@ export function AdvisoryPage() {
   });
 
   return (
-    <div className="p-6 space-y-6">
-      <h1 className="text-xl font-bold font-mono" style={{ color: 'var(--fg)' }}>AI Security Advisory</h1>
-      <p className="text-sm" style={{ color: 'var(--color-muted)' }}>
+    <div className="space-y-6">
+      <h1 className="text-xl font-bold font-mono text-text-primary">AI Security Advisory</h1>
+      <p className="text-sm text-text-secondary">
         AI-powered structured advisory with exploitability analysis and recommended actions.
       </p>
 
-      <div className="rounded-lg p-5 space-y-4" style={{ background: 'var(--surface)', border: '1px solid rgba(255,255,255,0.06)' }}>
+      <div className="rounded-lg p-5 space-y-4 bg-surface border border-border-color">
         <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
           <div>
-            <label className="block text-xs font-mono mb-1" style={{ color: 'var(--color-muted)' }}>ECOSYSTEM</label>
+            <label className="block text-xs font-mono mb-1 text-text-secondary">ECOSYSTEM</label>
             <select value={ecosystem} onChange={e => setEcosystem(e.target.value)}
-              className="w-full rounded px-3 py-2 text-sm font-mono"
-              style={{ background: 'var(--bg-base)', color: 'var(--fg)', border: '1px solid rgba(255,255,255,0.12)' }}>
+              className="w-full rounded px-3 py-2 text-sm font-mono bg-bg-base text-text-primary border border-border-color" >
               {ECOSYSTEMS.map(e => <option key={e}>{e}</option>)}
             </select>
           </div>
           <div>
-            <label className="block text-xs font-mono mb-1" style={{ color: 'var(--color-muted)' }}>PACKAGE</label>
+            <label className="block text-xs font-mono mb-1 text-text-secondary">PACKAGE</label>
             <input value={pkg} onChange={e => setPkg(e.target.value)} placeholder="package name"
-              className="w-full rounded px-3 py-2 text-sm font-mono"
-              style={{ background: 'var(--bg-base)', color: 'var(--fg)', border: '1px solid rgba(255,255,255,0.12)' }} />
+              className="w-full rounded px-3 py-2 text-sm font-mono bg-bg-base text-text-primary border border-border-color" />
           </div>
           <div>
-            <label className="block text-xs font-mono mb-1" style={{ color: 'var(--color-muted)' }}>VERSION</label>
+            <label className="block text-xs font-mono mb-1 text-text-secondary">VERSION</label>
             <input value={version} onChange={e => setVersion(e.target.value)} placeholder="version"
-              className="w-full rounded px-3 py-2 text-sm font-mono"
-              style={{ background: 'var(--bg-base)', color: 'var(--fg)', border: '1px solid rgba(255,255,255,0.12)' }} />
+              className="w-full rounded px-3 py-2 text-sm font-mono bg-bg-base text-text-primary border border-border-color" />
           </div>
         </div>
         <button onClick={() => gen.mutate()} disabled={!pkg || !version || gen.isPending}
@@ -66,38 +63,38 @@ export function AdvisoryPage() {
       {advisory && (
         <div className="space-y-4">
           {/* Header */}
-          <div className="rounded-lg p-5 space-y-3" style={{ background: 'var(--surface)', border: '1px solid rgba(255,255,255,0.06)' }}>
+          <div className="rounded-lg p-5 space-y-3 bg-surface border border-border-color">
             <div className="flex items-center gap-3">
               <SeverityBadge severity={advisory.severity} />
-              <span className="text-sm font-mono" style={{ color: 'var(--color-muted)' }}>
+              <span className="text-sm font-mono text-text-secondary">
                 Confidence: {Math.round(advisory.confidence * 100)}%
               </span>
             </div>
-            <h2 className="font-bold" style={{ color: 'var(--fg)' }}>
+            <h2 className="font-bold text-text-primary">
               {advisory.package.name}@{advisory.package.version} ({advisory.package.ecosystem})
             </h2>
           </div>
 
           {/* Advisory text */}
-          <div className="rounded-lg p-5" style={{ background: 'var(--surface)', border: '1px solid rgba(255,255,255,0.06)' }}>
-            <h3 className="text-xs font-mono mb-2" style={{ color: 'var(--color-muted)' }}>ADVISORY</h3>
-            <p className="text-sm leading-relaxed" style={{ color: 'var(--fg)' }}>{advisory.advisory}</p>
+          <div className="rounded-lg p-5 bg-surface border border-border-color">
+            <h3 className="text-xs font-mono mb-2 text-text-secondary">ADVISORY</h3>
+            <p className="text-sm leading-relaxed text-text-primary">{advisory.advisory}</p>
           </div>
 
           {/* Recommended action */}
           <div className="rounded-lg p-5" style={{ background: 'rgba(0,255,135,0.05)', border: '1px solid rgba(0,255,135,0.15)' }}>
             <div className="flex items-center gap-2 mb-2">
               <CheckCircle2 size={14} color="var(--color-safe)" />
-              <h3 className="text-xs font-mono" style={{ color: 'var(--color-safe)' }}>RECOMMENDED ACTION</h3>
+              <h3 className="text-xs font-mono text-success">RECOMMENDED ACTION</h3>
             </div>
-            <p className="text-sm" style={{ color: 'var(--fg)' }}>{advisory.recommended_action}</p>
+            <p className="text-sm text-text-primary">{advisory.recommended_action}</p>
           </div>
 
           {/* Agentic risk */}
           {advisory.agentic_risk && (
             <div className="rounded-lg p-5" style={{ background: 'rgba(255,171,64,0.05)', border: '1px solid rgba(255,171,64,0.15)' }}>
-              <h3 className="text-xs font-mono mb-2" style={{ color: 'var(--color-warning)' }}>AGENTIC ATTACK SURFACE</h3>
-              <p className="text-sm" style={{ color: 'var(--fg)' }}>{advisory.agentic_risk}</p>
+              <h3 className="text-xs font-mono mb-2 text-warning">AGENTIC ATTACK SURFACE</h3>
+              <p className="text-sm text-text-primary">{advisory.agentic_risk}</p>
             </div>
           )}
         </div>

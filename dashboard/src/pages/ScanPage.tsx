@@ -2,25 +2,30 @@ import { useState, useMemo, useRef, useEffect } from 'react';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import {
   PieChart, Pie, Cell, BarChart, Bar, XAxis, YAxis,
-  Tooltip as RechartsTooltip, ResponsiveContainer,
+  Tooltip as RechartsTooltip, ResponsiveContainer, CartesianGrid,
 } from 'recharts';
 import { triggerScan, scanUpload, getJobStatus, triggerRemoteScan, getRemoteScanJobStatus, getRecentResults } from '../lib/api';
-import { SeverityBadge } from '../components/SeverityBadge';
 import { FindingsTable } from '../components/FindingsTable';
-import { Search, Upload, AlertCircle, ShieldCheck, CheckCircle, XCircle, Loader, Server, Lock, Clock, FolderOpen, Package } from 'lucide-react';
-import type { Finding, EngineStatus, ScanSummary } from '../types/api';
+import {
+  Search, Upload, AlertCircle, ShieldCheck, CheckCircle, XCircle, Loader,
+  Server, Lock, Clock, FolderOpen, Package, RefreshCw,
+} from 'lucide-react';
+import type { EngineStatus, ScanSummary, ProjectScanResult } from '../types/api';
 import { useSessionStore } from '../store/sessions';
 import { useWorkspaceStore } from '../store/workspace';
+import { Card, CardHeader, CardBody } from '../components/ui/card';
+import { StatTile, type StatTileAccent } from '../components/ui/stat-tile';
+import { StatusChip } from '../components/ui/status-chip';
+import { DataTable, type DataTableColumn } from '../components/ui/data-table';
+import { EmptyState } from '../components/EmptyState';
+import { cn } from '../components/ui/utils';
+import { axisProps, barTooltipProps, gridProps, tooltipProps } from '../lib/chartTheme';
 
 const ECOSYSTEMS = ['npm', 'pypi', 'go', 'rubygems', 'crates', 'maven', 'huggingface', 'mcp'];
 
 // Mirrors the Go backend's internal/policy/policy.go severityOrd ordering.
 const SEVERITY_ORDER: Record<string, number> = {
-  CRITICAL: 4,
-  HIGH: 3,
-  MEDIUM: 2,
-  LOW: 1,
-  INFORMATIONAL: 0,
+  CRITICAL: 4, HIGH: 3, MEDIUM: 2, LOW: 1, INFORMATIONAL: 0,
 };
 
 type SeverityFilter = 'all' | 'critical' | 'high' | 'medium';
@@ -32,126 +37,255 @@ const SEVERITY_FILTER_THRESHOLD: Record<SeverityFilter, number> = {
   medium: SEVERITY_ORDER.MEDIUM,
 };
 
-const inputStyle = {
-  background: 'var(--bg-base)',
-  color: 'var(--fg)',
-  border: '1px solid rgba(255,255,255,0.12)',
-  borderRadius: '0.375rem',
-  padding: '0.5rem 0.75rem',
-  fontSize: '0.875rem',
-  fontFamily: 'var(--font-mono)',
-  width: '100%',
-  outline: 'none',
-} as React.CSSProperties;
+const SUMMARY_TILES: Array<{
+  key: 'critical' | 'high' | 'medium' | 'low'; label: string; accent: StatTileAccent;
+  fill: string; swatch: string;
+}> = [
+  { key: 'critical', label: 'Critical', accent: 'critical', fill: 'var(--critical)', swatch: 'bg-critical' },
+  { key: 'high',     label: 'High',     accent: 'amber',    fill: 'var(--amber)',    swatch: 'bg-amber' },
+  { key: 'medium',   label: 'Medium',   accent: 'warning',  fill: 'var(--warning)',  swatch: 'bg-warning' },
+  { key: 'low',      label: 'Low',      accent: 'teal',     fill: 'var(--teal)',     swatch: 'bg-teal' },
+];
+
+// ── shared styling ─────────────────────────────────────────────────────────
+
+const FIELD =
+  'wd-hover w-full rounded border border-border-color bg-bg-base px-3 py-2 font-mono text-[0.8rem] text-text-primary placeholder:text-text-muted hover:border-text-muted';
+
+const LABEL = 'mb-1 block font-mono text-[0.65rem] uppercase tracking-wide text-text-muted';
+
+const PRIMARY_BTN =
+  'wd-hover flex items-center gap-2 rounded bg-success px-5 py-2 font-mono text-[0.8rem] font-bold text-[#06170E] hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-50';
+
+const GHOST_BTN =
+  'wd-hover rounded border border-border-color bg-surface px-2.5 py-1 font-mono text-[0.72rem] text-text-secondary hover:bg-surface-muted hover:text-text-primary';
+
+function Alert({ tone, children }: { tone: 'critical' | 'warning'; children: React.ReactNode }) {
+  return (
+    <div
+      role={tone === 'critical' ? 'alert' : undefined}
+      className={cn(
+        'flex items-start gap-2 rounded border px-3 py-2.5 text-[0.76rem]',
+        tone === 'critical'
+          ? 'border-[color-mix(in_srgb,var(--critical)_25%,transparent)] bg-[color-mix(in_srgb,var(--critical)_10%,transparent)] text-critical'
+          : 'border-[color-mix(in_srgb,var(--warning)_25%,transparent)] bg-[color-mix(in_srgb,var(--warning)_8%,transparent)] text-warning',
+      )}
+    >
+      <AlertCircle size={14} className="mt-px shrink-0" aria-hidden="true" />
+      <div className="min-w-0">{children}</div>
+    </div>
+  );
+}
+
+function Field({ label, children }: { label: string; children: React.ReactNode }) {
+  return (
+    <div className="min-w-0">
+      <span className="block font-mono text-[0.62rem] uppercase tracking-wide text-text-muted">{label}</span>
+      <p className="m-0 mt-0.5 font-mono text-[0.8rem] font-semibold break-all text-text-primary">{children}</p>
+    </div>
+  );
+}
+
+function SummaryTiles({ summary }: { summary: ScanSummary }) {
+  return (
+    <div className="grid grid-cols-2 gap-5 sm:grid-cols-3 lg:grid-cols-5">
+      {SUMMARY_TILES.map((t) => (
+        <StatTile key={t.key} label={t.label} value={summary[t.key]} accent={t.accent} />
+      ))}
+      <StatTile label="Total findings" value={summary.total} />
+    </div>
+  );
+}
 
 function EngineStatusBar({ engines }: { engines: EngineStatus[] }) {
   return (
-    <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.375rem', marginTop: '0.5rem' }}>
-      {engines.map(e => (
-        <div key={e.engine} style={{
-          display: 'flex', alignItems: 'center', gap: 4,
-          padding: '0.2rem 0.5rem',
-          borderRadius: '0.25rem',
-          fontSize: '0.68rem',
-          fontFamily: 'var(--font-mono)',
-          background: e.status === 'ok' ? 'rgba(0,255,135,0.08)' : 'rgba(255,255,255,0.04)',
-          border: `1px solid ${e.status === 'ok' ? 'rgba(0,255,135,0.2)' : 'rgba(255,255,255,0.08)'}`,
-          color: e.status === 'ok' ? 'var(--color-safe)' : 'var(--color-muted)',
-        }}>
-          {e.status === 'ok'
-            ? <CheckCircle size={10} />
-            : <XCircle size={10} />}
-          {e.engine}
-          {e.findings > 0 && (
-            <span style={{ color: 'var(--color-warn)', fontWeight: 700 }}>({e.findings})</span>
+    <div className="mt-2 flex flex-wrap gap-1.5">
+      {engines.map((e) => (
+        <span
+          key={e.engine}
+          className={cn(
+            'inline-flex items-center gap-1 rounded border px-2 py-0.5 font-mono text-[0.68rem]',
+            e.status === 'ok'
+              ? 'border-[color-mix(in_srgb,var(--success)_25%,transparent)] bg-[color-mix(in_srgb,var(--success)_10%,transparent)] text-success'
+              : 'border-border-color bg-surface-muted text-text-muted',
           )}
-        </div>
+        >
+          {e.status === 'ok' ? <CheckCircle size={10} /> : <XCircle size={10} />}
+          {e.engine}
+          {e.findings > 0 && <span className="font-bold text-warning">({e.findings})</span>}
+        </span>
       ))}
     </div>
   );
 }
 
-function ScanHistory({ onRescan }: { onRescan: (eco: string, name: string, ver: string) => void }) {
-  const recent = useQuery({
-    queryKey: ['recent-scans'],
-    queryFn: () => getRecentResults(10),
-    retry: false,
-  });
+// ── scan history ───────────────────────────────────────────────────────────
 
-  const results = recent.data?.results ?? [];
-  const sevColor: Record<string, string> = {
-    CRITICAL: 'var(--color-critical)', HIGH: 'var(--color-high)',
-    MEDIUM: 'var(--color-medium)', LOW: '#60A5FA',
-  };
+interface RecentResult {
+  package: string; version: string; ecosystem: string;
+  severity: string; findings_count: number; scanned_at: string;
+}
+
+const historyColumns: Array<DataTableColumn<RecentResult>> = [
+  { key: 'package', header: 'Package', sortable: true, sortValue: (r) => r.package,
+    render: (r) => <span className="font-mono text-text-primary">{r.package}</span> },
+  { key: 'version', header: 'Version', sortable: true, sortValue: (r) => r.version,
+    render: (r) => <span className="font-mono text-[0.72rem] text-text-muted">{r.version}</span>,
+    className: 'w-[120px]' },
+  { key: 'ecosystem', header: 'Ecosystem', sortable: true, sortValue: (r) => r.ecosystem,
+    render: (r) => <span className="text-[0.72rem] uppercase text-text-muted">{r.ecosystem}</span>,
+    className: 'w-[110px]' },
+  { key: 'severity', header: 'Severity', sortable: true,
+    sortValue: (r) => SEVERITY_ORDER[r.severity] ?? 0,
+    render: (r) => <StatusChip tone={r.severity} dot={false} />,
+    className: 'w-[110px]' },
+  { key: 'count', header: 'Findings', numeric: true, sortable: true, sortValue: (r) => r.findings_count,
+    render: (r) => <span className="font-semibold">{r.findings_count}</span>,
+    className: 'w-[88px]' },
+  { key: 'scanned', header: 'Scanned', numeric: true, sortable: true,
+    sortValue: (r) => new Date(r.scanned_at).getTime(),
+    render: (r) => (
+      <span className="text-[0.72rem] text-text-muted">
+        {new Date(r.scanned_at).toLocaleDateString('en-US', { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' })}
+      </span>
+    ),
+    className: 'w-[150px]' },
+];
+
+function ScanHistory({ onRescan }: { onRescan: (eco: string, name: string, ver: string) => void }) {
+  const recent = useQuery({ queryKey: ['recent-scans'], queryFn: () => getRecentResults(10), retry: false });
+  const results: RecentResult[] = recent.data?.results ?? [];
+
+  const columns = useMemo<Array<DataTableColumn<RecentResult>>>(() => [
+    ...historyColumns,
+    {
+      key: 'action', header: '', render: (r) => (
+        <button
+          type="button"
+          onClick={() => onRescan(r.ecosystem, r.package, r.version)}
+          className={GHOST_BTN}
+        >
+          Rescan
+        </button>
+      ),
+      className: 'w-[92px] text-right',
+    },
+  ], [onRescan]);
 
   return (
-    <div className="space-y-4">
-      <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', padding: '2rem 0', gap: '1rem', textAlign: 'center' }}>
-        <ShieldCheck size={40} style={{ color: 'var(--color-muted)' }} />
-        <div>
-          <p style={{ fontSize: '0.9rem', color: 'var(--fg)', fontWeight: 600 }}>No scan results yet</p>
-          <p style={{ fontSize: '0.78rem', color: 'var(--color-muted)', marginTop: 4 }}>
-            Pick a registry package above, or upload an archive — then hit Run Full Scan.
-          </p>
-        </div>
-      </div>
+    <Card>
+      <CardHeader
+        icon={Clock}
+        title="Recent scans"
+        description="Last ten results recorded by the server — pick one to re-run it." />
+      <DataTable
+        columns={columns}
+        rows={results}
+        rowKey={(r) => `${r.ecosystem}:${r.package}@${r.version}-${r.scanned_at}`}
+        loading={recent.isLoading}
+        skeletonRows={4}
+        dense
+        initialSort={{ key: 'scanned', dir: 'desc' }}
+        empty={{
+          icon: Search,
+          title: 'No scan results yet',
+          description: 'Pick a registry package above, or upload an archive — then run a full scan.',
+          command: 'cwctl scan .',
+        }}
+      />
+    </Card>
+  );
+}
 
-      {results.length > 0 && (
-        <div className="rounded-lg" style={{ background: 'var(--surface)', border: '1px solid rgba(255,255,255,0.06)' }}>
-          <div style={{ padding: '0.75rem 1rem', borderBottom: '1px solid rgba(255,255,255,0.06)', display: 'flex', alignItems: 'center', gap: 8 }}>
-            <Clock size={14} style={{ color: 'var(--color-muted)' }} />
-            <span style={{ fontSize: '0.72rem', fontFamily: 'var(--font-mono)', fontWeight: 600, color: 'var(--color-muted)' }}>
-              RECENT SCANS
-            </span>
-          </div>
-          <div className="overflow-x-auto">
-            <table className="w-full text-sm border-collapse">
-              <thead>
-                <tr style={{ borderBottom: '1px solid rgba(255,255,255,0.08)' }}>
-                  {['Package', 'Version', 'Ecosystem', 'Severity', 'Findings', 'Scanned'].map(h => (
-                    <th key={h} className="text-left py-2 px-3 font-mono text-xs uppercase" style={{ color: 'var(--color-muted)' }}>{h}</th>
-                  ))}
-                  <th />
-                </tr>
-              </thead>
-              <tbody>
-                {results.map((r, i) => (
-                  <tr key={i} style={{ borderBottom: '1px solid rgba(255,255,255,0.04)' }} className="hover:bg-white/[0.02]">
-                    <td className="py-2 px-3 font-mono" style={{ color: 'var(--fg)' }}>{r.package}</td>
-                    <td className="py-2 px-3 font-mono text-xs" style={{ color: 'var(--color-muted)' }}>{r.version}</td>
-                    <td className="py-2 px-3 text-xs uppercase" style={{ color: 'var(--color-muted)' }}>{r.ecosystem}</td>
-                    <td className="py-2 px-3"><SeverityBadge severity={r.severity} /></td>
-                    <td className="py-2 px-3 font-mono" style={{ color: sevColor[r.severity] ?? 'var(--fg)' }}>{r.findings_count}</td>
-                    <td className="py-2 px-3 text-xs" style={{ color: 'var(--color-muted)' }}>
-                      {new Date(r.scanned_at).toLocaleDateString('en-US', { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' })}
-                    </td>
-                    <td className="py-2 px-3">
-                      <button
-                        onClick={() => onRescan(r.ecosystem, r.package, r.version)}
-                        style={{
-                          fontSize: '0.68rem', fontFamily: 'var(--font-mono)',
-                          padding: '0.2rem 0.5rem', borderRadius: '0.25rem',
-                          background: 'rgba(99,102,241,0.15)', border: '1px solid rgba(99,102,241,0.3)',
-                          color: 'var(--color-indigo)', cursor: 'pointer',
-                        }}
-                      >
-                        Rescan
-                      </button>
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
-        </div>
+// ── project scan results (upload + remote share this shape) ────────────────
+
+function ProjectResults({ result, origin }: { result: ProjectScanResult; origin: React.ReactNode }) {
+  const engineData = result.results
+    .flatMap((r) => r.findings)
+    .reduce<Record<string, number>>((acc, f) => {
+      const k = f.source || 'unknown';
+      acc[k] = (acc[k] || 0) + 1;
+      return acc;
+    }, {});
+  const bars = Object.entries(engineData).map(([name, count]) => ({ name, count })).sort((a, b) => b.count - a.count);
+
+  return (
+    <div className="space-y-5">
+      <Card>
+        <CardHeader icon={FolderOpen} title="Scan target" />
+        <CardBody className="flex flex-wrap gap-x-10 gap-y-3">{origin}</CardBody>
+      </Card>
+
+      <SummaryTiles summary={result.summary} />
+
+      {result.missing_tools.length > 0 && (
+        <Alert tone="warning">
+          Engines unavailable on the scanning server: {result.missing_tools.join(', ')}
+        </Alert>
+      )}
+
+      {bars.length > 0 && (
+        <Card>
+          <CardHeader title="Findings by engine" description="Attributed across the scanned manifests" />
+          <CardBody>
+            <ResponsiveContainer width="100%" height={Math.max(140, bars.length * 30)}>
+              <BarChart data={bars} layout="vertical" margin={{ top: 4, right: 16, left: 8, bottom: 4 }}>
+                <CartesianGrid {...gridProps} horizontal={false} vertical />
+                <XAxis type="number" {...axisProps} />
+                <YAxis type="category" dataKey="name" {...axisProps} width={84} />
+                <RechartsTooltip {...barTooltipProps} />
+                <Bar dataKey="count" fill="var(--chart-1)" radius={[0, 4, 4, 0]} barSize={16} isAnimationActive animationDuration={200} />
+              </BarChart>
+            </ResponsiveContainer>
+          </CardBody>
+        </Card>
+      )}
+
+      {result.manifests.length === 0 ? (
+        <Card>
+          <CardBody>
+            <Alert tone="warning">No recognised dependency manifests found in this archive.</Alert>
+          </CardBody>
+        </Card>
+      ) : result.summary.total === 0 ? (
+        <Card>
+          <CardBody>
+            <EmptyState
+              icon={ShieldCheck}
+              title={`No findings across ${result.manifests.length} manifest file(s)`}
+              description="Every engine came back clean for this target." />
+          </CardBody>
+        </Card>
+      ) : (
+        result.results.map((r, i) => (
+          r.findings.length === 0 ? null : (
+            <Card key={i}>
+              <CardHeader
+                title={`${r.entry.ecosystem}/${r.entry.name}@${r.entry.version}`}
+                description={r.entry.file_path}
+              />
+              <FindingsTable findings={r.findings} />
+            </Card>
+          )
+        ))
       )}
     </div>
   );
 }
 
+// ── page ───────────────────────────────────────────────────────────────────
+
+const TABS = [
+  { id: 'registry', label: 'Registry Package', icon: Search },
+  { id: 'upload',   label: 'Upload Project',   icon: Upload },
+  { id: 'remote',   label: 'Remote Host',      icon: Server },
+] as const;
+
+type TabId = (typeof TABS)[number]['id'];
+
 export function ScanPage() {
   const queryClient = useQueryClient();
-  const [tab, setTab] = useState<'registry' | 'upload' | 'remote'>('registry');
+  const [tab, setTab] = useState<TabId>('registry');
 
   // Registry scan state
   const [ecosystem, setEcosystem] = useState('npm');
@@ -180,16 +314,11 @@ export function ScanPage() {
   const [severityFilter, setSeverityFilter] = useState<SeverityFilter>('all');
   const [onlyFixable, setOnlyFixable] = useState(false);
 
-  // Submitting a scan returns a job immediately; poll until it settles.
   const registryScan = useMutation({
     mutationFn: () => triggerScan(ecosystem, pkg, version),
     onSuccess: (job) => setJobId(job.job_id),
   });
 
-  // Upload's result is a whole-project ProjectScanResult (localscanner walks
-  // the archive's real manifests), same shape as a remote scan's result —
-  // so it gets its own job id + poll using the same getRemoteScanJobStatus
-  // path rather than sharing registryScan's single-package jobPoll.
   const uploadScan = useMutation({
     mutationFn: () => scanUpload(uploadFile!, uploadFile!.name),
     onSuccess: (job) => setUploadJobId(job.job_id),
@@ -262,7 +391,7 @@ export function ScanPage() {
   const filteredFindings = useMemo(() => {
     if (!result) return [];
     const threshold = SEVERITY_FILTER_THRESHOLD[severityFilter];
-    return result.findings.filter(f => {
+    return result.findings.filter((f) => {
       if ((SEVERITY_ORDER[f.severity] ?? 0) < threshold) return false;
       if (onlyFixable && !f.fixed_version) return false;
       return true;
@@ -271,7 +400,7 @@ export function ScanPage() {
 
   const groupedFindings = useMemo(() => {
     if (!grouped || !result) return null;
-    const map = new Map<string, Finding[]>();
+    const map = new Map<string, typeof filteredFindings>();
     for (const f of filteredFindings) {
       const key = f.source || 'unknown';
       if (!map.has(key)) map.set(key, []);
@@ -286,8 +415,8 @@ export function ScanPage() {
     || (job?.status === 'failed' ? new Error(job.error || 'scan failed') : undefined);
 
   // Auto-save scan results as sessions
-  const saveSession = useSessionStore(s => s.save);
-  const activeWorkspaceId = useWorkspaceStore(s => s.activeId);
+  const saveSession = useSessionStore((s) => s.save);
+  const activeWorkspaceId = useWorkspaceStore((s) => s.activeId);
   const savedRef = useRef<Set<string>>(new Set());
 
   const invalidateDashboard = () => {
@@ -316,6 +445,7 @@ export function ScanPage() {
       });
       invalidateDashboard();
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [result, jobId, ecosystem, pkg, version, saveSession, activeWorkspaceId]);
 
   useEffect(() => {
@@ -328,10 +458,11 @@ export function ScanPage() {
         result: null,
         project_result: uploadResult,
         summary: uploadResult.summary,
-        findings: uploadResult.results?.flatMap(r => r.findings || []) || [],
+        findings: uploadResult.results?.flatMap((r) => r.findings || []) || [],
       });
       invalidateDashboard();
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [uploadResult, uploadJobId, uploadFile, saveSession, activeWorkspaceId]);
 
   useEffect(() => {
@@ -344,10 +475,11 @@ export function ScanPage() {
         result: null,
         project_result: remoteResult,
         summary: remoteResult.summary,
-        findings: remoteResult.results?.flatMap(r => r.findings || []) || [],
+        findings: remoteResult.results?.flatMap((r) => r.findings || []) || [],
       });
       invalidateDashboard();
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [remoteResult, remoteJobId, remoteTarget, saveSession, activeWorkspaceId]);
 
   const handleDrop = (e: React.DragEvent) => {
@@ -357,667 +489,471 @@ export function ScanPage() {
     if (f) setUploadFile(f);
   };
 
-  const tabStyle = (active: boolean) => ({
-    padding: '0.5rem 1.25rem',
-    fontSize: '0.8rem',
-    fontFamily: 'var(--font-mono)',
-    fontWeight: 600,
-    borderRadius: '0.375rem 0.375rem 0 0',
-    border: 'none',
-    cursor: 'pointer',
-    background: active ? 'var(--surface)' : 'transparent',
-    color: active ? 'var(--fg)' : 'var(--color-muted)',
-    borderBottom: active ? '2px solid var(--color-safe)' : '2px solid transparent',
-  } as React.CSSProperties);
+  const sevData = result
+    ? SUMMARY_TILES.map((t) => ({ name: t.label, value: result.summary[t.key], fill: t.fill, swatch: t.swatch })).filter((d) => d.value > 0)
+    : [];
 
   return (
-    <div className="p-6 space-y-6">
-      <div>
-        <h1 className="text-xl font-bold font-mono" style={{ color: 'var(--fg)' }}>Vulnerability Scanner</h1>
-        <p className="text-sm mt-1" style={{ color: 'var(--color-muted)' }}>
+    <div className="space-y-5">
+      <header>
+        <h1 className="m-0 text-[1.05rem] font-semibold text-text-primary">Vulnerability Scanner</h1>
+        <p className="m-0 mt-1.5 text-[0.78rem] text-text-secondary">
           Full 8-engine scan — OSV · Grype · Semgrep · Trivy · Behavioral · Malware · AI-Model · MCP
         </p>
-      </div>
+      </header>
 
       {/* Tabs */}
-      <div style={{ borderBottom: '1px solid rgba(255,255,255,0.06)', display: 'flex', gap: '0.25rem' }}>
-        <button style={tabStyle(tab === 'registry')} onClick={() => setTab('registry')}>
-          <Search size={12} style={{ display: 'inline', marginRight: 6 }} />
-          Registry Package
-        </button>
-        <button style={tabStyle(tab === 'upload')} onClick={() => setTab('upload')}>
-          <Upload size={12} style={{ display: 'inline', marginRight: 6 }} />
-          Upload Project
-        </button>
-        <button style={tabStyle(tab === 'remote')} onClick={() => setTab('remote')}>
-          <Server size={12} style={{ display: 'inline', marginRight: 6 }} />
-          Remote Host
-        </button>
+      <div role="tablist" aria-label="Scan source" className="flex gap-1 border-b border-border-color">
+        {TABS.map((t) => (
+          <button
+            key={t.id}
+            type="button"
+            role="tab"
+            aria-selected={tab === t.id}
+            onClick={() => setTab(t.id)}
+            className={cn(
+              'wd-hover -mb-px flex items-center gap-1.5 border-b-2 bg-transparent px-4 py-2 font-mono text-[0.76rem] font-semibold',
+              tab === t.id
+                ? 'border-primary text-primary'
+                : 'border-transparent text-text-secondary hover:text-text-primary',
+            )}
+          >
+            <t.icon size={13} aria-hidden="true" />
+            {t.label}
+          </button>
+        ))}
       </div>
 
       {/* Registry scan form */}
       {tab === 'registry' && (
-        <div className="rounded-lg p-5 space-y-4" style={{ background: 'var(--surface)', border: '1px solid rgba(255,255,255,0.06)' }}>
-          <p className="text-xs" style={{ color: 'var(--color-muted)' }}>
-            Downloads the package from its registry and runs all engines against the real files.
-          </p>
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
-            <div>
-              <label className="block text-xs font-mono mb-1" style={{ color: 'var(--color-muted)' }}>ECOSYSTEM</label>
-              <select value={ecosystem} onChange={e => setEcosystem(e.target.value)} style={inputStyle}>
-                {ECOSYSTEMS.map(e => <option key={e} value={e}>{e}</option>)}
-              </select>
+        <Card>
+          <CardHeader
+            title="Registry package"
+            description="Downloads the package from its registry and runs all engines against the real files." />
+          <CardBody className="space-y-4">
+            <div className="grid grid-cols-1 gap-3 md:grid-cols-3">
+              <div>
+                <label className={LABEL} htmlFor="scan-ecosystem">Ecosystem</label>
+                <select
+                  id="scan-ecosystem"
+                  value={ecosystem}
+                  onChange={(e) => setEcosystem(e.target.value)}
+                  className={FIELD}
+                >
+                  {ECOSYSTEMS.map((e) => <option key={e} value={e}>{e}</option>)}
+                </select>
+              </div>
+              <div>
+                <label className={LABEL} htmlFor="scan-package">Package</label>
+                <input
+                  id="scan-package"
+                  value={pkg}
+                  onChange={(e) => setPkg(e.target.value)}
+                  onKeyDown={(e) => e.key === 'Enter' && pkg && version && !isPending && registryScan.mutate()}
+                  placeholder="e.g. lodash"
+                  className={FIELD}
+                />
+              </div>
+              <div>
+                <label className={LABEL} htmlFor="scan-version">Version</label>
+                <input
+                  id="scan-version"
+                  value={version}
+                  onChange={(e) => setVersion(e.target.value)}
+                  onKeyDown={(e) => e.key === 'Enter' && pkg && version && !isPending && registryScan.mutate()}
+                  placeholder="e.g. 4.17.21"
+                  className={FIELD}
+                />
+              </div>
             </div>
-            <div>
-              <label className="block text-xs font-mono mb-1" style={{ color: 'var(--color-muted)' }}>PACKAGE</label>
-              <input
-                value={pkg}
-                onChange={e => setPkg(e.target.value)}
-                onKeyDown={e => e.key === 'Enter' && pkg && version && !isPending && registryScan.mutate()}
-                placeholder="e.g. lodash"
-                style={inputStyle}
-              />
-            </div>
-            <div>
-              <label className="block text-xs font-mono mb-1" style={{ color: 'var(--color-muted)' }}>VERSION</label>
-              <input
-                value={version}
-                onChange={e => setVersion(e.target.value)}
-                onKeyDown={e => e.key === 'Enter' && pkg && version && !isPending && registryScan.mutate()}
-                placeholder="e.g. 4.17.21"
-                style={inputStyle}
-              />
-            </div>
-          </div>
-          <button
-            onClick={() => registryScan.mutate()}
-            disabled={!pkg || !version || isPending}
-            style={{
-              display: 'flex', alignItems: 'center', gap: 8,
-              padding: '0.5rem 1.25rem', borderRadius: '0.375rem',
-              background: isPending ? 'rgba(0,255,135,0.4)' : 'var(--color-safe)',
-              color: '#0A0B0D', border: 'none', cursor: isPending ? 'not-allowed' : 'pointer',
-              fontSize: '0.8rem', fontFamily: 'var(--font-mono)', fontWeight: 700,
-            }}
-          >
-            {isPending ? <Loader size={14} className="animate-spin" /> : <Search size={14} />}
-            {isPending ? 'Scanning…' : 'Run Full Scan'}
-          </button>
-        </div>
+            <button
+              type="button"
+              onClick={() => registryScan.mutate()}
+              disabled={!pkg || !version || isPending}
+              className={PRIMARY_BTN}
+            >
+              {isPending ? <Loader size={14} className="animate-spin" /> : <Search size={14} />}
+              {isPending ? 'Scanning…' : 'Run full scan'}
+            </button>
+          </CardBody>
+        </Card>
       )}
 
       {/* Upload form */}
       {tab === 'upload' && (
-        <div className="rounded-lg p-5 space-y-4" style={{ background: 'var(--surface)', border: '1px solid rgba(255,255,255,0.06)' }}>
-          <p className="text-xs" style={{ color: 'var(--color-muted)' }}>
-            Upload a project archive (.tar.gz, .zip) or a single file. All engines run against the extracted contents.
-          </p>
-
-          {/* Drop zone */}
-          <div
-            onDragOver={e => { e.preventDefault(); setDragOver(true); }}
-            onDragLeave={() => setDragOver(false)}
-            onDrop={handleDrop}
-            onClick={() => fileRef.current?.click()}
-            style={{
-              border: `2px dashed ${dragOver ? 'var(--color-safe)' : 'rgba(255,255,255,0.12)'}`,
-              borderRadius: '0.5rem',
-              padding: '2rem',
-              textAlign: 'center',
-              cursor: 'pointer',
-              background: dragOver ? 'rgba(0,255,135,0.04)' : 'transparent',
-              transition: 'all 0.15s',
-            }}
-          >
-            <input
-              ref={fileRef}
-              type="file"
-              accept=".tar.gz,.tgz,.zip,.whl,.gem,.jar,.tar"
-              style={{ display: 'none' }}
-              onChange={e => { if (e.target.files?.[0]) setUploadFile(e.target.files[0]); }}
-            />
-            <Upload size={28} style={{ color: 'var(--color-muted)', margin: '0 auto 0.75rem' }} />
-            {uploadFile ? (
-              <div>
-                <p style={{ fontSize: '0.85rem', color: 'var(--color-safe)', fontFamily: 'var(--font-mono)', fontWeight: 600 }}>
-                  {uploadFile.name}
-                </p>
-                <p style={{ fontSize: '0.72rem', color: 'var(--color-muted)', marginTop: 4 }}>
-                  {(uploadFile.size / 1024 / 1024).toFixed(2)} MB — click to change
-                </p>
-              </div>
-            ) : (
-              <div>
-                <p style={{ fontSize: '0.85rem', color: 'var(--fg)' }}>Drop archive here or click to browse</p>
-                <p style={{ fontSize: '0.72rem', color: 'var(--color-muted)', marginTop: 4 }}>
-                  .tar.gz · .tgz · .zip · .jar · .gem · .whl (max 512 MB)
-                </p>
-              </div>
-            )}
-          </div>
-
-          <button
-            onClick={() => uploadScan.mutate()}
-            disabled={!uploadFile || uploadIsPending}
-            style={{
-              display: 'flex', alignItems: 'center', gap: 8,
-              padding: '0.5rem 1.25rem', borderRadius: '0.375rem',
-              background: uploadIsPending ? 'rgba(0,255,135,0.4)' : 'var(--color-safe)',
-              color: '#0A0B0D', border: 'none', cursor: uploadIsPending ? 'not-allowed' : 'pointer',
-              fontSize: '0.8rem', fontFamily: 'var(--font-mono)', fontWeight: 700,
-            }}
-          >
-            {uploadIsPending ? <Loader size={14} className="animate-spin" /> : <Upload size={14} />}
-            {uploadIsPending ? 'Scanning…' : 'Scan Uploaded File'}
-          </button>
-
-          {/* Upload scan error */}
-          {uploadError && (
-            <div style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '0.75rem 1rem', borderRadius: '0.375rem', background: 'rgba(255,61,61,0.1)', color: 'var(--color-critical)', border: '1px solid rgba(255,61,61,0.2)', fontSize: '0.8rem' }}>
-              <AlertCircle size={14} />
-              {(uploadError as Error).message}
-            </div>
-          )}
-
-          {/* Upload scan results — grouped by manifest file, same shape as remote scan */}
-          {uploadResult && (
-            <div className="space-y-4">
-              <div className="rounded-lg p-4" style={{ background: 'var(--bg-base)', border: '1px solid rgba(255,255,255,0.06)' }}>
-                <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 8 }}>
-                  <FolderOpen size={14} style={{ color: 'var(--color-safe)' }} />
-                  <span style={{ fontSize: '0.72rem', fontFamily: 'var(--font-mono)', fontWeight: 600, color: 'var(--color-muted)', textTransform: 'uppercase' }}>
-                    Scan Target
-                  </span>
-                </div>
-                <div style={{ display: 'flex', gap: '2rem', flexWrap: 'wrap' }}>
-                  <div>
-                    <span style={{ fontSize: '0.6rem', fontFamily: 'var(--font-mono)', color: 'var(--color-muted)', textTransform: 'uppercase' }}>Source</span>
-                    <p style={{ fontSize: '0.85rem', fontFamily: 'var(--font-mono)', color: 'var(--fg)', fontWeight: 600, marginTop: 2 }}>
-                      {uploadFile?.name ?? 'Uploaded archive'}
-                    </p>
-                  </div>
-                  <div>
-                    <span style={{ fontSize: '0.6rem', fontFamily: 'var(--font-mono)', color: 'var(--color-muted)', textTransform: 'uppercase' }}>Scan Type</span>
-                    <p style={{ fontSize: '0.85rem', fontFamily: 'var(--font-mono)', color: 'var(--fg)', marginTop: 2 }}>Upload / Project Scan</p>
-                  </div>
-                  {uploadResult.root_dir && (
-                    <div>
-                      <span style={{ fontSize: '0.6rem', fontFamily: 'var(--font-mono)', color: 'var(--color-muted)', textTransform: 'uppercase' }}>Scanned Directory</span>
-                      <p style={{ fontSize: '0.85rem', fontFamily: 'var(--font-mono)', color: 'var(--fg)', marginTop: 2 }}>{uploadResult.root_dir}</p>
-                    </div>
-                  )}
-                  <div>
-                    <span style={{ fontSize: '0.6rem', fontFamily: 'var(--font-mono)', color: 'var(--color-muted)', textTransform: 'uppercase' }}>Manifests Found</span>
-                    <p style={{ fontSize: '0.85rem', fontFamily: 'var(--font-mono)', color: 'var(--fg)', marginTop: 2 }}>{uploadResult.manifests.length}</p>
-                  </div>
-                </div>
-              </div>
-
-              <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-3">
-                {[
-                  { label: 'Critical', val: uploadResult.summary.critical, color: 'var(--color-critical)' },
-                  { label: 'High',     val: uploadResult.summary.high,     color: 'var(--color-high)' },
-                  { label: 'Medium',   val: uploadResult.summary.medium,   color: 'var(--color-medium)' },
-                  { label: 'Low',      val: uploadResult.summary.low,      color: '#60A5FA' },
-                  { label: 'Total',    val: uploadResult.summary.total,    color: 'var(--fg)' },
-                ].map(({ label, val, color }) => (
-                  <div key={label} style={{ borderRadius: '0.375rem', padding: '0.75rem', textAlign: 'center', background: 'var(--bg-base)', border: '1px solid rgba(255,255,255,0.06)' }}>
-                    <div style={{ fontSize: '1.75rem', fontWeight: 700, fontFamily: 'var(--font-mono)', color }}>{val}</div>
-                    <div style={{ fontSize: '0.72rem', color: 'var(--color-muted)', marginTop: 2 }}>{label}</div>
-                  </div>
-                ))}
-              </div>
-
-              {uploadResult.missing_tools.length > 0 && (
-                <p style={{ fontSize: '0.72rem', color: 'var(--color-muted)' }}>
-                  Engines unavailable on the scanning server: {uploadResult.missing_tools.join(', ')}
-                </p>
+        <Card>
+          <CardHeader
+            title="Upload project"
+            description="Upload a project archive (.tar.gz, .zip) or a single file. All engines run against the extracted contents." />
+          <CardBody className="space-y-4">
+            <div
+              onDragOver={(e) => { e.preventDefault(); setDragOver(true); }}
+              onDragLeave={() => setDragOver(false)}
+              onDrop={handleDrop}
+              onClick={() => fileRef.current?.click()}
+              onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') fileRef.current?.click(); }}
+              role="button"
+              tabIndex={0}
+              aria-label="Choose an archive to scan"
+              className={cn(
+                'wd-hover cursor-pointer rounded border-2 border-dashed p-8 text-center',
+                dragOver
+                  ? 'border-success bg-[color-mix(in_srgb,var(--success)_6%,transparent)]'
+                  : 'border-border-color hover:border-text-muted hover:bg-surface-muted/50',
               )}
-
-              <p style={{ fontSize: '0.72rem', color: 'var(--color-muted)' }}>
-                {uploadResult.manifests.length} manifest file(s) found in {uploadFile?.name ?? 'uploaded archive'}
-              </p>
-
-              {uploadResult.results.map((r, i) => (
-                r.findings.length === 0 ? null : (
-                  <div key={i} className="rounded-lg" style={{ background: 'var(--bg-base)', border: '1px solid rgba(255,255,255,0.06)' }}>
-                    <div style={{ padding: '0.625rem 0.875rem', borderBottom: '1px solid rgba(255,255,255,0.06)', fontSize: '0.78rem', fontFamily: 'var(--font-mono)', color: 'var(--fg)' }}>
-                      {r.entry.ecosystem}/{r.entry.name}@{r.entry.version}
-                      <span style={{ marginLeft: 8, fontSize: '0.68rem', color: 'var(--color-muted)' }}>{r.entry.file_path}</span>
-                    </div>
-                    <FindingsTable findings={r.findings} />
-                  </div>
-                )
-              ))}
-
-              {uploadResult.manifests.length === 0 && (
-                <div style={{ padding: '2rem', textAlign: 'center', color: 'var(--color-warn)', fontSize: '0.85rem' }}>
-                  <AlertCircle size={24} style={{ margin: '0 auto 0.5rem' }} />
-                  No recognized dependency manifests found in this archive.
-                </div>
-              )}
-
-              {uploadResult.manifests.length > 0 && uploadResult.summary.total === 0 && (
-                <div style={{ padding: '2rem', textAlign: 'center', color: 'var(--color-safe)', fontSize: '0.85rem' }}>
-                  <ShieldCheck size={24} style={{ margin: '0 auto 0.5rem' }} />
-                  No findings across {uploadResult.manifests.length} manifest file(s).
-                </div>
+            >
+              <input
+                ref={fileRef}
+                type="file"
+                accept=".tar.gz,.tgz,.zip,.whl,.gem,.jar,.tar"
+                className="hidden"
+                onChange={(e) => { if (e.target.files?.[0]) setUploadFile(e.target.files[0]); }}
+              />
+              <Upload size={28} className="mx-auto mb-3 text-text-muted" aria-hidden="true" />
+              {uploadFile ? (
+                <>
+                  <p className="m-0 font-mono text-[0.85rem] font-semibold text-success">{uploadFile.name}</p>
+                  <p className="m-0 mt-1 text-[0.72rem] text-text-muted">
+                    {(uploadFile.size / 1024 / 1024).toFixed(2)} MB — click to change
+                  </p>
+                </>
+              ) : (
+                <>
+                  <p className="m-0 text-[0.85rem] text-text-primary">Drop archive here or click to browse</p>
+                  <p className="m-0 mt-1 text-[0.72rem] text-text-muted">
+                    .tar.gz · .tgz · .zip · .jar · .gem · .whl (max 512 MB)
+                  </p>
+                </>
               )}
             </div>
-          )}
-        </div>
+
+            <button
+              type="button"
+              onClick={() => uploadScan.mutate()}
+              disabled={!uploadFile || uploadIsPending}
+              className={PRIMARY_BTN}
+            >
+              {uploadIsPending ? <Loader size={14} className="animate-spin" /> : <Upload size={14} />}
+              {uploadIsPending ? 'Scanning…' : 'Scan uploaded file'}
+            </button>
+
+            {uploadError && <Alert tone="critical">{(uploadError as Error).message}</Alert>}
+          </CardBody>
+        </Card>
       )}
 
       {/* Remote (SSH) scan form */}
       {tab === 'remote' && (
-        <div className="rounded-lg p-5 space-y-4" style={{ background: 'var(--surface)', border: '1px solid rgba(255,255,255,0.06)' }}>
-          <p className="text-xs" style={{ color: 'var(--color-muted)' }}>
-            Connects over SSH, discovers dependency manifests (package.json, go.mod, etc.),
-            pulls them to scan locally. Nothing is installed on the target — only read-only
-            <code style={{ margin: '0 3px', color: 'var(--fg)' }}>find</code>/<code style={{ margin: '0 3px', color: 'var(--fg)' }}>cat</code> commands run remotely.
-          </p>
-          <div style={{ display: 'flex', alignItems: 'flex-start', gap: 8, padding: '0.625rem 0.75rem', borderRadius: '0.375rem', background: 'rgba(255,171,64,0.06)', border: '1px solid rgba(255,171,64,0.15)' }}>
-            <Lock size={13} style={{ color: 'var(--color-warn)', marginTop: 1, flexShrink: 0 }} />
-            <p style={{ fontSize: '0.72rem', color: 'var(--color-muted)' }}>
-              The private key below is sent once for this scan and is never written to disk
-              or stored by the server. Key-based auth only — no passwords.
-            </p>
-          </div>
+        <Card>
+          <CardHeader
+            title="Remote host"
+            description="Connects over SSH, discovers dependency manifests and pulls them to scan locally. Nothing is installed on the target — only read-only find/cat commands run remotely." />
+          <CardBody className="space-y-4">
+            <Alert tone="warning">
+              <Lock size={12} className="mr-1 inline align-[-1px]" aria-hidden="true" />
+              The private key below is sent once for this scan and is never written to disk or stored
+              by the server. Key-based auth only — no passwords.
+            </Alert>
 
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
-            <div style={{ gridColumn: 'span 2' }}>
-              <label className="block text-xs font-mono mb-1" style={{ color: 'var(--color-muted)' }}>TARGET (user@host)</label>
-              <input
-                value={remoteTarget}
-                onChange={e => setRemoteTarget(e.target.value)}
-                placeholder="e.g. deploy@10.0.4.12"
-                style={inputStyle}
-              />
+            <div className="grid grid-cols-1 gap-3 md:grid-cols-3">
+              <div className="md:col-span-2">
+                <label className={LABEL} htmlFor="remote-target">Target (user@host)</label>
+                <input
+                  id="remote-target"
+                  value={remoteTarget}
+                  onChange={(e) => setRemoteTarget(e.target.value)}
+                  placeholder="e.g. deploy@10.0.4.12"
+                  className={FIELD}
+                />
+              </div>
+              <div>
+                <label className={LABEL} htmlFor="remote-port">Port</label>
+                <input
+                  id="remote-port"
+                  value={remotePort}
+                  onChange={(e) => setRemotePort(e.target.value)}
+                  placeholder="22"
+                  className={FIELD}
+                />
+              </div>
             </div>
+
             <div>
-              <label className="block text-xs font-mono mb-1" style={{ color: 'var(--color-muted)' }}>PORT</label>
-              <input
-                value={remotePort}
-                onChange={e => setRemotePort(e.target.value)}
-                placeholder="22"
-                style={inputStyle}
+              <label className={LABEL} htmlFor="remote-key">Private key (PEM)</label>
+              <textarea
+                id="remote-key"
+                value={remotePrivateKey}
+                onChange={(e) => setRemotePrivateKey(e.target.value)}
+                placeholder={'-----BEGIN OPENSSH PRIVATE KEY-----\n...\n-----END OPENSSH PRIVATE KEY-----'}
+                rows={5}
+                className={cn(FIELD, 'resize-y text-[0.72rem]')}
+                autoComplete="off"
+                spellCheck={false}
               />
             </div>
-          </div>
 
-          <div>
-            <label className="block text-xs font-mono mb-1" style={{ color: 'var(--color-muted)' }}>PRIVATE KEY (PEM)</label>
-            <textarea
-              value={remotePrivateKey}
-              onChange={e => setRemotePrivateKey(e.target.value)}
-              placeholder="-----BEGIN OPENSSH PRIVATE KEY-----&#10;...&#10;-----END OPENSSH PRIVATE KEY-----"
-              rows={5}
-              style={{ ...inputStyle, resize: 'vertical' as const, fontSize: '0.72rem' }}
-              autoComplete="off"
-              spellCheck={false}
-            />
-          </div>
+            <div>
+              <label className={LABEL} htmlFor="remote-path">
+                Remote path <span className="opacity-60">(optional — default: remote $HOME)</span>
+              </label>
+              <input
+                id="remote-path"
+                value={remotePath}
+                onChange={(e) => setRemotePath(e.target.value)}
+                placeholder="/opt/app"
+                className={FIELD}
+              />
+            </div>
 
-          <div>
-            <label className="block text-xs font-mono mb-1" style={{ color: 'var(--color-muted)' }}>
-              REMOTE PATH <span style={{ opacity: 0.6 }}>(optional — default: remote $HOME)</span>
+            <label className="flex cursor-pointer items-center gap-2 text-[0.78rem] text-text-secondary">
+              <input
+                type="checkbox"
+                checked={acceptNewHostKey}
+                onChange={(e) => setAcceptNewHostKey(e.target.checked)}
+                className="h-3.5 w-3.5 accent-[var(--primary)]" />
+              Trust this host&apos;s key if not already known to the server (does not persist it)
             </label>
-            <input
-              value={remotePath}
-              onChange={e => setRemotePath(e.target.value)}
-              placeholder="/opt/app"
-              style={inputStyle}
-            />
-          </div>
 
-          <label style={{ display: 'flex', alignItems: 'center', gap: '0.4rem', fontSize: '0.78rem', color: 'var(--color-muted)', cursor: 'pointer' }}>
-            <input
-              type="checkbox"
-              checked={acceptNewHostKey}
-              onChange={e => setAcceptNewHostKey(e.target.checked)}
-            />
-            Trust this host's key if not already known to the server (does not persist it)
-          </label>
+            <button
+              type="button"
+              onClick={() => remoteScan.mutate()}
+              disabled={!remoteTarget || !remotePrivateKey || remoteIsPending}
+              className={PRIMARY_BTN}
+            >
+              {remoteIsPending ? <Loader size={14} className="animate-spin" /> : <Server size={14} />}
+              {remoteIsPending ? 'Scanning…' : 'Scan remote host'}
+            </button>
 
-          <button
-            onClick={() => remoteScan.mutate()}
-            disabled={!remoteTarget || !remotePrivateKey || remoteIsPending}
-            style={{
-              display: 'flex', alignItems: 'center', gap: 8,
-              padding: '0.5rem 1.25rem', borderRadius: '0.375rem',
-              background: remoteIsPending ? 'rgba(0,255,135,0.4)' : 'var(--color-safe)',
-              color: '#0A0B0D', border: 'none', cursor: remoteIsPending ? 'not-allowed' : 'pointer',
-              fontSize: '0.8rem', fontFamily: 'var(--font-mono)', fontWeight: 700,
-            }}
-          >
-            {remoteIsPending ? <Loader size={14} className="animate-spin" /> : <Server size={14} />}
-            {remoteIsPending ? 'Scanning…' : 'Scan Remote Host'}
-          </button>
-
-          {/* Remote scan error */}
-          {remoteError && (
-            <div style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '0.75rem 1rem', borderRadius: '0.375rem', background: 'rgba(255,61,61,0.1)', color: 'var(--color-critical)', border: '1px solid rgba(255,61,61,0.2)', fontSize: '0.8rem' }}>
-              <AlertCircle size={14} />
-              {(remoteError as Error).message}
-            </div>
-          )}
-
-          {/* Remote scan results — grouped by manifest file */}
-          {remoteResult && (
-            <div className="space-y-4">
-              <div className="rounded-lg p-4" style={{ background: 'var(--bg-base)', border: '1px solid rgba(255,255,255,0.06)' }}>
-                <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 8 }}>
-                  <Server size={14} style={{ color: 'var(--color-safe)' }} />
-                  <span style={{ fontSize: '0.72rem', fontFamily: 'var(--font-mono)', fontWeight: 600, color: 'var(--color-muted)', textTransform: 'uppercase' }}>
-                    Scan Target
-                  </span>
-                </div>
-                <div style={{ display: 'flex', gap: '2rem', flexWrap: 'wrap' }}>
-                  <div>
-                    <span style={{ fontSize: '0.6rem', fontFamily: 'var(--font-mono)', color: 'var(--color-muted)', textTransform: 'uppercase' }}>Remote Host</span>
-                    <p style={{ fontSize: '0.85rem', fontFamily: 'var(--font-mono)', color: 'var(--fg)', fontWeight: 600, marginTop: 2 }}>{remoteTarget}</p>
-                  </div>
-                  <div>
-                    <span style={{ fontSize: '0.6rem', fontFamily: 'var(--font-mono)', color: 'var(--color-muted)', textTransform: 'uppercase' }}>Remote Path</span>
-                    <p style={{ fontSize: '0.85rem', fontFamily: 'var(--font-mono)', color: 'var(--fg)', marginTop: 2 }}>{remotePath || '~ (home)'}</p>
-                  </div>
-                  <div>
-                    <span style={{ fontSize: '0.6rem', fontFamily: 'var(--font-mono)', color: 'var(--color-muted)', textTransform: 'uppercase' }}>Scan Type</span>
-                    <p style={{ fontSize: '0.85rem', fontFamily: 'var(--font-mono)', color: 'var(--fg)', marginTop: 2 }}>Remote SSH Scan</p>
-                  </div>
-                  {remoteResult.root_dir && (
-                    <div>
-                      <span style={{ fontSize: '0.6rem', fontFamily: 'var(--font-mono)', color: 'var(--color-muted)', textTransform: 'uppercase' }}>Scanned Directory</span>
-                      <p style={{ fontSize: '0.85rem', fontFamily: 'var(--font-mono)', color: 'var(--fg)', marginTop: 2 }}>{remoteResult.root_dir}</p>
-                    </div>
-                  )}
-                  <div>
-                    <span style={{ fontSize: '0.6rem', fontFamily: 'var(--font-mono)', color: 'var(--color-muted)', textTransform: 'uppercase' }}>Manifests Found</span>
-                    <p style={{ fontSize: '0.85rem', fontFamily: 'var(--font-mono)', color: 'var(--fg)', marginTop: 2 }}>{remoteResult.manifests.length}</p>
-                  </div>
-                </div>
-              </div>
-
-              <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-3">
-                {[
-                  { label: 'Critical', val: remoteResult.summary.critical, color: 'var(--color-critical)' },
-                  { label: 'High',     val: remoteResult.summary.high,     color: 'var(--color-high)' },
-                  { label: 'Medium',   val: remoteResult.summary.medium,   color: 'var(--color-medium)' },
-                  { label: 'Low',      val: remoteResult.summary.low,      color: '#60A5FA' },
-                  { label: 'Total',    val: remoteResult.summary.total,    color: 'var(--fg)' },
-                ].map(({ label, val, color }) => (
-                  <div key={label} style={{ borderRadius: '0.375rem', padding: '0.75rem', textAlign: 'center', background: 'var(--bg-base)', border: '1px solid rgba(255,255,255,0.06)' }}>
-                    <div style={{ fontSize: '1.75rem', fontWeight: 700, fontFamily: 'var(--font-mono)', color }}>{val}</div>
-                    <div style={{ fontSize: '0.72rem', color: 'var(--color-muted)', marginTop: 2 }}>{label}</div>
-                  </div>
-                ))}
-              </div>
-
-              {remoteResult.missing_tools.length > 0 && (
-                <p style={{ fontSize: '0.72rem', color: 'var(--color-muted)' }}>
-                  Engines unavailable on the scanning server: {remoteResult.missing_tools.join(', ')}
-                </p>
-              )}
-
-              <p style={{ fontSize: '0.72rem', color: 'var(--color-muted)' }}>
-                {remoteTarget}:{remotePath || '~'} — {remoteResult.manifests.length} manifest file(s) scanned
-              </p>
-
-              {remoteResult.results.map((r, i) => (
-                r.findings.length === 0 ? null : (
-                  <div key={i} className="rounded-lg" style={{ background: 'var(--bg-base)', border: '1px solid rgba(255,255,255,0.06)' }}>
-                    <div style={{ padding: '0.625rem 0.875rem', borderBottom: '1px solid rgba(255,255,255,0.06)', fontSize: '0.78rem', fontFamily: 'var(--font-mono)', color: 'var(--fg)' }}>
-                      {r.entry.ecosystem}/{r.entry.name}@{r.entry.version}
-                      <span style={{ marginLeft: 8, fontSize: '0.68rem', color: 'var(--color-muted)' }}>{r.entry.file_path}</span>
-                    </div>
-                    <FindingsTable findings={r.findings} />
-                  </div>
-                )
-              ))}
-
-              {remoteResult.summary.total === 0 && (
-                <div style={{ padding: '2rem', textAlign: 'center', color: 'var(--color-safe)', fontSize: '0.85rem' }}>
-                  <ShieldCheck size={24} style={{ margin: '0 auto 0.5rem' }} />
-                  No findings across {remoteResult.manifests.length} manifest file(s).
-                </div>
-              )}
-            </div>
-          )}
-        </div>
+            {remoteError && <Alert tone="critical">{(remoteError as Error).message}</Alert>}
+          </CardBody>
+        </Card>
       )}
 
-      {/* Error */}
-      {error && (
-        <div style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '0.75rem 1rem', borderRadius: '0.375rem', background: 'rgba(255,61,61,0.1)', color: 'var(--color-critical)', border: '1px solid rgba(255,61,61,0.2)', fontSize: '0.8rem' }}>
-          <AlertCircle size={14} />
-          {(error as Error).message}
-        </div>
+      {error && <Alert tone="critical">{(error as Error).message}</Alert>}
+
+      {/* Upload results */}
+      {uploadResult && (
+        <ProjectResults
+          result={uploadResult}
+          origin={
+            <>
+              <Field label="Source">{uploadFile?.name ?? 'Uploaded archive'}</Field>
+              <Field label="Scan type">Upload / project scan</Field>
+              {uploadResult.root_dir && <Field label="Scanned directory">{uploadResult.root_dir}</Field>}
+              <Field label="Manifests found">{uploadResult.manifests.length}</Field>
+            </>
+          }
+        />
+      )}
+
+      {/* Remote results */}
+      {remoteResult && (
+        <ProjectResults
+          result={remoteResult}
+          origin={
+            <>
+              <Field label="Remote host">{remoteTarget}</Field>
+              <Field label="Remote path">{remotePath || '~ (home)'}</Field>
+              <Field label="Scan type">Remote SSH scan</Field>
+              {remoteResult.root_dir && <Field label="Scanned directory">{remoteResult.root_dir}</Field>}
+              <Field label="Manifests found">{remoteResult.manifests.length}</Field>
+            </>
+          }
+        />
       )}
 
       {/* Empty state + scan history */}
-      {!result && !isPending && !error && (
-        <ScanHistory onRescan={(eco, name, ver) => { setEcosystem(eco); setPkg(name); setVersion(ver); setTab('registry'); }} />
+      {!result && !isPending && !error && !uploadResult && !remoteResult && (
+        <div className="space-y-5">
+          <Card>
+            <CardBody>
+              <EmptyState
+                icon={Search}
+                title="Nothing scanned yet in this view"
+                description="Pick a registry package, upload an archive, or point at a remote host above."
+                command="cwctl scan ." />
+            </CardBody>
+          </Card>
+          <ScanHistory
+            onRescan={(eco, name, ver) => { setEcosystem(eco); setPkg(name); setVersion(ver); setTab('registry'); }}
+          />
+        </div>
       )}
 
-      {/* Results */}
+      {/* Registry results */}
       {result && (
-        <div className="space-y-4">
-
-          {/* Scan target info */}
-          <div className="rounded-lg p-4" style={{ background: 'var(--surface)', border: '1px solid rgba(255,255,255,0.06)' }}>
-            <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 8 }}>
-              <Package size={14} style={{ color: 'var(--color-safe)' }} />
-              <span style={{ fontSize: '0.72rem', fontFamily: 'var(--font-mono)', fontWeight: 600, color: 'var(--color-muted)', textTransform: 'uppercase' }}>
-                Scan Target
-              </span>
-            </div>
-            <div style={{ display: 'flex', gap: '2rem', flexWrap: 'wrap' }}>
-              <div>
-                <span style={{ fontSize: '0.6rem', fontFamily: 'var(--font-mono)', color: 'var(--color-muted)', textTransform: 'uppercase' }}>Package</span>
-                <p style={{ fontSize: '0.85rem', fontFamily: 'var(--font-mono)', color: 'var(--fg)', fontWeight: 600, marginTop: 2 }}>
-                  {result.package}
+        <div className="space-y-5">
+          <Card>
+            <CardHeader icon={Package} title="Scan target" />
+            <CardBody className="flex flex-wrap gap-x-10 gap-y-3">
+              <Field label="Package">{result.package}</Field>
+              <Field label="Ecosystem">{ecosystem}</Field>
+              <Field label="Scan type">Registry package</Field>
+              {result.sha256 && <Field label="SHA-256">{result.sha256}</Field>}
+              <div className="min-w-0">
+                <span className="block font-mono text-[0.62rem] uppercase tracking-wide text-text-muted">Status</span>
+                <p className="m-0 mt-1">
+                  <StatusChip
+                    tone={result.downloaded ? 'GREEN' : 'AMBER'}
+                    label={result.downloaded ? 'Artifact downloaded' : 'Partial scan'}
+                  />
                 </p>
               </div>
-              <div>
-                <span style={{ fontSize: '0.6rem', fontFamily: 'var(--font-mono)', color: 'var(--color-muted)', textTransform: 'uppercase' }}>Ecosystem</span>
-                <p style={{ fontSize: '0.85rem', fontFamily: 'var(--font-mono)', color: 'var(--fg)', marginTop: 2 }}>{ecosystem}</p>
-              </div>
-              <div>
-                <span style={{ fontSize: '0.6rem', fontFamily: 'var(--font-mono)', color: 'var(--color-muted)', textTransform: 'uppercase' }}>Scan Type</span>
-                <p style={{ fontSize: '0.85rem', fontFamily: 'var(--font-mono)', color: 'var(--fg)', marginTop: 2 }}>Registry Package</p>
-              </div>
-              {result.sha256 && (
-                <div>
-                  <span style={{ fontSize: '0.6rem', fontFamily: 'var(--font-mono)', color: 'var(--color-muted)', textTransform: 'uppercase' }}>SHA-256</span>
-                  <p style={{ fontSize: '0.72rem', fontFamily: 'var(--font-mono)', color: 'var(--fg)', marginTop: 2, wordBreak: 'break-all' }}>{result.sha256}</p>
-                </div>
-              )}
-              <div>
-                <span style={{ fontSize: '0.6rem', fontFamily: 'var(--font-mono)', color: 'var(--color-muted)', textTransform: 'uppercase' }}>Status</span>
-                <p style={{ fontSize: '0.85rem', fontFamily: 'var(--font-mono)', color: result.downloaded ? 'var(--color-safe)' : 'var(--color-warn)', marginTop: 2 }}>
-                  {result.downloaded ? 'Artifact downloaded' : 'Download failed — partial scan'}
-                </p>
-              </div>
-            </div>
-          </div>
+            </CardBody>
+          </Card>
 
-          {/* Engine status bar */}
           {result.engines && result.engines.length > 0 && (
-            <div className="rounded-lg p-4" style={{ background: 'var(--surface)', border: '1px solid rgba(255,255,255,0.06)' }}>
-              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 8 }}>
-                <span style={{ fontSize: '0.72rem', fontFamily: 'var(--font-mono)', fontWeight: 600, color: 'var(--color-muted)' }}>
-                  ENGINES
-                </span>
-                <span style={{ fontSize: '0.7rem', color: result.downloaded ? 'var(--color-safe)' : 'var(--color-warn)' }}>
-                  {result.downloaded ? '✓ artifact downloaded — full scan' : '⚠ download failed — OSV + behavioral only'}
-                </span>
-              </div>
-              <EngineStatusBar engines={result.engines} />
-            </div>
+            <Card>
+              <CardHeader
+                icon={RefreshCw}
+                title="Engines"
+                description={result.downloaded
+                  ? 'Artifact downloaded — full scan'
+                  : 'Download failed — OSV + behavioral only'}
+              />
+              <CardBody>
+                <EngineStatusBar engines={result.engines} />
+              </CardBody>
+            </Card>
           )}
 
-          {/* Summary cards */}
-          <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-3">
-            {[
-              { label: 'Critical', val: result.summary.critical, color: 'var(--color-critical)' },
-              { label: 'High',     val: result.summary.high,     color: 'var(--color-high)' },
-              { label: 'Medium',   val: result.summary.medium,   color: 'var(--color-medium)' },
-              { label: 'Low',      val: result.summary.low,      color: '#60A5FA' },
-              { label: 'Total',    val: result.summary.total,    color: 'var(--fg)' },
-            ].map(({ label, val, color }) => (
-              <div key={label} style={{ borderRadius: '0.375rem', padding: '0.75rem', textAlign: 'center', background: 'var(--surface)', border: '1px solid rgba(255,255,255,0.06)' }}>
-                <div style={{ fontSize: '1.75rem', fontWeight: 700, fontFamily: 'var(--font-mono)', color }}>{val}</div>
-                <div style={{ fontSize: '0.72rem', color: 'var(--color-muted)', marginTop: 2 }}>{label}</div>
-              </div>
-            ))}
-          </div>
+          <SummaryTiles summary={result.summary} />
 
-          {/* Severity donut + Engine bar chart */}
           {(result.summary.total > 0 || (result.engines && result.engines.length > 0)) && (
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-              {/* Severity distribution donut */}
-              {result.summary.total > 0 && (() => {
-                const sevData = [
-                  { name: 'Critical', value: result.summary.critical, color: 'var(--color-critical)' },
-                  { name: 'High',     value: result.summary.high,     color: 'var(--color-high)' },
-                  { name: 'Medium',   value: result.summary.medium,   color: 'var(--color-medium)' },
-                  { name: 'Low',      value: result.summary.low,      color: '#60A5FA' },
-                ].filter(d => d.value > 0);
-                return (
-                  <div className="rounded-lg p-4" style={{ background: 'var(--surface)', border: '1px solid rgba(255,255,255,0.06)' }}>
-                    <span style={{ fontSize: '0.72rem', fontFamily: 'var(--font-mono)', fontWeight: 600, color: 'var(--color-muted)' }}>
-                      SEVERITY DISTRIBUTION
-                    </span>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '1rem', marginTop: '0.5rem' }}>
-                      <ResponsiveContainer width="50%" height={140}>
-                        <PieChart>
-                          <Pie data={sevData} dataKey="value" cx="50%" cy="50%" innerRadius={35} outerRadius={55} paddingAngle={2} strokeWidth={0}>
-                            {sevData.map((d, i) => <Cell key={i} fill={d.color} />)}
-                          </Pie>
-                          <RechartsTooltip
-                            contentStyle={{ background: 'var(--surface)', border: '1px solid rgba(255,255,255,0.1)', borderRadius: 6, fontSize: '0.75rem', color: 'var(--fg)' }}
-                          />
-                        </PieChart>
-                      </ResponsiveContainer>
-                      <div style={{ display: 'flex', flexDirection: 'column', gap: 6, flex: 1 }}>
-                        {sevData.map(d => (
-                          <div key={d.name} style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: '0.75rem' }}>
-                            <span style={{ width: 8, height: 8, borderRadius: '50%', background: d.color, flexShrink: 0 }} />
-                            <span style={{ color: 'var(--color-muted)', flex: 1 }}>{d.name}</span>
-                            <span style={{ fontFamily: 'var(--font-mono)', fontWeight: 600, color: 'var(--fg)' }}>{d.value}</span>
-                          </div>
-                        ))}
-                      </div>
+            <div className="grid grid-cols-1 gap-5 md:grid-cols-2">
+              {result.summary.total > 0 && (
+                <Card>
+                  <CardHeader title="Severity distribution" />
+                  <CardBody className="flex flex-wrap items-center gap-4">
+                    <ResponsiveContainer width={150} height={150}>
+                      <PieChart>
+                        <Pie
+                          data={sevData} dataKey="value" cx="50%" cy="50%"
+                          innerRadius={38} outerRadius={58} paddingAngle={2} stroke="none"
+                          isAnimationActive animationDuration={200}
+                        >
+                          {sevData.map((d, i) => <Cell key={i} fill={d.fill} />)}
+                        </Pie>
+                        <RechartsTooltip {...tooltipProps} />
+                      </PieChart>
+                    </ResponsiveContainer>
+                    <div className="flex flex-1 flex-col gap-1.5">
+                      {sevData.map((d) => (
+                        <div key={d.name} className="flex items-center gap-2 text-[0.75rem]">
+                          <span aria-hidden="true" className={cn('h-2 w-2 shrink-0 rounded-full', d.swatch)} />
+                          <span className="flex-1 text-text-muted">{d.name}</span>
+                          <span className="font-mono font-semibold tabular-nums text-text-primary">{d.value}</span>
+                        </div>
+                      ))}
                     </div>
-                  </div>
-                );
-              })()}
+                  </CardBody>
+                </Card>
+              )}
 
-              {/* Findings by engine */}
               {result.engines && result.engines.length > 0 && (() => {
                 const engineData = result.engines
-                  .filter(e => e.status === 'ok')
-                  .map(e => ({ name: e.engine, findings: e.findings }))
+                  .filter((e) => e.status === 'ok')
+                  .map((e) => ({ name: e.engine, findings: e.findings }))
                   .sort((a, b) => b.findings - a.findings);
                 if (engineData.length === 0) return null;
                 return (
-                  <div className="rounded-lg p-4" style={{ background: 'var(--surface)', border: '1px solid rgba(255,255,255,0.06)' }}>
-                    <span style={{ fontSize: '0.72rem', fontFamily: 'var(--font-mono)', fontWeight: 600, color: 'var(--color-muted)' }}>
-                      FINDINGS BY ENGINE
-                    </span>
-                    <ResponsiveContainer width="100%" height={140} style={{ marginTop: '0.5rem' }}>
-                      <BarChart data={engineData} layout="vertical" margin={{ left: 0, right: 8, top: 4, bottom: 4 }}>
-                        <XAxis type="number" hide />
-                        <YAxis type="category" dataKey="name" width={70} tick={{ fontSize: 11, fill: 'var(--color-muted)', fontFamily: 'var(--font-mono)' }} axisLine={false} tickLine={false} />
-                        <RechartsTooltip
-                          contentStyle={{ background: 'var(--surface)', border: '1px solid rgba(255,255,255,0.1)', borderRadius: 6, fontSize: '0.75rem', color: 'var(--fg)' }}
-                        />
-                        <Bar dataKey="findings" fill="rgba(99,102,241,0.6)" radius={[0, 4, 4, 0]} barSize={16} />
-                      </BarChart>
-                    </ResponsiveContainer>
-                  </div>
+                  <Card>
+                    <CardHeader title="Findings by engine" />
+                    <CardBody>
+                      <ResponsiveContainer width="100%" height={150}>
+                        <BarChart data={engineData} layout="vertical" margin={{ top: 4, right: 16, left: 8, bottom: 4 }}>
+                          <CartesianGrid {...gridProps} horizontal={false} vertical />
+                          <XAxis type="number" {...axisProps} />
+                          <YAxis type="category" dataKey="name" {...axisProps} width={84} />
+                          <RechartsTooltip {...barTooltipProps} />
+                          <Bar dataKey="findings" fill="var(--chart-1)" radius={[0, 4, 4, 0]} barSize={16} isAnimationActive animationDuration={200} />
+                        </BarChart>
+                      </ResponsiveContainer>
+                    </CardBody>
+                  </Card>
                 );
               })()}
             </div>
           )}
 
-          {/* Highest-severity informational banner — mirrors what --fail-on would act on */}
+          {/* Highest-severity banner — mirrors what --fail-on would act on */}
           {result.summary.highest_sev && (
-            <div style={{
-              display: 'flex', alignItems: 'center', gap: 8,
-              padding: '0.625rem 1rem', borderRadius: '0.375rem',
-              background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.08)',
-              fontSize: '0.78rem', color: 'var(--color-muted)',
-            }}>
-              <AlertCircle size={13} style={{ flexShrink: 0 }} />
-              <span>
-                This scan's highest severity: <SeverityBadge severity={result.summary.highest_sev} /> — would fail CI with{' '}
-                <code style={{ color: 'var(--fg)' }}>
+            <Card>
+              <CardBody className="flex flex-wrap items-center gap-2 text-[0.78rem] text-text-secondary">
+                <AlertCircle size={13} className="shrink-0 text-text-muted" aria-hidden="true" />
+                <span>This scan&apos;s highest severity:</span>
+                <StatusChip tone={result.summary.highest_sev} dot={false} />
+                <span>— would fail CI with</span>
+                <code className="rounded bg-surface-muted px-1.5 py-0.5 font-mono text-[0.72rem] text-text-primary">
                   --fail-on={result.summary.highest_sev.toLowerCase()}
-                </code>{' '}
-                or lower.
-              </span>
-            </div>
+                </code>
+                <span>or lower.</span>
+              </CardBody>
+            </Card>
           )}
 
-          {/* Filters */}
-          <div style={{ display: 'flex', alignItems: 'center', gap: '1rem', flexWrap: 'wrap' }}>
-            <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-              <label className="text-xs font-mono" style={{ color: 'var(--color-muted)' }}>SEVERITY</label>
-              <select
-                value={severityFilter}
-                onChange={e => setSeverityFilter(e.target.value as SeverityFilter)}
-                style={{ ...inputStyle, width: 'auto', padding: '0.35rem 0.625rem', fontSize: '0.78rem' }}
-              >
-                <option value="all">All severities</option>
-                <option value="critical">Critical+</option>
-                <option value="high">High+</option>
-                <option value="medium">Medium+</option>
-              </select>
-            </div>
-            <label style={{ display: 'flex', alignItems: 'center', gap: '0.4rem', fontSize: '0.78rem', color: 'var(--color-muted)', cursor: 'pointer' }}>
-              <input
-                type="checkbox"
-                checked={onlyFixable}
-                onChange={e => setOnlyFixable(e.target.checked)}
-              />
-              Only show fixable findings
-            </label>
-            {(severityFilter !== 'all' || onlyFixable) && (
-              <span style={{ fontSize: '0.72rem', color: 'var(--color-muted)' }}>
-                Showing {filteredFindings.length} of {result.findings.length} findings
-              </span>
-            )}
-          </div>
-
-          {/* Findings */}
-          <div className="rounded-lg" style={{ background: 'var(--surface)', border: '1px solid rgba(255,255,255,0.06)' }}>
-            <div style={{ padding: '0.75rem 1rem', borderBottom: '1px solid rgba(255,255,255,0.06)', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-              <span style={{ fontSize: '0.8rem', fontFamily: 'var(--font-mono)', color: 'var(--color-muted)' }}>
-                FINDINGS — {result.package}
-                {result.sha256 && <span style={{ marginLeft: 8, fontSize: '0.68rem', opacity: 0.5 }}>sha256:{result.sha256.slice(0, 12)}…</span>}
-              </span>
-              <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
-                {result.summary.highest_sev && <SeverityBadge severity={result.summary.highest_sev} />}
-                <button
-                  onClick={() => setGrouped(g => !g)}
-                  style={{ fontSize: '0.72rem', padding: '0.25rem 0.625rem', borderRadius: '0.25rem', background: 'rgba(255,255,255,0.06)', color: 'var(--fg)', border: '1px solid rgba(255,255,255,0.1)', cursor: 'pointer', fontFamily: 'var(--font-mono)' }}
+          <Card>
+            <CardHeader
+              icon={ShieldCheck}
+              title={`Findings — ${result.package}`}
+              description={result.sha256 ? `sha256:${result.sha256.slice(0, 12)}…` : undefined}
+              action={
+                <div className="flex items-center gap-2">
+                  {result.summary.highest_sev && <StatusChip tone={result.summary.highest_sev} dot={false} />}
+                  <button type="button" onClick={() => setGrouped((g) => !g)} className={GHOST_BTN}>
+                    {grouped ? 'Flat' : 'Grouped'}
+                  </button>
+                </div>
+              }
+            />
+            <CardBody className="flex flex-wrap items-center gap-4 border-b border-border-color">
+              <div className="flex items-center gap-2">
+                <label className="font-mono text-[0.65rem] uppercase tracking-wide text-text-muted" htmlFor="sev-filter">
+                  Severity
+                </label>
+                <select
+                  id="sev-filter"
+                  value={severityFilter}
+                  onChange={(e) => setSeverityFilter(e.target.value as SeverityFilter)}
+                  className={cn(FIELD, 'w-auto py-1 text-[0.76rem]')}
                 >
-                  {grouped ? 'Flat' : 'Grouped'}
-                </button>
+                  <option value="all">All severities</option>
+                  <option value="critical">Critical+</option>
+                  <option value="high">High+</option>
+                  <option value="medium">Medium+</option>
+                </select>
               </div>
-            </div>
+              <label className="flex cursor-pointer items-center gap-2 text-[0.76rem] text-text-secondary">
+                <input
+                  type="checkbox"
+                  checked={onlyFixable}
+                  onChange={(e) => setOnlyFixable(e.target.checked)}
+                  className="h-3.5 w-3.5 accent-[var(--primary)]" />
+                Only show fixable findings
+              </label>
+              {(severityFilter !== 'all' || onlyFixable) && (
+                <span className="text-[0.72rem] tabular-nums text-text-muted">
+                  Showing {filteredFindings.length} of {result.findings.length} findings
+                </span>
+              )}
+            </CardBody>
+
             {filteredFindings.length === 0 ? (
-              <div style={{ padding: '2rem', textAlign: 'center', color: 'var(--color-safe)', fontSize: '0.85rem' }}>
-                <ShieldCheck size={24} style={{ margin: '0 auto 0.5rem' }} />
-                {result.findings.length === 0 ? 'No findings — package looks clean.' : 'No findings match the current filters.'}
-              </div>
+              <CardBody>
+                <EmptyState
+                  icon={ShieldCheck}
+                  title={result.findings.length === 0 ? 'No findings — package looks clean' : 'No findings match the current filters'}
+                  description={result.findings.length === 0
+                    ? 'Every engine ran and nothing matched.'
+                    : 'Widen the severity filter or turn off “only fixable”.'}
+                />
+              </CardBody>
             ) : groupedFindings ? (
               <div>
                 {Array.from(groupedFindings.entries()).map(([key, group]) => (
-                  <div key={key} style={{ borderBottom: '1px solid rgba(255,255,255,0.04)' }}>
-                    <div style={{ padding: '0.5rem 1rem', background: 'rgba(255,255,255,0.02)', fontSize: '0.72rem', fontFamily: 'var(--font-mono)', fontWeight: 700, color: 'var(--color-muted)' }}>
-                      {key} <span style={{ color: 'var(--fg)' }}>({group.length})</span>
+                  <div key={key} className="border-b border-border-color/60 last:border-b-0">
+                    <div className="bg-bg-base px-4 py-1.5 font-mono text-[0.72rem] font-bold text-text-muted">
+                      {key} <span className="text-text-primary">({group.length})</span>
                     </div>
                     <FindingsTable findings={group} />
                   </div>
@@ -1026,7 +962,7 @@ export function ScanPage() {
             ) : (
               <FindingsTable findings={filteredFindings} />
             )}
-          </div>
+          </Card>
         </div>
       )}
     </div>

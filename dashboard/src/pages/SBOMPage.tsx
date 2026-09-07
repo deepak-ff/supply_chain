@@ -38,39 +38,35 @@ export function SBOMPage() {
   };
 
   return (
-    <div className="p-6 space-y-6">
-      <h1 className="text-xl font-bold font-mono" style={{ color: 'var(--fg)' }}>SBOM Generator</h1>
-      <p className="text-sm" style={{ color: 'var(--color-muted)' }}>
+    <div className="space-y-6">
+      <h1 className="text-xl font-bold font-mono text-text-primary">SBOM Generator</h1>
+      <p className="text-sm text-text-secondary">
         Generate CycloneDX or SPDX software bill of materials for any package.
       </p>
 
-      <div className="rounded-lg p-5 space-y-4" style={{ background: 'var(--surface)', border: '1px solid rgba(255,255,255,0.06)' }}>
+      <div className="rounded-lg p-5 space-y-4 bg-surface border border-border-color">
         <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
           <div>
-            <label className="block text-xs font-mono mb-1" style={{ color: 'var(--color-muted)' }}>ECOSYSTEM</label>
+            <label className="block text-xs font-mono mb-1 text-text-secondary">ECOSYSTEM</label>
             <select value={ecosystem} onChange={e => setEcosystem(e.target.value)}
-              className="w-full rounded px-3 py-2 text-sm font-mono"
-              style={{ background: 'var(--bg-base)', color: 'var(--fg)', border: '1px solid rgba(255,255,255,0.12)' }}>
+              className="w-full rounded px-3 py-2 text-sm font-mono bg-bg-base text-text-primary border border-border-color" >
               {ECOSYSTEMS.map(e => <option key={e}>{e}</option>)}
             </select>
           </div>
           <div>
-            <label className="block text-xs font-mono mb-1" style={{ color: 'var(--color-muted)' }}>PACKAGE</label>
+            <label className="block text-xs font-mono mb-1 text-text-secondary">PACKAGE</label>
             <input value={pkg} onChange={e => setPkg(e.target.value)} placeholder="package"
-              className="w-full rounded px-3 py-2 text-sm font-mono"
-              style={{ background: 'var(--bg-base)', color: 'var(--fg)', border: '1px solid rgba(255,255,255,0.12)' }} />
+              className="w-full rounded px-3 py-2 text-sm font-mono bg-bg-base text-text-primary border border-border-color" />
           </div>
           <div>
-            <label className="block text-xs font-mono mb-1" style={{ color: 'var(--color-muted)' }}>VERSION</label>
+            <label className="block text-xs font-mono mb-1 text-text-secondary">VERSION</label>
             <input value={version} onChange={e => setVersion(e.target.value)} placeholder="version"
-              className="w-full rounded px-3 py-2 text-sm font-mono"
-              style={{ background: 'var(--bg-base)', color: 'var(--fg)', border: '1px solid rgba(255,255,255,0.12)' }} />
+              className="w-full rounded px-3 py-2 text-sm font-mono bg-bg-base text-text-primary border border-border-color" />
           </div>
           <div>
-            <label className="block text-xs font-mono mb-1" style={{ color: 'var(--color-muted)' }}>FORMAT</label>
+            <label className="block text-xs font-mono mb-1 text-text-secondary">FORMAT</label>
             <select value={format} onChange={e => setFormat(e.target.value)}
-              className="w-full rounded px-3 py-2 text-sm font-mono"
-              style={{ background: 'var(--bg-base)', color: 'var(--fg)', border: '1px solid rgba(255,255,255,0.12)' }}>
+              className="w-full rounded px-3 py-2 text-sm font-mono bg-bg-base text-text-primary border border-border-color" >
               {FORMATS.map(f => <option key={f}>{f}</option>)}
             </select>
           </div>
@@ -91,9 +87,9 @@ export function SBOMPage() {
       )}
 
       {sbomText && generatedFor && (
-        <div className="rounded-lg" style={{ background: 'var(--surface)', border: '1px solid rgba(255,255,255,0.06)' }}>
-          <div className="flex items-center justify-between px-4 py-3" style={{ borderBottom: '1px solid rgba(255,255,255,0.06)' }}>
-            <span className="text-xs font-mono" style={{ color: 'var(--color-muted)' }}>
+        <div className="rounded-lg bg-surface border border-border-color">
+          <div className="flex items-center justify-between px-4 py-3 border-b border-border-color">
+            <span className="text-xs font-mono text-text-secondary">
               {generatedFor.format.toUpperCase()} — {generatedFor.pkg}@{generatedFor.version}
             </span>
             <button onClick={download} className="flex items-center gap-1 text-xs px-3 py-1 rounded font-mono"
@@ -101,7 +97,7 @@ export function SBOMPage() {
               <Download size={12} /> Download
             </button>
           </div>
-          <pre className="p-4 text-xs overflow-auto max-h-96 font-mono" style={{ color: 'var(--fg)' }}>
+          <pre className="p-4 text-xs overflow-auto max-h-96 font-mono text-text-primary">
             {sbomText}
           </pre>
         </div>

@@ -95,9 +95,10 @@ export function StatCard({
                 type="monotone"
                 dataKey="v"
                 stroke={sparkColor}
-                strokeWidth={1.5}
+                strokeWidth={2}
                 dot={false}
-                isAnimationActive={false}
+                isAnimationActive
+                animationDuration={200}
               />
             </LineChart>
           </ResponsiveContainer>

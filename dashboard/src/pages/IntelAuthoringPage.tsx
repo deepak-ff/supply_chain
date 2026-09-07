@@ -85,37 +85,37 @@ export function IntelAuthoringPage() {
   const copyYAML = () => yamlText && navigator.clipboard.writeText(yamlText);
 
   return (
-    <div className="p-6 space-y-6">
-      <h1 className="text-xl font-bold font-mono" style={{ color: 'var(--fg)' }}>Signature Authoring</h1>
-      <p className="text-sm" style={{ color: 'var(--color-muted)' }}>
+    <div className="space-y-6">
+      <h1 className="text-xl font-bold font-mono text-text-primary">Signature Authoring</h1>
+      <p className="text-sm text-text-secondary">
         Author, validate, and test new detection signatures for the ChainWarden intelligence store.
       </p>
 
       {/* Form */}
-      <div className="rounded-lg p-5 space-y-4" style={{ background: 'var(--surface)', border: '1px solid rgba(255,255,255,0.06)' }}>
-        <h2 className="text-sm font-mono" style={{ color: 'var(--color-muted)' }}>NEW SIGNATURE</h2>
+      <div className="rounded-lg p-5 space-y-4 bg-surface border border-border-color">
+        <h2 className="text-sm font-mono text-text-secondary">NEW SIGNATURE</h2>
 
         <div>
-          <label className="block text-xs font-mono mb-1" style={{ color: 'var(--color-muted)' }}>TYPE</label>
+          <label className="block text-xs font-mono mb-1 text-text-secondary">TYPE</label>
           <select value={type} onChange={e => setType(e.target.value as SignatureType)}
             className="w-full rounded px-3 py-2 text-sm font-mono" style={inputStyle}>
             {SIG_TYPES.map(t => <option key={t.value} value={t.value}>{t.label}</option>)}
           </select>
-          <p className="text-xs mt-1" style={{ color: 'var(--color-muted)' }}>
+          <p className="text-xs mt-1 text-text-secondary">
             {SIG_TYPES.find(t => t.value === type)?.description}
           </p>
         </div>
 
         <div className="grid grid-cols-2 gap-3">
           <div>
-            <label className="block text-xs font-mono mb-1" style={{ color: 'var(--color-muted)' }}>ECOSYSTEM</label>
+            <label className="block text-xs font-mono mb-1 text-text-secondary">ECOSYSTEM</label>
             <select value={ecosystem} onChange={e => setEcosystem(e.target.value)}
               className="w-full rounded px-3 py-2 text-sm font-mono" style={inputStyle}>
               {ECOSYSTEMS.map(e => <option key={e}>{e}</option>)}
             </select>
           </div>
           <div>
-            <label className="block text-xs font-mono mb-1" style={{ color: 'var(--color-muted)' }}>SEVERITY</label>
+            <label className="block text-xs font-mono mb-1 text-text-secondary">SEVERITY</label>
             <select value={severity} onChange={e => setSeverity(e.target.value)}
               className="w-full rounded px-3 py-2 text-sm font-mono" style={inputStyle}>
               {SEVERITIES.map(s => <option key={s}>{s}</option>)}
@@ -124,13 +124,13 @@ export function IntelAuthoringPage() {
         </div>
 
         <div>
-          <label className="block text-xs font-mono mb-1" style={{ color: 'var(--color-muted)' }}>NAME</label>
+          <label className="block text-xs font-mono mb-1 text-text-secondary">NAME</label>
           <input value={name} onChange={e => setName(e.target.value)} placeholder="e.g. Backdoor in evil-pkg"
             className="w-full rounded px-3 py-2 text-sm font-mono" style={inputStyle} />
         </div>
 
         <div>
-          <label className="block text-xs font-mono mb-1" style={{ color: 'var(--color-muted)' }}>DESCRIPTION</label>
+          <label className="block text-xs font-mono mb-1 text-text-secondary">DESCRIPTION</label>
           <textarea rows={3} value={description} onChange={e => setDescription(e.target.value)}
             placeholder="What does it do / why is it dangerous?"
             className="w-full rounded px-3 py-2 text-sm font-mono resize-y" style={inputStyle} />
@@ -138,25 +138,25 @@ export function IntelAuthoringPage() {
 
         <div className="grid grid-cols-2 gap-3">
           <div>
-            <label className="block text-xs font-mono mb-1" style={{ color: 'var(--color-muted)' }}>AUTHOR</label>
+            <label className="block text-xs font-mono mb-1 text-text-secondary">AUTHOR</label>
             <input value={author} onChange={e => setAuthor(e.target.value)} placeholder="anonymous"
               className="w-full rounded px-3 py-2 text-sm font-mono" style={inputStyle} />
           </div>
           <div>
-            <label className="block text-xs font-mono mb-1" style={{ color: 'var(--color-muted)' }}>CVE (optional)</label>
+            <label className="block text-xs font-mono mb-1 text-text-secondary">CVE (optional)</label>
             <input value={cve} onChange={e => setCve(e.target.value)} placeholder="CVE-YYYY-NNNNN"
               className="w-full rounded px-3 py-2 text-sm font-mono" style={inputStyle} />
           </div>
         </div>
 
         <div>
-          <label className="block text-xs font-mono mb-1" style={{ color: 'var(--color-muted)' }}>REFERENCE URL (optional)</label>
+          <label className="block text-xs font-mono mb-1 text-text-secondary">REFERENCE URL (optional)</label>
           <input value={reference} onChange={e => setReference(e.target.value)} placeholder="https://…"
             className="w-full rounded px-3 py-2 text-sm font-mono" style={inputStyle} />
         </div>
 
         <div>
-          <label className="block text-xs font-mono mb-1" style={{ color: 'var(--color-muted)' }}>{extraField.label}</label>
+          <label className="block text-xs font-mono mb-1 text-text-secondary">{extraField.label}</label>
           {extraField.multiline ? (
             <textarea rows={2} value={extraValue} onChange={e => setExtraValue(e.target.value)}
               placeholder={extraField.placeholder}
@@ -174,7 +174,7 @@ export function IntelAuthoringPage() {
           <PenTool size={14} />{generate.isPending ? 'Generating…' : 'Generate Signature'}
         </button>
         {generate.isError && (
-          <div className="flex items-center gap-2 text-sm" style={{ color: 'var(--color-critical)' }}>
+          <div className="flex items-center gap-2 text-sm text-critical">
             <AlertCircle size={14} />{(generate.error as Error).message}
           </div>
         )}
@@ -183,10 +183,10 @@ export function IntelAuthoringPage() {
       {/* Generated YAML */}
       {generated && (
         <div className="rounded-lg" style={{ background: 'var(--surface)', border: '1px solid rgba(0,255,135,0.2)' }}>
-          <div className="flex items-center justify-between px-4 py-3" style={{ borderBottom: '1px solid rgba(255,255,255,0.06)' }}>
+          <div className="flex items-center justify-between px-4 py-3 border-b border-border-color">
             <div className="flex items-center gap-2">
               <CheckCircle2 size={14} color="var(--color-safe)" />
-              <span className="text-xs font-mono" style={{ color: 'var(--color-safe)' }}>{generated.id}</span>
+              <span className="text-xs font-mono text-success">{generated.id}</span>
             </div>
             <button onClick={copyYAML} className="text-xs px-2 py-1 rounded font-mono"
               style={{ background: 'rgba(0,255,135,0.1)', color: 'var(--color-safe)' }}>Copy YAML</button>
@@ -195,15 +195,15 @@ export function IntelAuthoringPage() {
             {yamlText}
           </pre>
           <div className="px-4 py-2 text-xs" style={{ color: 'var(--color-muted)', borderTop: '1px solid rgba(255,255,255,0.06)' }}>
-            Suggested path: <code style={{ color: 'var(--color-safe)' }}>{generated.suggested_path}</code>
+            Suggested path: <code className="text-success">{generated.suggested_path}</code>
           </div>
         </div>
       )}
 
       {/* Validate */}
       {generated && (
-        <div className="rounded-lg p-5 space-y-3" style={{ background: 'var(--surface)', border: '1px solid rgba(255,255,255,0.06)' }}>
-          <h2 className="text-sm font-mono" style={{ color: 'var(--color-muted)' }}>VALIDATE</h2>
+        <div className="rounded-lg p-5 space-y-3 bg-surface border border-border-color">
+          <h2 className="text-sm font-mono text-text-secondary">VALIDATE</h2>
           <button onClick={() => validate.mutate()} disabled={!yamlText || validate.isPending}
             className="px-4 py-2 rounded text-sm font-mono font-bold disabled:opacity-50"
             style={{ background: 'rgba(255,255,255,0.1)', color: 'var(--fg)' }}>
@@ -226,7 +226,7 @@ export function IntelAuthoringPage() {
             </div>
           )}
           {validate.isError && (
-            <div className="flex items-center gap-2 text-sm" style={{ color: 'var(--color-critical)' }}>
+            <div className="flex items-center gap-2 text-sm text-critical">
               <AlertCircle size={14} />{(validate.error as Error).message}
             </div>
           )}
@@ -235,8 +235,8 @@ export function IntelAuthoringPage() {
 
       {/* Test against a live package */}
       {generated && (
-        <div className="rounded-lg p-5 space-y-3" style={{ background: 'var(--surface)', border: '1px solid rgba(255,255,255,0.06)' }}>
-          <h2 className="text-sm font-mono" style={{ color: 'var(--color-muted)' }}>TEST AGAINST A LIVE PACKAGE</h2>
+        <div className="rounded-lg p-5 space-y-3 bg-surface border border-border-color">
+          <h2 className="text-sm font-mono text-text-secondary">TEST AGAINST A LIVE PACKAGE</h2>
           <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
             <select value={testEco} onChange={e => setTestEco(e.target.value)}
               className="rounded px-3 py-2 text-sm font-mono" style={inputStyle}>
@@ -259,11 +259,11 @@ export function IntelAuthoringPage() {
               border: `1px solid ${test.data.matched ? 'rgba(255,171,64,0.25)' : 'rgba(255,255,255,0.08)'}`,
             }}>
               <p>{test.data.matched ? `Matched — ${test.data.findings.length} finding(s)` : 'No match'}</p>
-              <p className="text-xs mt-1" style={{ color: 'var(--color-muted)' }}>{test.data.note}</p>
+              <p className="text-xs mt-1 text-text-secondary">{test.data.note}</p>
             </div>
           )}
           {test.isError && (
-            <div className="flex items-center gap-2 text-sm" style={{ color: 'var(--color-critical)' }}>
+            <div className="flex items-center gap-2 text-sm text-critical">
               <AlertCircle size={14} />{(test.error as Error).message}
             </div>
           )}

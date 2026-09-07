@@ -6,25 +6,33 @@ import {
   ResponsiveContainer, Legend,
 } from 'recharts';
 import {
-  CheckCircle2, Clock, Package, Globe, Zap,
-  ArrowUp, ArrowDown, Minus,
+  CheckCircle2, Clock, Package, Globe, Zap, ShieldCheck,
 } from 'lucide-react';
 import { getDashboardStats, getDashboardTimeline, getActiveRisks, listPackages, getDependencyGraph, padTimeline } from '../lib/api';
 import { NetworkGraph } from '../components/NetworkGraph';
 import { computeSecurityScore } from '../components/SecurityScore';
 import { ActivityFeed } from '../components/ActivityFeed';
-import { DashboardHeader } from '../components/TopBar';
+import { Card, CardHeader, CardBody, CardFooter } from '../components/ui/card';
+import { StatTile, type StatTileAccent } from '../components/ui/stat-tile';
+import { DataTable, type DataTableColumn } from '../components/ui/data-table';
+import { StatusChip } from '../components/ui/status-chip';
+import { EmptyState } from '../components/EmptyState';
 import { useUIStore } from '../store/ui';
 import { useWorkspaceStore } from '../store/workspace';
 import { cn } from '../components/ui/utils';
-import React from 'react';
+import {
+  axisProps, gridProps, legendProps, seriesProps, tooltipProps,
+} from '../lib/chartTheme';
 
 // ── helpers ────────────────────────────────────────────────────────────────
 
-function trendDelta(data: number[]): { delta: number; direction: 'up' | 'down' | 'flat' } {
-  if (data.length < 2) return { delta: 0, direction: 'flat' };
+function trendDelta(data: number[]): { value: string; direction: 'up' | 'down' | 'flat' } {
+  if (data.length < 2) return { value: '0', direction: 'flat' };
   const d = data[data.length - 1] - data[0];
-  return { delta: d, direction: d > 0 ? 'up' : d < 0 ? 'down' : 'flat' };
+  return {
+    value: d === 0 ? '0' : `${d > 0 ? '+' : ''}${d}`,
+    direction: d > 0 ? 'up' : d < 0 ? 'down' : 'flat',
+  };
 }
 
 function relativeTime(dateStr: string): string {
@@ -49,82 +57,67 @@ function scoreToGrade(score: number): { letter: string; label: string } {
   return { letter: 'F', label: 'Critical' };
 }
 
-function gradeColor(score: number): string {
-  if (score >= 90) return 'var(--success)';
-  if (score >= 70) return 'var(--warning)';
-  return 'var(--critical)';
+function gradeStroke(score: number): string {
+  if (score >= 90) return 'stroke-success';
+  if (score >= 70) return 'stroke-warning';
+  return 'stroke-critical';
 }
 
-// ── shared UI ──────────────────────────────────────────────────────────────
-
-function Card({ children, className }: { children: React.ReactNode; className?: string }) {
-  return (
-    <div className={cn('rounded-xl border border-border-color bg-surface shadow-sm', className)}>
-      {children}
-    </div>
-  );
-}
-
-function PanelHeader({ title, badge, action }: { title: string; badge?: React.ReactNode; action?: React.ReactNode }) {
-  return (
-    <div className="flex items-center justify-between px-4 pt-3 pb-2">
-      <div className="flex items-center gap-2">
-        <span className="text-[0.78rem] font-semibold text-text-primary">{title}</span>
-        {badge}
-      </div>
-      {action}
-    </div>
-  );
+function gradeText(score: number): string {
+  if (score >= 90) return 'text-success';
+  if (score >= 70) return 'text-warning';
+  return 'text-critical';
 }
 
 function NavLink({ label, onClick }: { label: string; onClick: () => void }) {
   return (
-    <button onClick={onClick}
-      className="text-[0.7rem] text-primary-blue bg-transparent border-none cursor-pointer p-0 hover:underline flex items-center gap-0.5">
+    <button
+      type="button"
+      onClick={onClick}
+      className="wd-hover rounded bg-transparent p-0 text-[0.7rem] font-medium text-primary hover:underline" >
       {label} →
     </button>
   );
 }
 
-function Sparkline({ data, color, w = 72, h = 22 }: { data: number[]; color: string; w?: number; h?: number }) {
-  if (data.length < 2) return null;
-  const max = Math.max(...data, 1);
-  const min = Math.min(...data, 0);
-  const range = max - min || 1;
-  const pts = data.map((v, i) => {
-    const x = (i / (data.length - 1)) * w;
-    const y = h - ((v - min) / range) * (h - 4) - 2;
-    return `${x},${y}`;
-  }).join(' ');
+/** Horizontal progress meter — SVG geometry, so no inline styles anywhere. */
+function Meter({ pct, className }: { pct: number; className?: string }) {
+  const w = Math.max(0, Math.min(100, pct));
   return (
-    <svg width={w} height={h} viewBox={`0 0 ${w} ${h}`} preserveAspectRatio="none" className="mt-1.5">
-      <polyline points={`${pts} ${w},${h} 0,${h}`} fill={color} opacity={0.08} stroke="none" />
-      <polyline points={pts} fill="none" stroke={color} strokeWidth={1.5} strokeLinejoin="round" />
+    <svg viewBox="0 0 100 4" preserveAspectRatio="none" className={cn('h-1 w-full', className)} aria-hidden="true">
+      <rect x={0} y={0} width={100} height={4} rx={2} className="fill-surface-muted" />
+      <rect x={0} y={0} width={w} height={4} rx={2} className="fill-current" />
     </svg>
   );
 }
 
-function TrendBadge({ delta, direction }: { delta: number; direction: 'up' | 'down' | 'flat' }) {
-  const Icon = direction === 'up' ? ArrowUp : direction === 'down' ? ArrowDown : Minus;
-  const color = direction === 'up' ? 'var(--critical)' : direction === 'down' ? 'var(--success)' : 'var(--text-muted)';
+function CoverageRow({
+  label, current, total, className,
+}: { label: string; current: number; total: number; className?: string }) {
+  const pct = total > 0 ? Math.min(100, Math.round((current / total) * 100)) : 0;
   return (
-    <span className="flex items-center gap-0.5 text-[0.62rem] font-medium" style={{ color }}>
-      <Icon size={10} />
-      {delta !== 0 && <>{delta > 0 ? '+' : ''}{delta}</>}
-    </span>
+    <div>
+      <div className="mb-1 flex items-baseline justify-between gap-2">
+        <span className="text-[0.72rem] text-text-secondary">{label}</span>
+        <span className="text-[0.72rem] font-medium tabular-nums text-text-primary">
+          {current} / {total}
+        </span>
+      </div>
+      <Meter pct={pct} className={className} />
+    </div>
   );
 }
 
-// ── severity constants ─────────────────────────────────────────────────────
+// ── severity vocabulary ────────────────────────────────────────────────────
 
-const SEV = {
-  critical: { color: 'var(--critical)', hex: '#DC2626' },
-  high:     { color: '#EA580C',         hex: '#EA580C' },
-  medium:   { color: 'var(--warning)',  hex: '#D97706' },
-  low:      { color: 'var(--cyan)',     hex: '#06B6D4' },
-} as const;
+const SEVERITIES = [
+  { key: 'critical', label: 'Critical', fill: 'var(--critical)', swatch: 'bg-critical', accent: 'critical' as StatTileAccent },
+  { key: 'high',     label: 'High',     fill: 'var(--amber)',    swatch: 'bg-amber',    accent: 'amber' as StatTileAccent },
+  { key: 'medium',   label: 'Medium',   fill: 'var(--warning)',  swatch: 'bg-warning',  accent: 'warning' as StatTileAccent },
+  { key: 'low',      label: 'Low',      fill: 'var(--teal)',     swatch: 'bg-teal',     accent: 'teal' as StatTileAccent },
+] as const;
 
-// ── 1. Posture Banner ──────────────────────────────────────────────────────
+// ── 1. Posture banner ──────────────────────────────────────────────────────
 
 function PostureBanner({
   score, critCount, totalFindings, totalPackages, ecosystems, scannedToday, lastUpdated, onNavigate,
@@ -134,100 +127,69 @@ function PostureBanner({
   onNavigate: (p: string) => void;
 }) {
   const grade = scoreToGrade(score);
-  const color = gradeColor(score);
+  const r = 30;
+  const circumference = 2 * Math.PI * r;
 
   return (
-    <Card className="fg-entrance">
-      <div className="flex items-center gap-4 p-4">
-        <div
-          className="w-16 h-16 rounded-full flex items-center justify-center shrink-0"
-          style={{ border: `3px solid ${color}` }}
-        >
-          <span className="text-[1.6rem] font-bold leading-none" style={{ color }}>{grade.letter}</span>
+    <Card>
+      <CardBody className="flex flex-wrap items-center gap-5">
+        <div className="relative shrink-0">
+          <svg width={76} height={76} viewBox="0 0 76 76" aria-hidden="true">
+            <circle cx={38} cy={38} r={r} fill="none" stroke="var(--surface-muted)" strokeWidth={7} />
+            <circle
+              cx={38} cy={38} r={r} fill="none" strokeWidth={7} strokeLinecap="round"
+              className={gradeStroke(score)}
+              strokeDasharray={circumference}
+              strokeDashoffset={circumference * (1 - Math.max(0, Math.min(100, score)) / 100)}
+              transform="rotate(-90 38 38)" />
+          </svg>
+          <span className={cn('absolute inset-0 grid place-items-center text-[1.4rem] font-bold leading-none', gradeText(score))}>
+            {grade.letter}
+          </span>
         </div>
 
-        <div className="flex-1 min-w-0">
-          <div className="flex items-baseline gap-2">
-            <span className="text-[0.92rem] font-semibold text-text-primary">
-              Security posture: {grade.label}
-            </span>
-            <span className="text-[0.72rem] text-text-muted">
-              Score {score}/100
-            </span>
-          </div>
-          <p className="text-[0.75rem] text-text-secondary mt-0.5 mb-0">
+        <div className="min-w-[240px] flex-1">
+          <p className="m-0 text-[0.9rem] font-semibold text-text-primary">
+            Security posture: {grade.label}
+          </p>
+          <p className="m-0 mt-0.5 text-[0.78rem] text-text-secondary">
             {critCount > 0
               ? `${critCount} critical finding${critCount !== 1 ? 's' : ''} need attention`
               : totalFindings > 0
                 ? `${totalFindings} findings across ${totalPackages} packages`
-                : 'No findings detected — run a scan to start monitoring'
-            }
+                : 'No findings detected — run a scan to start monitoring'}
           </p>
-          <div className="flex items-center gap-4 mt-2 flex-wrap">
-            <span className="flex items-center gap-1.5 text-[0.68rem] text-text-muted">
-              <span className="w-1.5 h-1.5 rounded-full shrink-0" style={{ background: 'var(--success)' }} />
+          <div className="mt-2.5 flex flex-wrap items-center gap-x-4 gap-y-1.5 text-[0.7rem] text-text-muted">
+            <span className="flex items-center gap-1.5">
+              <span aria-hidden="true" className="h-1.5 w-1.5 shrink-0 rounded-full bg-success" />
               All engines healthy
             </span>
             {lastUpdated && (
-              <span className="flex items-center gap-1 text-[0.68rem] text-text-muted">
-                <Clock size={11} /> Last scan {relativeTime(lastUpdated)}
-              </span>
+              <span className="flex items-center gap-1"><Clock size={11} /> Last scan {relativeTime(lastUpdated)}</span>
             )}
             {scannedToday > 0 && (
-              <span className="flex items-center gap-1 text-[0.68rem] text-text-muted">
-                <Zap size={11} /> {scannedToday} scanned today
-              </span>
+              <span className="flex items-center gap-1"><Zap size={11} /> {scannedToday} scanned today</span>
             )}
-            <span className="flex items-center gap-1 text-[0.68rem] text-text-muted">
-              <Package size={11} /> {totalPackages} packages
-            </span>
-            <span className="flex items-center gap-1 text-[0.68rem] text-text-muted">
+            <span className="flex items-center gap-1"><Package size={11} /> {totalPackages} packages</span>
+            <span className="flex items-center gap-1">
               <Globe size={11} /> {ecosystems.length} ecosystem{ecosystems.length !== 1 ? 's' : ''}
             </span>
+            <span className="tabular-nums">Score {score}/100</span>
           </div>
         </div>
 
-        <div className="flex gap-2 shrink-0">
-          <button
-            onClick={() => onNavigate('/scan')}
-            className="flex items-center gap-1.5 text-[0.72rem] font-medium px-3 py-1.5 rounded-lg border-none text-white cursor-pointer transition-colors"
-            style={{ background: 'var(--primary-blue)' }}
-          >
-            <Zap size={13} /> Scan now
-          </button>
-        </div>
-      </div>
+        <button
+          type="button"
+          onClick={() => onNavigate('/scan')}
+          className="wd-hover flex shrink-0 items-center gap-1.5 rounded bg-primary px-3.5 py-2 text-[0.78rem] font-medium text-white hover:opacity-90" >
+          <Zap size={14} aria-hidden="true" /> Scan now
+        </button>
+      </CardBody>
     </Card>
   );
 }
 
-// ── 2. KPI Tiles ───────────────────────────────────────────────────────────
-
-function KPITile({
-  label, value, color, accentColor, sparkData, delta, direction, className,
-}: {
-  label: string; value: number; color: string; accentColor?: string;
-  sparkData?: number[]; delta: number; direction: 'up' | 'down' | 'flat';
-  className?: string;
-}) {
-  return (
-    <Card className={cn('relative overflow-hidden', className)}>
-      {accentColor && (
-        <div className="absolute left-0 top-2.5 bottom-2.5 w-[3px] rounded-r-sm" style={{ background: accentColor }} />
-      )}
-      <div className={cn('p-3.5', accentColor && 'pl-4')}>
-        <div className="text-[0.68rem] text-text-secondary mb-1">{label}</div>
-        <div className="flex items-baseline gap-2">
-          <span className="text-[1.6rem] font-bold tabular-nums leading-none" style={{ color }}>{value}</span>
-          <TrendBadge delta={delta} direction={direction} />
-        </div>
-        {sparkData && <Sparkline data={sparkData} color={accentColor ?? color} />}
-      </div>
-    </Card>
-  );
-}
-
-// ── 3. Findings Evolution (stacked bar) ────────────────────────────────────
+// ── 3. Findings evolution ──────────────────────────────────────────────────
 
 function FindingsEvolutionCard({
   points, onNavigate,
@@ -237,366 +199,353 @@ function FindingsEvolutionCard({
 }) {
   return (
     <Card>
-      <PanelHeader
+      <CardHeader
         title="Findings evolution"
-        badge={<span className="text-[0.6rem] text-text-muted font-medium uppercase tracking-wide">30 days</span>}
+        description="Last 30 days, by severity"
         action={<NavLink label="View trend" onClick={() => onNavigate('/drift')} />}
       />
-      <div className="px-2 pb-3">
+      <CardBody>
         {points.length > 0 ? (
-          <ResponsiveContainer width="100%" height={160}>
-            <LineChart data={points} margin={{ top: 4, right: 8, left: -24, bottom: 0 }}>
-              <CartesianGrid strokeDasharray="3 3" stroke="var(--border-color)" vertical={false} />
-              <XAxis dataKey="date" tick={{ fill: 'var(--text-muted)', fontSize: 9 }}
-                tickFormatter={(v: string) => v.slice(5)} interval="preserveStartEnd" />
-              <YAxis tick={{ fill: 'var(--text-muted)', fontSize: 9 }} />
-              <RechartsTooltip
-                contentStyle={{ background: 'var(--surface)', border: '1px solid var(--border-color)', borderRadius: 8, fontSize: 11 }}
-                labelStyle={{ color: 'var(--text-primary)', fontWeight: 600 }}
-              />
-              <Legend iconType="plainline" iconSize={8} wrapperStyle={{ fontSize: 10, paddingTop: 4 }} />
-              <Line type="monotone" dataKey="critical" name="Critical" stroke="var(--critical)" strokeWidth={2.5}
-                dot={{ r: 4, fill: 'var(--critical)', stroke: 'var(--critical)', strokeWidth: 1 }}
-                activeDot={{ r: 6, fill: 'var(--critical)', stroke: '#fff', strokeWidth: 2 }} />
-              <Line type="monotone" dataKey="high" name="High" stroke="#EA580C" strokeWidth={2.5}
-                dot={{ r: 4, fill: '#EA580C', stroke: '#EA580C', strokeWidth: 1 }}
-                activeDot={{ r: 6, fill: '#EA580C', stroke: '#fff', strokeWidth: 2 }} />
-              <Line type="monotone" dataKey="medium" name="Medium" stroke="var(--warning)" strokeWidth={2.5}
-                dot={{ r: 4, fill: 'var(--warning)', stroke: 'var(--warning)', strokeWidth: 1 }}
-                activeDot={{ r: 6, fill: 'var(--warning)', stroke: '#fff', strokeWidth: 2 }} />
-              <Line type="monotone" dataKey="low" name="Low" stroke="var(--cyan)" strokeWidth={2}
-                dot={{ r: 3.5, fill: 'var(--cyan)', stroke: 'var(--cyan)', strokeWidth: 1 }}
-                activeDot={{ r: 5.5, fill: 'var(--cyan)', stroke: '#fff', strokeWidth: 2 }} />
+          <ResponsiveContainer width="100%" height={180}>
+            <LineChart data={points} margin={{ top: 4, right: 8, left: -22, bottom: 0 }}>
+              <CartesianGrid {...gridProps} />
+              <XAxis
+                dataKey="date"
+                {...axisProps}
+                tickFormatter={(v: string) => v.slice(5)}
+                interval="preserveStartEnd" />
+              <YAxis {...axisProps} width={38} />
+              <RechartsTooltip {...tooltipProps} />
+              <Legend {...legendProps} />
+              <Line type="monotone" dataKey="critical" name="Critical" {...seriesProps(0)} />
+              <Line type="monotone" dataKey="high" name="High" {...seriesProps(1)} />
+              <Line type="monotone" dataKey="medium" name="Medium" {...seriesProps(2)} />
+              <Line type="monotone" dataKey="low" name="Low" stroke="var(--teal)" strokeWidth={2} dot={false} animationDuration={200} />
             </LineChart>
           </ResponsiveContainer>
         ) : (
-          <div className="h-40 flex items-center justify-center">
-            <p className="text-[0.78rem] text-text-secondary">No data — run scans to populate history.</p>
-          </div>
+          <EmptyState
+            icon={CheckCircle2}
+            title="No history yet"
+            description="Run a scan and the trend line starts filling in from today."
+            command="cwctl scan ." />
         )}
-      </div>
+      </CardBody>
     </Card>
   );
 }
 
-// ── 4. Severity Donut ──────────────────────────────────────────────────────
+// ── 4. Severity distribution ───────────────────────────────────────────────
 
 function SeverityDonutCard({
   critical, high, medium, low, onNavigate,
-}: {
-  critical: number; high: number; medium: number; low: number;
-  onNavigate: (p: string) => void;
-}) {
+}: { critical: number; high: number; medium: number; low: number; onNavigate: (p: string) => void }) {
   const total = critical + high + medium + low;
-  const slices = [
-    { label: 'Critical', value: critical, color: SEV.critical.hex },
-    { label: 'High', value: high, color: SEV.high.hex },
-    { label: 'Medium', value: medium, color: SEV.medium.hex },
-    { label: 'Low', value: low, color: SEV.low.hex },
-  ];
+  const counts = { critical, high, medium, low };
+  const slices = SEVERITIES.map((s) => ({ ...s, value: counts[s.key] }));
 
   return (
     <Card>
-      <PanelHeader title="Severity distribution" action={<NavLink label="View all" onClick={() => onNavigate('/risks')} />} />
-      <div className="flex items-center gap-5 px-4 pt-1 pb-4">
+      <CardHeader
+        title="Severity distribution"
+        description="All active findings"
+        action={<NavLink label="View all" onClick={() => onNavigate('/risks')} />}
+      />
+      <CardBody className="flex flex-wrap items-center gap-5">
         <div className="relative shrink-0">
           <ResponsiveContainer width={120} height={120}>
             <PieChart>
               <Pie
-                data={total > 0 ? slices : [{ label: 'none', value: 1, color: 'var(--border-color)' }]}
-                innerRadius={40} outerRadius={56} dataKey="value"
-                paddingAngle={2} startAngle={90} endAngle={-270}>
-                {(total > 0 ? slices : [{ color: 'var(--border-color)' }]).map((s, i) => (
-                  <Cell key={i} fill={s.color} />
+                data={total > 0 ? slices : [{ label: 'none', value: 1, fill: 'var(--border-color)' }]}
+                innerRadius={40}
+                outerRadius={56}
+                dataKey="value"
+                paddingAngle={2}
+                startAngle={90}
+                endAngle={-270}
+                stroke="none"
+                isAnimationActive
+                animationDuration={200}
+              >
+                {(total > 0 ? slices : [{ fill: 'var(--border-color)' }]).map((s, i) => (
+                  <Cell key={i} fill={s.fill} />
                 ))}
               </Pie>
+              <RechartsTooltip {...tooltipProps} />
             </PieChart>
           </ResponsiveContainer>
-          <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 text-center pointer-events-none">
-            <div className="text-[1.1rem] font-bold text-text-primary font-mono leading-none">{total}</div>
-            <div className="text-[0.52rem] text-text-muted mt-0.5 uppercase tracking-wider">total</div>
+          <div className="pointer-events-none absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 text-center">
+            <div className="font-mono text-[1.1rem] font-bold leading-none tabular-nums text-text-primary">{total}</div>
+            <div className="mt-0.5 text-[0.55rem] uppercase tracking-wider text-text-muted">total</div>
           </div>
         </div>
-        <div className="flex-1 flex flex-col gap-2">
-          {slices.map(s => (
+        <div className="flex min-w-[180px] flex-1 flex-col gap-2">
+          {slices.map((s) => (
             <div key={s.label} className="flex items-center gap-2">
-              <div className="w-2 h-2 rounded-[3px] shrink-0" style={{ background: s.color }} />
-              <span className="text-[0.72rem] text-text-secondary flex-1">{s.label}</span>
-              <span className="text-[0.78rem] font-semibold text-text-primary font-mono">{s.value}</span>
-              <span className="text-[0.62rem] text-text-muted font-mono w-8 text-right">
+              <span aria-hidden="true" className={cn('h-2 w-2 shrink-0 rounded-sm', s.swatch)} />
+              <span className="flex-1 text-[0.74rem] text-text-secondary">{s.label}</span>
+              <span className="font-mono text-[0.78rem] font-semibold tabular-nums text-text-primary">{s.value}</span>
+              <span className="w-9 text-right font-mono text-[0.65rem] tabular-nums text-text-muted">
                 {total > 0 ? `${Math.round((s.value / total) * 100)}%` : '—'}
               </span>
             </div>
           ))}
         </div>
-      </div>
+      </CardBody>
     </Card>
   );
 }
 
-// ── 5. Top Risks Table ─────────────────────────────────────────────────────
+// ── 5. Top risks ───────────────────────────────────────────────────────────
 
-function TopRisksCard({
-  risks, onNavigate,
-}: {
-  risks: Array<{ package_name: string; version: string; ecosystem: string; top_severity: string; finding_count: number; first_seen: string }>;
-  onNavigate: (p: string) => void;
-}) {
-  const sorted = useMemo(() => {
-    const order: Record<string, number> = { CRITICAL: 0, HIGH: 1, MEDIUM: 2, LOW: 3 };
-    return [...risks]
-      .sort((a, b) => (order[a.top_severity] ?? 4) - (order[b.top_severity] ?? 4) || b.finding_count - a.finding_count)
-      .slice(0, 6);
-  }, [risks]);
+interface RiskRow {
+  package_name: string; version: string; ecosystem: string;
+  top_severity: string; finding_count: number; first_seen: string;
+}
+
+const SEVERITY_RANK: Record<string, number> = { CRITICAL: 4, HIGH: 3, MEDIUM: 2, LOW: 1 };
+
+const riskColumns: Array<DataTableColumn<RiskRow>> = [
+  {
+    key: 'package', header: 'Package', sortable: true, sortValue: (r) => r.package_name,
+    render: (r) => (
+      <span className="truncate font-mono text-[0.74rem] text-text-primary">{r.package_name}</span>
+    ),
+  },
+  {
+    key: 'severity', header: 'Severity', sortable: true,
+    sortValue: (r) => SEVERITY_RANK[r.top_severity?.toUpperCase()] ?? 0,
+    render: (r) => <StatusChip tone={r.top_severity} dot={false} />,
+    className: 'w-[104px]',
+  },
+  {
+    key: 'ecosystem', header: 'Eco', sortable: true, sortValue: (r) => r.ecosystem,
+    render: (r) => (
+      <span className="rounded bg-surface-muted px-1.5 py-0.5 text-[0.65rem] uppercase text-text-muted">
+        {r.ecosystem.toLowerCase()}
+      </span>
+    ),
+    className: 'w-[86px]',
+  },
+  {
+    key: 'count', header: 'Findings', numeric: true, sortable: true, sortValue: (r) => r.finding_count,
+    render: (r) => r.finding_count,
+    className: 'w-[88px]',
+  },
+  {
+    key: 'seen', header: 'Seen', numeric: true, sortable: true,
+    sortValue: (r) => new Date(r.first_seen).getTime(),
+    render: (r) => <span className="text-text-muted">{relativeTime(r.first_seen)}</span>,
+    className: 'w-[76px]',
+  },
+];
+
+function TopRisksCard({ risks, onNavigate }: { risks: RiskRow[]; onNavigate: (p: string) => void }) {
+  const sorted = useMemo(
+    () => [...risks]
+      .sort((a, b) => (SEVERITY_RANK[b.top_severity?.toUpperCase()] ?? 0) - (SEVERITY_RANK[a.top_severity?.toUpperCase()] ?? 0)
+        || b.finding_count - a.finding_count)
+      .slice(0, 8),
+    [risks],
+  );
 
   return (
     <Card>
-      <PanelHeader title="Top risks" action={<NavLink label="View all" onClick={() => onNavigate('/risks')} />} />
-      <div className="px-4 pb-3">
-        {sorted.length === 0 ? (
-          <div className="py-4 text-center">
-            <CheckCircle2 size={18} className="text-text-muted opacity-40 mx-auto mb-1" />
-            <p className="text-[0.75rem] text-text-secondary">No active risks</p>
-          </div>
-        ) : (
-          <div className="flex flex-col">
-            {sorted.map((r, i) => (
-              <div key={`${r.package_name}-${i}`}
-                className={cn('flex items-center gap-2 py-2', i < sorted.length - 1 && 'border-b border-border-color')}>
-                <span className="text-[0.58rem] font-semibold uppercase tracking-wide px-1.5 py-0.5 rounded w-12 text-center shrink-0"
-                  style={{
-                    background: `color-mix(in srgb, ${r.top_severity === 'CRITICAL' ? 'var(--critical)' : r.top_severity === 'HIGH' ? '#EA580C' : r.top_severity === 'MEDIUM' ? 'var(--warning)' : 'var(--cyan)'} 12%, transparent)`,
-                    color: r.top_severity === 'CRITICAL' ? 'var(--critical)' : r.top_severity === 'HIGH' ? '#EA580C' : r.top_severity === 'MEDIUM' ? 'var(--warning)' : 'var(--cyan)',
-                  }}>
-                  {r.top_severity === 'CRITICAL' ? 'crit' : r.top_severity.toLowerCase().slice(0, 4)}
-                </span>
-                <span className="text-[0.72rem] font-mono text-text-primary flex-1 overflow-hidden text-ellipsis whitespace-nowrap">
-                  {r.package_name}
-                </span>
-                <span className="text-[0.6rem] text-text-muted px-1.5 py-0.5 rounded shrink-0"
-                  style={{ background: 'var(--surface-muted)' }}>
-                  {r.ecosystem.toLowerCase()}
-                </span>
-                <span className="text-[0.68rem] text-text-secondary font-mono w-6 text-right shrink-0">
-                  {r.finding_count}
-                </span>
-                <span className="text-[0.6rem] text-text-muted w-8 text-right shrink-0">
-                  {relativeTime(r.first_seen)}
-                </span>
-              </div>
-            ))}
-          </div>
-        )}
-      </div>
+      <CardHeader
+        title="Top risks"
+        description="Highest-severity packages first"
+        action={<NavLink label="View all" onClick={() => onNavigate('/risks')} />}
+      />
+      <DataTable
+        columns={riskColumns}
+        rows={sorted}
+        rowKey={(r) => `${r.package_name}-${r.version}-${r.ecosystem}`}
+        dense
+        empty={{
+          icon: ShieldCheck,
+          title: 'No active risks',
+          description: 'Nothing is currently above your severity threshold.',
+          command: 'cwctl scan . --fail-on=high',
+        }}
+      />
     </Card>
   );
 }
 
-// ── 6. Engine Coverage Grid ────────────────────────────────────────────────
+// ── 6. Engine coverage ─────────────────────────────────────────────────────
+
+const ENGINES = [
+  { name: 'OSV', active: true },
+  { name: 'Behavioral', active: true },
+  { name: 'Malware', active: true },
+  { name: 'AI Model', active: true },
+  { name: 'MCP', active: true },
+  { name: 'Grype', active: false },
+  { name: 'Trivy', active: false },
+  { name: 'Semgrep', active: false },
+];
 
 function EngineCoverageCard({ onNavigate }: { onNavigate: (p: string) => void }) {
-  const engines = [
-    { name: 'OSV', active: true },
-    { name: 'Behavioral', active: true },
-    { name: 'Malware', active: true },
-    { name: 'AI Model', active: true },
-    { name: 'MCP', active: true },
-    { name: 'Grype', active: false },
-    { name: 'Trivy', active: false },
-    { name: 'Semgrep', active: false },
-  ];
-
+  const active = ENGINES.filter((e) => e.active).length;
   return (
     <Card>
-      <PanelHeader
+      <CardHeader
         title="Engine coverage"
-        badge={
-          <span className="text-[0.58rem] px-1.5 py-0.5 rounded-full font-medium"
-            style={{ background: 'color-mix(in srgb, var(--success) 12%, transparent)', color: 'var(--success)' }}>
-            8 active
-          </span>
-        }
+        description={`${active} built-in, ${ENGINES.length - active} optional`}
         action={<NavLink label="Details" onClick={() => onNavigate('/integrations')} />}
       />
-      <div className="grid grid-cols-2 gap-1.5 px-3.5 pb-3">
-        {engines.map(e => (
-          <div key={e.name}
-            className="flex items-center gap-2 px-2.5 py-2 rounded-lg"
-            style={{ background: 'var(--surface-muted)' }}>
-            <div className="w-[7px] h-[7px] rounded-full shrink-0"
-              style={{
-                background: e.active ? 'var(--success)' : 'var(--warning)',
-                boxShadow: e.active ? '0 0 4px color-mix(in srgb, var(--success) 60%, transparent)' : 'none',
-              }} />
-            <span className="text-[0.68rem] font-medium text-text-primary flex-1">{e.name}</span>
-            <span className="text-[0.55rem] text-text-muted">
-              {e.active ? 'active' : 'opt'}
-            </span>
+      <CardBody className="grid grid-cols-2 gap-1.5">
+        {ENGINES.map((e) => (
+          <div key={e.name} className="flex items-center gap-2 rounded bg-surface-muted px-2.5 py-2">
+            <span
+              aria-hidden="true"
+              className={cn('h-1.5 w-1.5 shrink-0 rounded-full', e.active ? 'bg-success' : 'bg-warning')}
+            />
+            <span className="flex-1 truncate text-[0.7rem] font-medium text-text-primary">{e.name}</span>
+            <span className="shrink-0 text-[0.6rem] text-text-muted">{e.active ? 'active' : 'opt'}</span>
           </div>
         ))}
-      </div>
+      </CardBody>
     </Card>
   );
 }
 
-// ── 7. Fix Rate Gauge ──────────────────────────────────────────────────────
+// ── 7. Fix rate ────────────────────────────────────────────────────────────
 
 function FixRateCard({ totalFindings }: { totalFindings: number }) {
   const fixable = Math.round(totalFindings * 0.75);
   const pct = totalFindings > 0 ? Math.round((fixable / totalFindings) * 100) : 0;
   const circumference = 2 * Math.PI * 30;
-  const offset = circumference * (1 - pct / 100);
-  const color = pct >= 70 ? 'var(--success)' : pct >= 40 ? 'var(--warning)' : 'var(--critical)';
+  const stroke = pct >= 70 ? 'stroke-success' : pct >= 40 ? 'stroke-warning' : 'stroke-critical';
+  const text = pct >= 70 ? 'text-success' : pct >= 40 ? 'text-warning' : 'text-critical';
 
   return (
-    <Card className="flex flex-col items-center justify-center py-5 px-4 gap-2">
-      <span className="text-[0.6rem] text-text-muted font-semibold uppercase tracking-wider">Fix rate</span>
-      <div className="relative" style={{ width: 76, height: 76 }}>
-        <svg width={76} height={76} className="-rotate-90">
-          <circle cx={38} cy={38} r={30} fill="none" stroke="var(--border-color)" strokeWidth={6} />
-          <circle cx={38} cy={38} r={30} fill="none" stroke={color} strokeWidth={6}
-            strokeDasharray={circumference} strokeDashoffset={offset}
-            strokeLinecap="round" style={{ transition: 'stroke-dashoffset 0.6s ease' }} />
-        </svg>
-        <div className="absolute inset-0 flex flex-col items-center justify-center">
-          <span className="text-[1.1rem] font-bold tabular-nums" style={{ color }}>{pct}%</span>
+    <Card className="flex flex-col">
+      <CardHeader title="Fix rate" description="Findings with a known fix" />
+      <CardBody className="flex flex-1 flex-col items-center justify-center gap-2 py-4">
+        <div className="relative">
+          <svg width={76} height={76} viewBox="0 0 76 76" aria-hidden="true">
+            <circle cx={38} cy={38} r={30} fill="none" stroke="var(--border-color)" strokeWidth={6} />
+            <circle
+              cx={38} cy={38} r={30} fill="none" strokeWidth={6} strokeLinecap="round"
+              className={stroke}
+              strokeDasharray={circumference}
+              strokeDashoffset={circumference * (1 - pct / 100)}
+              transform="rotate(-90 38 38)" />
+          </svg>
+          <span className={cn('absolute inset-0 grid place-items-center text-[1.1rem] font-bold tabular-nums', text)}>
+            {pct}%
+          </span>
         </div>
-      </div>
-      <span className="text-[0.68rem] text-text-secondary">{fixable} of {totalFindings} fixable</span>
+        <span className="text-[0.7rem] tabular-nums text-text-secondary">
+          {fixable} of {totalFindings} fixable
+        </span>
+      </CardBody>
     </Card>
   );
 }
 
-// ── 8. Ecosystems Horizontal Bars ──────────────────────────────────────────
-
-const ECO_COLORS: Record<string, string> = {
-  NPM: '#2563EB', PYPI: '#A855F7', GO: '#06B6D4', DOCKER: '#D97706',
-  HUGGINGFACE: '#EA580C', MCP: '#DC2626', RUBYGEMS: '#D97706',
-  CRATES: '#2563EB', MAVEN: '#DC2626',
-};
+// ── 8. Ecosystems ──────────────────────────────────────────────────────────
 
 function EcosystemsCard({
   packages, onNavigate,
-}: {
-  packages: Array<{ ecosystem: string }>;
-  onNavigate: (p: string) => void;
-}) {
+}: { packages: Array<{ ecosystem: string }>; onNavigate: (p: string) => void }) {
   const breakdown = useMemo(() => {
     const counts: Record<string, number> = {};
     for (const pkg of packages) {
       const key = pkg.ecosystem.toUpperCase();
       counts[key] = (counts[key] ?? 0) + 1;
     }
-    return Object.entries(counts)
-      .sort(([, a], [, b]) => b - a)
-      .slice(0, 6)
-      .map(([eco, count]) => ({ eco, count }));
+    return Object.entries(counts).sort(([, a], [, b]) => b - a).slice(0, 6).map(([eco, count]) => ({ eco, count }));
   }, [packages]);
 
   const total = breakdown.reduce((s, r) => s + r.count, 0);
   const maxCount = breakdown[0]?.count ?? 1;
 
   return (
-    <Card>
-      <PanelHeader title="Ecosystems" action={<NavLink label="Inventory" onClick={() => onNavigate('/inventory')} />} />
-      <div className="px-4 pb-3">
+    <Card className="flex flex-col">
+      <CardHeader
+        title="Ecosystems"
+        description="Where your dependencies live"
+        action={<NavLink label="Inventory" onClick={() => onNavigate('/inventory')} />}
+      />
+      <CardBody className="flex-1">
         {breakdown.length === 0 ? (
-          <p className="text-[0.72rem] text-text-secondary py-3">No packages scanned yet.</p>
+          <EmptyState
+            icon={Globe}
+            title="No packages scanned yet"
+            description="Point a scan at a project to build the inventory."
+            command="cwctl scan ." />
         ) : (
-          <>
-            <div className="flex flex-col gap-1.5">
-              {breakdown.map(r => (
-                <div key={r.eco} className="flex items-center gap-2">
-                  <span className="w-10 text-[0.68rem] font-medium text-text-primary shrink-0">{r.eco}</span>
-                  <div className="flex-1 h-[5px] rounded-full overflow-hidden" style={{ background: 'var(--surface-muted)' }}>
-                    <div className="h-full rounded-full transition-[width] duration-300"
-                      style={{ width: `${(r.count / maxCount) * 100}%`, background: ECO_COLORS[r.eco] ?? '#98A2B3' }} />
-                  </div>
-                  <span className="text-[0.62rem] text-text-muted font-mono w-6 text-right shrink-0">{r.count}</span>
-                </div>
-              ))}
-            </div>
-            <div className="flex justify-between mt-3 pt-2 border-t border-border-color">
-              <span className="text-[0.62rem] text-text-muted">{total} packages</span>
-              <span className="text-[0.62rem] text-text-muted">{breakdown.length} ecosystems</span>
-            </div>
-          </>
+          <div className="flex flex-col gap-2">
+            {breakdown.map((r) => (
+              <div key={r.eco} className="flex items-center gap-2">
+                <span className="w-16 shrink-0 truncate text-[0.7rem] font-medium text-text-primary">{r.eco}</span>
+                <Meter pct={(r.count / maxCount) * 100} className="flex-1 text-primary" />
+                <span className="w-7 shrink-0 text-right font-mono text-[0.65rem] tabular-nums text-text-muted">
+                  {r.count}
+                </span>
+              </div>
+            ))}
+          </div>
         )}
-      </div>
+      </CardBody>
+      {breakdown.length > 0 && (
+        <CardFooter>
+          <span>{total} packages</span>
+          <span>{breakdown.length} ecosystems</span>
+        </CardFooter>
+      )}
     </Card>
   );
 }
 
-// ── 9. Scan Coverage ───────────────────────────────────────────────────────
+// ── 9. Scan coverage ───────────────────────────────────────────────────────
 
 function ScanCoverageCard({
   totalPackages, totalFindings, scannedToday, lastUpdated,
-}: {
-  totalPackages: number; totalFindings: number; scannedToday: number; lastUpdated: string;
-}) {
+}: { totalPackages: number; totalFindings: number; scannedToday: number; lastUpdated: string }) {
   const fixable = Math.round(totalFindings * 0.75);
-
   return (
-    <Card>
-      <PanelHeader title="Scan coverage" />
-      <div className="px-4 pb-3.5 flex flex-col gap-3">
-        <CoverageRow label="Packages scanned" current={totalPackages} total={totalPackages} color="var(--success)" />
-        <CoverageRow label="With fix available" current={fixable} total={totalFindings || 1} color="var(--primary-blue)" />
-        <CoverageRow label="Scanned today" current={scannedToday} total={totalPackages || 1} color="var(--warning)" />
-        {lastUpdated && (
-          <div className="flex items-center gap-1.5 mt-1">
-            <Clock size={11} className="text-text-muted" />
-            <span className="text-[0.62rem] text-text-muted">
-              Last full scan: {relativeTime(lastUpdated)}
-            </span>
-          </div>
-        )}
-      </div>
+    <Card className="flex flex-col">
+      <CardHeader title="Scan coverage" description="How much of the estate has been through the engines" />
+      <CardBody className="flex flex-1 flex-col gap-3.5">
+        <CoverageRow label="Packages scanned" current={totalPackages} total={totalPackages} className="text-success" />
+        <CoverageRow label="With fix available" current={fixable} total={totalFindings || 1} className="text-primary" />
+        <CoverageRow label="Scanned today" current={scannedToday} total={totalPackages || 1} className="text-warning" />
+      </CardBody>
+      {lastUpdated && (
+        <CardFooter>
+          <span className="flex items-center gap-1.5">
+            <Clock size={11} /> Last full scan {relativeTime(lastUpdated)}
+          </span>
+        </CardFooter>
+      )}
     </Card>
   );
 }
 
-function CoverageRow({ label, current, total, color }: { label: string; current: number; total: number; color: string }) {
-  const pct = total > 0 ? Math.min(100, Math.round((current / total) * 100)) : 0;
-  return (
-    <div>
-      <div className="flex justify-between mb-1">
-        <span className="text-[0.68rem] text-text-secondary">{label}</span>
-        <span className="text-[0.68rem] font-medium text-text-primary tabular-nums">{current} / {total}</span>
-      </div>
-      <div className="h-1 rounded-full overflow-hidden" style={{ background: 'var(--surface-muted)' }}>
-        <div className="h-full rounded-full transition-[width] duration-300" style={{ width: `${pct}%`, background: color }} />
-      </div>
-    </div>
-  );
-}
-
-// ── 10. Recent Activity ────────────────────────────────────────────────────
+// ── 10. Recent activity ────────────────────────────────────────────────────
 
 function RecentActivityCard({ onNavigate }: { onNavigate: (p: string) => void }) {
   return (
     <Card className="flex flex-col">
-      <PanelHeader
+      <CardHeader
         title="Recent activity"
-        badge={
-          <span className="relative flex h-2 w-2">
-            <span className="animate-ping absolute inline-flex h-full w-full rounded-full opacity-75" style={{ background: 'var(--success)' }} />
-            <span className="relative inline-flex rounded-full h-2 w-2" style={{ background: 'var(--success)' }} />
-          </span>
-        }
+        description="Live engine and scan events"
         action={<NavLink label="View all" onClick={() => onNavigate('/monitor')} />}
       />
-      <div className="flex-1 overflow-hidden">
+      <CardBody className="flex-1 overflow-hidden">
         <ActivityFeed />
-      </div>
+      </CardBody>
     </Card>
   );
 }
 
-// ── 11. Dependency Graph ───────────────────────────────────────────────────
+// ── 11. Dependency graph ───────────────────────────────────────────────────
 
 function DependencyGraphCard({ onNavigate }: { onNavigate: (p: string) => void }) {
-  const wsName = useWorkspaceStore(s => s.getActive()).name;
+  const wsName = useWorkspaceStore((s) => s.getActive()).name;
   const graph = useQuery({
     queryKey: ['dependency-graph', wsName],
     queryFn: () => getDependencyGraph(20, wsName),
@@ -606,45 +555,48 @@ function DependencyGraphCard({ onNavigate }: { onNavigate: (p: string) => void }
 
   const liveData = graph.data && graph.data.nodes.length > 1
     ? {
-        nodes: graph.data.nodes.map(n => ({ ...n, severity: (n.severity || 'none') as 'critical' | 'high' | 'medium' | 'low' | 'none' })),
+        nodes: graph.data.nodes.map((n) => ({ ...n, severity: (n.severity || 'none') as 'critical' | 'high' | 'medium' | 'low' | 'none' })),
         links: graph.data.links,
       }
     : { nodes: [], links: [] };
 
   return (
     <Card>
-      <PanelHeader
+      <CardHeader
         title="Dependency graph"
+        description="Top 20 nodes by connection count"
         action={<NavLink label="Full graph" onClick={() => onNavigate('/graph')} />}
       />
-      <div className="flex gap-4 px-4 pb-2 flex-wrap">
-        {(['Critical', 'High', 'Medium', 'Low'] as const).map(l => (
-          <div key={l} className="flex items-center gap-1.5">
-            <div className="w-2 h-2 rounded-full shrink-0"
-              style={{ background: SEV[l.toLowerCase() as keyof typeof SEV].color }} />
-            <span className="text-[0.65rem] text-text-secondary">{l}</span>
-          </div>
-        ))}
-      </div>
-      <div className="px-2 pb-2 flex items-center justify-center">
+      <CardBody>
+        <div className="mb-2 flex flex-wrap gap-4">
+          {SEVERITIES.map((s) => (
+            <div key={s.label} className="flex items-center gap-1.5">
+              <span aria-hidden="true" className={cn('h-2 w-2 shrink-0 rounded-full', s.swatch)} />
+              <span className="text-[0.68rem] text-text-secondary">{s.label}</span>
+            </div>
+          ))}
+        </div>
         {liveData.nodes.length === 0 ? (
-          <div className="flex flex-col items-center justify-center gap-1 py-14 text-center w-full">
-            <p className="text-sm text-text-secondary">No dependency graph data yet</p>
-            <code className="text-xs font-mono text-primary-blue mt-1">cwctl scan .</code>
-          </div>
+          <EmptyState
+            icon={Globe}
+            title="No dependency graph data yet"
+            description="The graph is built from scan output — run one scan to populate it."
+            command="cwctl scan ." />
         ) : (
-          <NetworkGraph mode="data" data={liveData} width={1040} height={340} />
+          <div className="flex items-center justify-center">
+            <NetworkGraph mode="data" data={liveData} width={1040} height={340} />
+          </div>
         )}
-      </div>
+      </CardBody>
     </Card>
   );
 }
 
-// ── Main Page ──────────────────────────────────────────────────────────────
+// ── Main page ──────────────────────────────────────────────────────────────
 
 export function DashboardPage() {
-  const navigate = useUIStore(s => s.navigate);
-  const wsName = useWorkspaceStore(s => s.getActive()).name;
+  const navigate = useUIStore((s) => s.navigate);
+  const wsName = useWorkspaceStore((s) => s.getActive()).name;
 
   const stats    = useQuery({ queryKey: ['dashboard-stats', wsName], queryFn: () => getDashboardStats(wsName), refetchInterval: 30_000 });
   const timeline = useQuery({ queryKey: ['dashboard-timeline'],      queryFn: () => getDashboardTimeline(30),  refetchInterval: 60_000 });
@@ -654,11 +606,11 @@ export function DashboardPage() {
 
   const pts7 = useMemo(() => padTimeline(tl7.data?.points ?? [], 7), [tl7.data]);
   const sparklines = {
-    critical: pts7.map(p => p.critical),
-    high:     pts7.map(p => p.high),
-    medium:   pts7.map(p => p.medium),
-    low:      pts7.map(p => p.low),
-    total:    pts7.map(p => p.total),
+    critical: pts7.map((p) => p.critical),
+    high:     pts7.map((p) => p.high),
+    medium:   pts7.map((p) => p.medium),
+    low:      pts7.map((p) => p.low),
+    total:    pts7.map((p) => p.total),
   };
 
   const d = stats.data;
@@ -686,117 +638,78 @@ export function DashboardPage() {
   const lowCount    = statsEmpty ? riskDerived.low : (d?.low_findings ?? 0);
   const totalFindings = critCount + highCount + mediumCount + lowCount;
 
-  const critTrend  = trendDelta(sparklines.critical);
-  const highTrend  = trendDelta(sparklines.high);
-  const medTrend   = trendDelta(sparklines.medium);
-  const lowTrend   = trendDelta(sparklines.low);
-  const totalTrend = trendDelta(sparklines.total);
+  const counts = { critical: critCount, high: highCount, medium: mediumCount, low: lowCount };
+  const trends = {
+    critical: trendDelta(sparklines.critical),
+    high: trendDelta(sparklines.high),
+    medium: trendDelta(sparklines.medium),
+    low: trendDelta(sparklines.low),
+    total: trendDelta(sparklines.total),
+  };
 
-  const score = computeSecurityScore({ critical: critCount, high: highCount, medium: mediumCount, low: lowCount });
+  const score = computeSecurityScore(counts);
 
   return (
-    <div className="flex flex-col h-full overflow-y-auto">
-      <DashboardHeader />
+    <div className="flex flex-col gap-5">
+      <PostureBanner
+        score={score}
+        critCount={critCount}
+        totalFindings={totalFindings}
+        totalPackages={statsEmpty ? riskDerived.packages : (d?.total_packages ?? 0)}
+        ecosystems={d?.ecosystems_covered ?? []}
+        scannedToday={d?.scanned_today ?? 0}
+        lastUpdated={d?.last_updated ?? ''}
+        onNavigate={navigate}
+      />
 
-      <div className="p-5 flex flex-col gap-3.5">
+      {/* KPI row */}
+      <div className="grid grid-cols-2 gap-5 sm:grid-cols-3 lg:grid-cols-5">
+        <StatTile
+          label="Total findings"
+          value={totalFindings}
+          delta={trends.total}
+          sparkline={sparklines.total}
+          loading={stats.isLoading && !d}
+        />
+        {SEVERITIES.map((s) => (
+          <StatTile
+            key={s.key}
+            label={s.label}
+            value={counts[s.key]}
+            accent={s.accent}
+            delta={trends[s.key]}
+            sparkline={sparklines[s.key]}
+            loading={stats.isLoading && !d}
+          />
+        ))}
+      </div>
 
-        {/* 1. Posture banner */}
-        <PostureBanner
-          score={score}
-          critCount={critCount}
-          totalFindings={totalFindings}
-          totalPackages={statsEmpty ? riskDerived.packages : (d?.total_packages ?? 0)}
-          ecosystems={d?.ecosystems_covered ?? []}
-          scannedToday={d?.scanned_today ?? 0}
-          lastUpdated={d?.last_updated ?? ''}
+      <div className="grid grid-cols-1 gap-5 lg:grid-cols-[3fr_2fr]">
+        <FindingsEvolutionCard points={timelinePoints} onNavigate={navigate} />
+        <SeverityDonutCard
+          critical={critCount} high={highCount} medium={mediumCount} low={lowCount}
           onNavigate={navigate}
         />
-
-        {/* 2. KPI strip — 5 tiles */}
-        <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-2.5">
-          <KPITile
-            className="fg-entrance"
-            label="Total findings"
-            value={totalFindings}
-            color="var(--text-primary)"
-            sparkData={sparklines.total}
-            delta={totalTrend.delta}
-            direction={totalTrend.direction}
-          />
-          <KPITile
-            className="fg-entrance fg-entrance-delay-1"
-            label="Critical"
-            value={critCount}
-            color="var(--critical)"
-            accentColor="var(--critical)"
-            sparkData={sparklines.critical}
-            delta={critTrend.delta}
-            direction={critTrend.direction}
-          />
-          <KPITile
-            className="fg-entrance fg-entrance-delay-2"
-            label="High"
-            value={highCount}
-            color="#EA580C"
-            accentColor="#EA580C"
-            sparkData={sparklines.high}
-            delta={highTrend.delta}
-            direction={highTrend.direction}
-          />
-          <KPITile
-            className="fg-entrance fg-entrance-delay-3"
-            label="Medium"
-            value={mediumCount}
-            color="var(--warning)"
-            accentColor="var(--warning)"
-            sparkData={sparklines.medium}
-            delta={medTrend.delta}
-            direction={medTrend.direction}
-          />
-          <KPITile
-            className="fg-entrance fg-entrance-delay-4"
-            label="Low"
-            value={lowCount}
-            color="var(--cyan)"
-            accentColor="var(--cyan)"
-            sparkData={sparklines.low}
-            delta={lowTrend.delta}
-            direction={lowTrend.direction}
-          />
-        </div>
-
-        {/* 3. Findings evolution + severity donut */}
-        <div className="grid grid-cols-1 lg:grid-cols-[3fr_2fr] gap-3.5">
-          <FindingsEvolutionCard points={timelinePoints} onNavigate={navigate} />
-          <SeverityDonutCard
-            critical={critCount} high={highCount} medium={mediumCount} low={lowCount}
-            onNavigate={navigate}
-          />
-        </div>
-
-        {/* 4. Top risks + engine coverage + fix rate */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-[2fr_2fr_1fr] gap-3.5">
-          <TopRisksCard risks={allRisks} onNavigate={navigate} />
-          <EngineCoverageCard onNavigate={navigate} />
-          <FixRateCard totalFindings={totalFindings} />
-        </div>
-
-        {/* 5. Ecosystems + scan coverage + recent activity */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3.5">
-          <EcosystemsCard packages={allPkgs} onNavigate={navigate} />
-          <ScanCoverageCard
-            totalPackages={statsEmpty ? riskDerived.packages : (d?.total_packages ?? 0)}
-            totalFindings={totalFindings}
-            scannedToday={d?.scanned_today ?? 0}
-            lastUpdated={d?.last_updated ?? ''}
-          />
-          <RecentActivityCard onNavigate={navigate} />
-        </div>
-
-        {/* 6. Dependency graph */}
-        <DependencyGraphCard onNavigate={navigate} />
-
       </div>
+
+      <div className="grid grid-cols-1 gap-5 md:grid-cols-2 lg:grid-cols-[2fr_2fr_1fr]">
+        <TopRisksCard risks={allRisks} onNavigate={navigate} />
+        <EngineCoverageCard onNavigate={navigate} />
+        <FixRateCard totalFindings={totalFindings} />
+      </div>
+
+      <div className="grid grid-cols-1 gap-5 md:grid-cols-2 lg:grid-cols-3">
+        <EcosystemsCard packages={allPkgs} onNavigate={navigate} />
+        <ScanCoverageCard
+          totalPackages={statsEmpty ? riskDerived.packages : (d?.total_packages ?? 0)}
+          totalFindings={totalFindings}
+          scannedToday={d?.scanned_today ?? 0}
+          lastUpdated={d?.last_updated ?? ''}
+        />
+        <RecentActivityCard onNavigate={navigate} />
+      </div>
+
+      <DependencyGraphCard onNavigate={navigate} />
     </div>
   );
 }

@@ -4,7 +4,7 @@ import {
   AlertCircle, CheckCircle, Eye, Bell, Timer, Github, ArrowRight,
   Globe, Server, Boxes, Database, Webhook,
 } from 'lucide-react';
-import { AuthPanel } from '../components/AuthPanel';
+import { SignInDialog } from '../components/AuthPanel';
 import { NetworkGraph } from '../components/NetworkGraph';
 import { TopoBackground } from '../components/TopoBackground';
 import { CopyButton } from '../components/CopyButton';
@@ -141,7 +141,10 @@ interface PitchPageProps {
 
 export function PitchPage({ onLoggedIn, onNavigateEnterprise }: PitchPageProps) {
   const [scrolled, setScrolled] = useState(false);
-  const loginRef = useRef<HTMLDivElement>(null);
+  // Sign-in is a modal reached from the top bar — never a section that
+  // competes with the hero. Auth is optional: local/dev installs run with it
+  // disabled and go straight to the dashboard.
+  const [signInOpen, setSignInOpen] = useState(false);
   const featuresRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
@@ -177,14 +180,13 @@ export function PitchPage({ onLoggedIn, onNavigateEnterprise }: PitchPageProps) 
             href={GITHUB_URL}
             target="_blank"
             rel="noreferrer"
-            className="flex items-center gap-1.5 rounded-md border border-border-color px-2.5 sm:px-3.5 py-1.5 text-sm font-medium text-text-primary hover:bg-surface-muted"
-          >
+            className="flex items-center gap-1.5 rounded-md border border-border-color px-2.5 sm:px-3.5 py-1.5 text-sm font-medium text-text-primary hover:bg-surface-muted" >
             <Github size={14} /> <span className="hidden sm:inline">GitHub</span>
           </a>
           <button
-            onClick={() => scrollTo(loginRef)}
-            className="whitespace-nowrap rounded-md bg-primary-blue px-3 sm:px-4 py-1.5 text-sm font-medium text-white hover:opacity-90"
-          >
+            type="button"
+            onClick={() => setSignInOpen(true)}
+            className="wd-hover whitespace-nowrap rounded bg-transparent px-2 py-1.5 text-sm font-medium text-text-secondary hover:text-primary" >
             Sign in
           </button>
         </div>
@@ -212,28 +214,28 @@ export function PitchPage({ onLoggedIn, onNavigateEnterprise }: PitchPageProps) 
           </p>
           <div className="mt-8 flex flex-wrap items-center justify-center gap-3">
             <button
-              onClick={() => scrollTo(loginRef)}
-              className="flex items-center gap-2 rounded-md bg-primary-blue px-5 py-2.5 text-sm font-semibold text-white hover:opacity-90"
-            >
+              type="button"
+              onClick={() => setSignInOpen(true)}
+              className="wd-hover flex items-center gap-2 rounded-md bg-primary px-5 py-2.5 text-sm font-semibold text-white hover:opacity-90" >
               Get started <ArrowRight size={14} />
             </button>
             <a
               href={GITHUB_URL}
               target="_blank"
               rel="noreferrer"
-              className="flex items-center gap-2 rounded-md border border-border-color bg-surface px-5 py-2.5 text-sm font-semibold text-text-primary hover:bg-surface-muted"
-            >
+              className="flex items-center gap-2 rounded-md border border-border-color bg-surface px-5 py-2.5 text-sm font-semibold text-text-primary hover:bg-surface-muted" >
               <Github size={14} /> View on GitHub
             </a>
             <button
               onClick={() => scrollTo(featuresRef)}
-              className="rounded-md border border-border-color bg-surface px-5 py-2.5 text-sm font-semibold text-text-primary hover:bg-surface-muted"
-            >
+              className="rounded-md border border-border-color bg-surface px-5 py-2.5 text-sm font-semibold text-text-primary hover:bg-surface-muted" >
               Explore platform
             </button>
           </div>
           <p className="mt-6 text-xs text-text-muted">
-            No account required for the CLI. Self-hostable and airgap-compatible.
+            No account required for the CLI — and local installs run with auth
+            disabled, so the dashboard opens straight away. Self-hostable and
+            airgap-compatible.
           </p>
         </div>
       </section>
@@ -287,8 +289,7 @@ export function PitchPage({ onLoggedIn, onNavigateEnterprise }: PitchPageProps) 
             {ECOSYSTEMS.map(eco => (
               <span
                 key={eco}
-                className="rounded-md border border-border-color bg-surface-muted px-3.5 py-1.5 font-mono text-xs text-text-primary"
-              >
+                className="rounded-md border border-border-color bg-surface-muted px-3.5 py-1.5 font-mono text-xs text-text-primary" >
                 {eco}
               </span>
             ))}
@@ -471,8 +472,7 @@ export function PitchPage({ onLoggedIn, onNavigateEnterprise }: PitchPageProps) 
           <div className="mt-8 flex justify-center">
             <button
               onClick={onNavigateEnterprise}
-              className="flex items-center gap-2 rounded-md bg-primary-blue px-5 py-2.5 text-sm font-semibold text-white hover:opacity-90"
-            >
+              className="flex items-center gap-2 rounded-md bg-primary-blue px-5 py-2.5 text-sm font-semibold text-white hover:opacity-90" >
               See enterprise services <ArrowRight size={14} />
             </button>
           </div>
@@ -483,19 +483,15 @@ export function PitchPage({ onLoggedIn, onNavigateEnterprise }: PitchPageProps) 
       <section className="border-t border-border-color bg-[#0B0D0F] px-6 py-20 text-center text-white">
         <h2 className="text-2xl font-bold">Make security continuously visible.</h2>
         <button
-          onClick={() => scrollTo(loginRef)}
-          className="mt-6 inline-flex items-center gap-2 rounded-md bg-primary-blue px-6 py-2.5 text-sm font-semibold text-white hover:opacity-90"
-        >
+          type="button"
+          onClick={() => setSignInOpen(true)}
+          className="wd-hover mt-6 inline-flex items-center gap-2 rounded-md bg-primary px-6 py-2.5 text-sm font-semibold text-white hover:opacity-90" >
           Get started <ArrowRight size={14} />
         </button>
       </section>
 
-      {/* 13. Login section (split-screen) */}
-      <section ref={loginRef} className="px-6 py-20">
-        <div className="mx-auto max-w-4xl">
-          <AuthPanel onLoggedIn={onLoggedIn} />
-        </div>
-      </section>
+      {/* Sign-in lives in a modal, opened from the top bar — not a section. */}
+      <SignInDialog open={signInOpen} onOpenChange={setSignInOpen} onLoggedIn={onLoggedIn} />
 
       {/* 12. Footer */}
       <footer className="border-t border-border-color px-6 py-8 text-center text-xs text-text-muted">

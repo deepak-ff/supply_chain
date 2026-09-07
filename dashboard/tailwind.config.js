@@ -31,6 +31,20 @@ export default {
         cyan: 'var(--cyan)',
         success: 'var(--success)',
         warning: 'var(--warning)',
+        // Component-layer tokens (see src/index.css). Prefer these over
+        // inline style={{}} objects — they are dark-mode aware by construction.
+        // NOTE: `primary` is intentionally not redefined here; the shadcn
+        // `primary` entry below already resolves to hsl(var(--primary)) = the
+        // Warden violet in both themes.
+        amber: 'var(--amber)',
+        'accent-soft': 'var(--accent-soft)',
+        teal: 'var(--teal)',
+        'ring-soft': 'var(--ring-soft)',
+        skeleton: 'var(--skeleton)',
+        'row-hover': 'var(--row-hover)',
+        'chart-1': 'var(--chart-1)',
+        'chart-2': 'var(--chart-2)',
+        'chart-3': 'var(--chart-3)',
         // shadcn/ui semantic colors (reference CSS variables)
         border: 'hsl(var(--border))',
         input: 'hsl(var(--input))',
@@ -61,6 +75,10 @@ export default {
           DEFAULT: 'hsl(var(--card))',
           foreground: 'hsl(var(--card-foreground))',
         },
+      },
+      boxShadow: {
+        // The one and only card shadow — themed per mode in index.css.
+        card: 'var(--shadow-card)',
       },
       borderRadius: {
         lg: 'var(--radius)',

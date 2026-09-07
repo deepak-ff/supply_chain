@@ -27,10 +27,10 @@ export default function InventoryPage() {
   const totalPages = Math.max(1, Math.ceil(total / PAGE_SIZE))
 
   return (
-    <div style={{ padding: '1.5rem', display: 'flex', flexDirection: 'column', gap: '1.25rem' }}>
+    <div className="flex flex-col gap-5">
       <div>
-        <h1 className="text-lg font-bold font-mono" style={{ color: 'var(--fg)' }}>Software Inventory</h1>
-        <p className="text-xs mt-0.5" style={{ color: 'var(--color-muted)' }}>
+        <h1 className="text-lg font-bold font-mono text-text-primary">Software Inventory</h1>
+        <p className="text-xs mt-0.5 text-text-secondary">
           All known packages and dependencies across your scanned projects
         </p>
       </div>
@@ -49,7 +49,7 @@ export default function InventoryPage() {
             borderRadius: '0.5rem',
             padding: '0.875rem 1rem',
           }}>
-            <p className="text-xs" style={{ color: 'var(--color-muted)' }}>{card.label}</p>
+            <p className="text-xs text-text-secondary">{card.label}</p>
             {stats.isLoading
               ? <Skeleton className="h-7 w-12 mt-1" />
               : <p className="text-2xl font-bold font-mono mt-0.5" style={{ color: card.color }}>{card.value ?? '—'}</p>
@@ -85,8 +85,8 @@ export default function InventoryPage() {
       {/* Package table */}
       <div style={{ background: 'var(--bg-surface)', border: '1px solid rgba(255,255,255,0.07)', borderRadius: '0.5rem', overflow: 'hidden' }}>
         <div style={{ padding: '0.75rem 1rem', borderBottom: '1px solid rgba(255,255,255,0.07)', display: 'flex', gap: '0.75rem', alignItems: 'center' }}>
-          <Package size={14} style={{ color: 'var(--color-muted)' }} />
-          <span className="text-xs font-semibold" style={{ color: 'var(--fg)' }}>{total} packages</span>
+          <Package className="text-text-secondary" size={14} />
+          <span className="text-xs font-semibold text-text-primary">{total} packages</span>
           <div style={{ marginLeft: 'auto', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
             <div style={{ position: 'relative' }}>
               <Search size={12} style={{ position: 'absolute', left: 8, top: '50%', transform: 'translateY(-50%)', color: 'var(--color-muted)' }} />
@@ -108,8 +108,8 @@ export default function InventoryPage() {
           </div>
         ) : filtered.length === 0 ? (
           <div style={{ padding: '3rem', textAlign: 'center' }}>
-            <p className="text-sm" style={{ color: 'var(--fg)' }}>No packages found</p>
-            <p className="text-xs mt-1" style={{ color: 'var(--color-muted)' }}>Scan a project to populate your inventory:</p>
+            <p className="text-sm text-text-primary">No packages found</p>
+            <p className="text-xs mt-1 text-text-secondary">Scan a project to populate your inventory:</p>
             <code className="text-xs px-3 py-1.5 rounded font-mono mt-2 inline-block"
               style={{ background: 'rgba(255,255,255,0.06)', color: 'var(--color-safe)' }}>
               cwctl scan .
@@ -128,9 +128,9 @@ export default function InventoryPage() {
                 </thead>
                 <tbody>
                   {filtered.map(pkg => (
-                    <tr key={`${pkg.ecosystem}/${pkg.name}`} style={{ borderBottom: '1px solid rgba(255,255,255,0.04)' }}>
+                    <tr className="border-b border-border-color/60" key={`${pkg.ecosystem}/${pkg.name}`}>
                       <td style={{ padding: '0.55rem 0.75rem' }}>
-                        <span className="font-mono text-sm" style={{ color: 'var(--fg)' }}>{pkg.name}</span>
+                        <span className="font-mono text-sm text-text-primary">{pkg.name}</span>
                       </td>
                       <td style={{ padding: '0.55rem 0.75rem' }}>
                         <span className="text-xs font-mono px-1.5 py-0.5 rounded"
@@ -139,7 +139,7 @@ export default function InventoryPage() {
                         </span>
                       </td>
                       <td style={{ padding: '0.55rem 0.75rem' }}>
-                        <span className="text-xs" style={{ color: 'var(--color-muted)' }}>
+                        <span className="text-xs text-text-secondary">
                           {pkg.versions?.length ?? 1} version{(pkg.versions?.length ?? 1) !== 1 ? 's' : ''}
                         </span>
                       </td>
@@ -158,7 +158,7 @@ export default function InventoryPage() {
                 >
                   ← Prev
                 </button>
-                <span className="text-xs" style={{ color: 'var(--color-muted)' }}>{page} / {totalPages}</span>
+                <span className="text-xs text-text-secondary">{page} / {totalPages}</span>
                 <button
                   onClick={() => setPage(p => Math.min(totalPages, p + 1))}
                   disabled={page === totalPages}

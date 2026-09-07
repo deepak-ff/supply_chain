@@ -6,24 +6,24 @@ export function WebhooksPage() {
   const test = useMutation({ mutationFn: testWebhook });
 
   return (
-    <div className="p-6 space-y-6">
+    <div className="space-y-6">
       <div className="flex items-center gap-3">
-        <Webhook size={20} style={{ color: 'var(--color-indigo)' }} />
+        <Webhook className="text-primary" size={20} />
         <div>
-          <h1 className="text-xl font-bold font-mono" style={{ color: 'var(--fg)' }}>Webhooks</h1>
-          <p className="text-sm mt-0.5" style={{ color: 'var(--color-muted)' }}>Configure outbound webhooks for security events and scan completions.</p>
+          <h1 className="text-xl font-bold font-mono text-text-primary">Webhooks</h1>
+          <p className="text-sm mt-0.5 text-text-secondary">Configure outbound webhooks for security events and scan completions.</p>
         </div>
       </div>
 
-      <div className="rounded-lg p-5" style={{ background: 'var(--surface)', border: '1px solid rgba(255,255,255,0.06)' }}>
+      <div className="rounded-lg p-5 bg-surface border border-border-color">
         <div className="flex items-center gap-2 mb-3">
-          <Bell size={14} style={{ color: 'var(--color-warn)' }} />
-          <span className="text-xs font-mono font-bold" style={{ color: 'var(--color-muted)' }}>CONFIGURED LOCALLY, NOT VIA THIS PAGE</span>
+          <Bell className="text-warning" size={14} />
+          <span className="text-xs font-mono font-bold text-text-secondary">CONFIGURED LOCALLY, NOT VIA THIS PAGE</span>
         </div>
-        <p className="text-xs" style={{ color: 'var(--color-muted)' }}>
+        <p className="text-xs text-text-secondary">
           Webhooks fire on scan completion, critical finding detection, and policy violations — configured
-          on the machine running the ChainWarden API server, via <code style={{ color: 'var(--color-safe)' }}>cwctl config set</code>{' '}
-          (writes to <code style={{ color: 'var(--color-safe)' }}>~/.chainwarden/config.yaml</code>). There's no
+          on the machine running the ChainWarden API server, via <code className="text-success">cwctl config set</code>{' '}
+          (writes to <code className="text-success">~/.chainwarden/config.yaml</code>). There's no
           dashboard form for this yet — use the commands below, then verify with the test button.
         </p>
       </div>
@@ -40,7 +40,7 @@ export function WebhooksPage() {
             style={{ background: 'var(--surface)', border: '1px solid rgba(255,255,255,0.06)', display: 'flex', alignItems: 'center', gap: '0.875rem' }}
           >
             <w.icon size={16} style={{ color: 'var(--color-indigo)', flexShrink: 0 }} />
-            <div style={{ flex: 1 }}>
+            <div className="flex-1">
               <p style={{ fontSize: '0.8rem', fontWeight: 600, color: 'var(--fg)' }}>{w.label}</p>
               <code style={{ fontSize: '0.68rem', color: 'var(--color-safe)', fontFamily: 'var(--font-mono)' }}>{w.hint}</code>
             </div>
@@ -51,7 +51,7 @@ export function WebhooksPage() {
           style={{ background: 'var(--surface)', border: '1px solid rgba(255,255,255,0.06)', display: 'flex', alignItems: 'center', gap: '0.875rem' }}
         >
           <Bell size={16} style={{ color: 'var(--color-indigo)', flexShrink: 0 }} />
-          <div style={{ flex: 1 }}>
+          <div className="flex-1">
             <p style={{ fontSize: '0.8rem', fontWeight: 600, color: 'var(--fg)' }}>Severity threshold</p>
             <code style={{ fontSize: '0.68rem', color: 'var(--color-safe)', fontFamily: 'var(--font-mono)' }}>
               cwctl config set notify.on_severity=high
@@ -60,11 +60,11 @@ export function WebhooksPage() {
         </div>
       </div>
 
-      <div className="rounded-lg p-4" style={{ background: 'var(--surface)', border: '1px solid rgba(255,255,255,0.06)' }}>
-        <p className="text-xs font-mono font-bold mb-3" style={{ color: 'var(--color-muted)' }}>TEST DELIVERY</p>
-        <p className="text-xs mb-3" style={{ color: 'var(--color-muted)' }}>
-          Hits the API server's <code style={{ color: 'var(--color-safe)' }}>POST /api/v1/webhooks/test</code> —
-          it reads whatever's currently in <code style={{ color: 'var(--color-safe)' }}>config.yaml</code> on
+      <div className="rounded-lg p-4 bg-surface border border-border-color">
+        <p className="text-xs font-mono font-bold mb-3 text-text-secondary">TEST DELIVERY</p>
+        <p className="text-xs mb-3 text-text-secondary">
+          Hits the API server's <code className="text-success">POST /api/v1/webhooks/test</code> —
+          it reads whatever's currently in <code className="text-success">config.yaml</code> on
           that machine and attempts a real delivery.
         </p>
         <button
@@ -79,23 +79,23 @@ export function WebhooksPage() {
         </button>
 
         {test.isSuccess && test.data.status === 'ok' && (
-          <p className="text-xs mt-3 flex items-center gap-1.5" style={{ color: 'var(--color-safe)' }}>
+          <p className="text-xs mt-3 flex items-center gap-1.5 text-success">
             <CheckCircle2 size={12} /> {test.data.message}
           </p>
         )}
         {test.isSuccess && test.data.status === 'not_configured' && (
-          <p className="text-xs mt-3 flex items-center gap-1.5" style={{ color: 'var(--color-muted)' }}>
+          <p className="text-xs mt-3 flex items-center gap-1.5 text-text-secondary">
             <Webhook size={12} /> {test.data.message}
           </p>
         )}
         {test.isSuccess && test.data.status === 'failed' && (
-          <div className="text-xs mt-3 flex flex-col gap-1" style={{ color: 'var(--color-critical)' }}>
+          <div className="text-xs mt-3 flex flex-col gap-1 text-critical">
             <span className="flex items-center gap-1.5"><XCircle size={12} /> Delivery failed:</span>
             {test.data.errors?.map((e, i) => <span key={i} className="ml-4">{e}</span>)}
           </div>
         )}
         {test.isError && (
-          <p className="text-xs mt-3 flex items-center gap-1.5" style={{ color: 'var(--color-critical)' }}>
+          <p className="text-xs mt-3 flex items-center gap-1.5 text-critical">
             <XCircle size={12} /> {(test.error as Error).message}
           </p>
         )}

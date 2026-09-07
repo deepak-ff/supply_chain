@@ -31,11 +31,11 @@ export function AgentsPage() {
                  !latestSessionEvents.some(e => e.type === 'done' || e.type === 'error');
 
   return (
-    <div className="p-6 space-y-6">
+    <div className="space-y-6">
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-xl font-bold font-mono" style={{ color: 'var(--fg)' }}>AI Patch Agents</h1>
-          <p className="text-sm mt-0.5" style={{ color: 'var(--color-muted)' }}>
+          <h1 className="text-xl font-bold font-mono text-text-primary">AI Patch Agents</h1>
+          <p className="text-sm mt-0.5 text-text-secondary">
             Live feed of autonomous patch agent sessions.
           </p>
         </div>
@@ -55,23 +55,23 @@ export function AgentsPage() {
       <div className="rounded-lg p-5" style={{ background: 'var(--surface)', border: `1px solid ${active ? 'rgba(0,255,135,0.2)' : 'rgba(255,255,255,0.06)'}` }}>
         <div className="flex items-center gap-3 mb-2">
           {active
-            ? <Radio size={16} style={{ color: 'var(--color-safe)' }} />
-            : <Bot size={16} style={{ color: 'var(--color-muted)' }} />}
+            ? <Radio className="text-success" size={16} />
+            : <Bot className="text-text-secondary" size={16} />}
           <span className="text-sm font-mono font-bold" style={{ color: active ? 'var(--color-safe)' : 'var(--color-muted)' }}>
             {active ? 'AGENT SESSION RUNNING' : 'NO ACTIVE AGENT SESSION'}
           </span>
         </div>
-        <p className="text-xs" style={{ color: 'var(--color-muted)' }}>
+        <p className="text-xs text-text-secondary">
           {active
             ? 'Patch agent is active. Events stream below in real time.'
             : 'Start a session from the CLI. Events will appear here automatically.'}
         </p>
-        {error && <p className="text-xs mt-2" style={{ color: 'var(--color-critical)' }}>{error}</p>}
+        {error && <p className="text-xs mt-2 text-critical">{error}</p>}
       </div>
 
       {/* Live event feed */}
       {events.length > 0 && (
-        <div className="rounded-lg overflow-hidden" style={{ background: 'var(--surface)', border: '1px solid rgba(255,255,255,0.06)' }}>
+        <div className="rounded-lg overflow-hidden bg-surface border border-border-color">
           <div style={{ padding: '0.5rem 0.875rem', borderBottom: '1px solid rgba(255,255,255,0.06)', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
             <span style={{ fontSize: '0.7rem', fontFamily: 'var(--font-mono)', color: 'var(--color-muted)', fontWeight: 600 }}>
               AGENT EVENT LOG ({events.length})
@@ -89,7 +89,7 @@ export function AgentsPage() {
                   color: TYPE_COLOR[ev.type] ?? 'var(--fg)',
                   minWidth: 52, paddingTop: 2, textTransform: 'uppercase',
                 }}>{ev.type}</span>
-                <div style={{ flex: 1 }}>
+                <div className="flex-1">
                   <p style={{ fontSize: '0.78rem', color: 'var(--fg)' }}>{ev.message}</p>
                   {ev.package && (
                     <p style={{ fontSize: '0.7rem', color: 'var(--color-muted)', marginTop: 2 }}>
@@ -107,12 +107,12 @@ export function AgentsPage() {
       )}
 
       {/* CLI hint */}
-      <div className="rounded-lg p-4 space-y-2" style={{ background: 'var(--surface)', border: '1px solid rgba(255,255,255,0.06)' }}>
-        <p className="text-xs font-mono font-bold" style={{ color: 'var(--color-muted)' }}>START A PATCH SESSION</p>
-        <code className="text-xs block" style={{ color: 'var(--color-safe)' }}>cwctl patch .                      # patch current project</code>
-        <code className="text-xs block" style={{ color: 'var(--color-safe)' }}>cwctl patch . --severity=high      # high+ findings only</code>
-        <code className="text-xs block" style={{ color: 'var(--color-safe)' }}>cwctl patch . --dry-run            # preview proposed changes</code>
-        <p className="text-xs mt-1" style={{ color: 'var(--color-muted)' }}>Requires an AI provider API key. See Settings for configuration.</p>
+      <div className="rounded-lg p-4 space-y-2 bg-surface border border-border-color">
+        <p className="text-xs font-mono font-bold text-text-secondary">START A PATCH SESSION</p>
+        <code className="text-xs block text-success">cwctl patch .                      # patch current project</code>
+        <code className="text-xs block text-success">cwctl patch . --severity=high      # high+ findings only</code>
+        <code className="text-xs block text-success">cwctl patch . --dry-run            # preview proposed changes</code>
+        <p className="text-xs mt-1 text-text-secondary">Requires an AI provider API key. See Settings for configuration.</p>
       </div>
     </div>
   );

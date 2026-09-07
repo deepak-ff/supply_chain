@@ -34,12 +34,12 @@ security-full:
 
 export function CiCdPage() {
   return (
-    <div className="p-6 space-y-6">
+    <div className="space-y-6">
       <div className="flex items-center gap-3">
-        <GitMerge size={20} style={{ color: 'var(--color-indigo)' }} />
+        <GitMerge className="text-primary" size={20} />
         <div>
-          <h1 className="text-xl font-bold font-mono" style={{ color: 'var(--fg)' }}>CI/CD Integration</h1>
-          <p className="text-sm mt-0.5" style={{ color: 'var(--color-muted)' }}>Integrate ChainWarden into your CI/CD pipelines for continuous supply chain security.</p>
+          <h1 className="text-xl font-bold font-mono text-text-primary">CI/CD Integration</h1>
+          <p className="text-sm mt-0.5 text-text-secondary">Integrate ChainWarden into your CI/CD pipelines for continuous supply chain security.</p>
         </div>
       </div>
 
@@ -74,13 +74,13 @@ export function CiCdPage() {
         </div>
       ))}
 
-      <div className="rounded-lg p-4" style={{ background: 'var(--surface)', border: '1px solid rgba(255,255,255,0.06)' }}>
-        <p className="text-xs font-mono font-bold mb-2" style={{ color: 'var(--color-muted)' }}>CI-OPTIMIZED FLAGS</p>
+      <div className="rounded-lg p-4 bg-surface border border-border-color">
+        <p className="text-xs font-mono font-bold mb-2 text-text-secondary">CI-OPTIMIZED FLAGS</p>
         <div className="space-y-1">
-          <code className="text-xs block" style={{ color: 'var(--color-safe)' }}>{'--ci              # Quiet mode + SARIF output + fail-on=high'}</code>
-          <code className="text-xs block" style={{ color: 'var(--color-safe)' }}>{'--fail-on=critical # Only fail pipeline on critical findings'}</code>
-          <code className="text-xs block" style={{ color: 'var(--color-safe)' }}>{'--format sarif    # SARIF 2.1.0 for GitHub/GitLab code scanning'}</code>
-          <code className="text-xs block" style={{ color: 'var(--color-safe)' }}>{'--prod-only       # Skip dev/test dependencies'}</code>
+          <code className="text-xs block text-success">{'--ci              # Quiet mode + SARIF output + fail-on=high'}</code>
+          <code className="text-xs block text-success">{'--fail-on=critical # Only fail pipeline on critical findings'}</code>
+          <code className="text-xs block text-success">{'--format sarif    # SARIF 2.1.0 for GitHub/GitLab code scanning'}</code>
+          <code className="text-xs block text-success">{'--prod-only       # Skip dev/test dependencies'}</code>
         </div>
       </div>
     </div>

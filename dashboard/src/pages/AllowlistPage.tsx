@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { Skeleton } from '../components/ui/skeleton';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { ListFilter, ShieldCheck, ShieldX, Plus, Trash2 } from 'lucide-react';
 import { listAllowlist, addAllowlist, deleteAllowlist } from '../lib/api';
@@ -45,20 +46,20 @@ export function AllowlistPage() {
   const entries = data?.allowlist ?? [];
 
   return (
-    <div className="p-6 space-y-6">
+    <div className="space-y-6">
       <div className="flex items-center gap-3">
-        <ListFilter size={20} style={{ color: 'var(--color-indigo)' }} />
+        <ListFilter className="text-primary" size={20} />
         <div>
-          <h1 className="text-xl font-bold font-mono" style={{ color: 'var(--fg)' }}>Allowlist</h1>
-          <p className="text-sm mt-0.5" style={{ color: 'var(--color-muted)' }}>
+          <h1 className="text-xl font-bold font-mono text-text-primary">Allowlist</h1>
+          <p className="text-sm mt-0.5 text-text-secondary">
             Explicitly trusted packages that bypass policy enforcement.
           </p>
         </div>
       </div>
 
       {/* Add form */}
-      <div className="rounded-lg p-4 space-y-3" style={{ background: 'var(--surface)', border: '1px solid rgba(255,255,255,0.06)' }}>
-        <p className="text-xs font-mono font-bold" style={{ color: 'var(--color-muted)' }}>ADD ENTRY</p>
+      <div className="rounded-lg p-4 space-y-3 bg-surface border border-border-color">
+        <p className="text-xs font-mono font-bold text-text-secondary">ADD ENTRY</p>
         <div className="grid grid-cols-1 sm:grid-cols-[110px_1fr_1fr] gap-2.5">
           <div>
             <label style={{ fontSize: '0.68rem', color: 'var(--color-muted)', display: 'block', marginBottom: 3 }}>ECOSYSTEM</label>
@@ -91,14 +92,18 @@ export function AllowlistPage() {
       </div>
 
       {/* Allowlist table */}
-      <div className="rounded-lg overflow-hidden" style={{ background: 'var(--surface)', border: '1px solid rgba(255,255,255,0.06)' }}>
+      <div className="rounded-lg overflow-hidden bg-surface border border-border-color">
         <div style={{ padding: '0.5rem 0.875rem', borderBottom: '1px solid rgba(255,255,255,0.06)', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-          <ShieldCheck size={14} style={{ color: 'var(--color-safe)' }} />
+          <ShieldCheck className="text-success" size={14} />
           <span style={{ fontSize: '0.72rem', fontFamily: 'var(--font-mono)', fontWeight: 600, color: 'var(--color-safe)' }}>
             ALLOWLISTED ({entries.length})
           </span>
         </div>
-        {isLoading && <div style={{ padding: '1.5rem', textAlign: 'center', fontSize: '0.8rem', color: 'var(--color-muted)' }}>Loading…</div>}
+        {isLoading && (
+          <div className="flex flex-col gap-2 p-5">
+            {[...Array(5)].map((_, i) => <Skeleton key={i} className="h-4 w-full" />)}
+          </div>
+        )}
         {!isLoading && entries.length === 0 && (
           <div style={{ padding: '1.5rem', textAlign: 'center', fontSize: '0.8rem', color: 'var(--color-muted)' }}>
             No entries. Add packages above to bypass policy enforcement.
@@ -128,13 +133,13 @@ export function AllowlistPage() {
       </div>
 
       {/* Blocklist from policy (read-only) */}
-      <div className="rounded-lg p-4 space-y-2" style={{ background: 'var(--surface)', border: '1px solid rgba(255,255,255,0.06)' }}>
+      <div className="rounded-lg p-4 space-y-2 bg-surface border border-border-color">
         <div className="flex items-center gap-2">
-          <ShieldX size={14} style={{ color: 'var(--color-critical)' }} />
-          <p className="text-xs font-mono font-bold" style={{ color: 'var(--color-critical)' }}>BLOCKLIST</p>
+          <ShieldX className="text-critical" size={14} />
+          <p className="text-xs font-mono font-bold text-critical">BLOCKLIST</p>
         </div>
-        <p className="text-xs" style={{ color: 'var(--color-muted)' }}>
-          Blocked packages are managed via policy.yaml — use <code style={{ color: 'var(--color-safe)' }}>cwctl policy set deny=pkg@version</code>
+        <p className="text-xs text-text-secondary">
+          Blocked packages are managed via policy.yaml — use <code className="text-success">cwctl policy set deny=pkg@version</code>
         </p>
       </div>
     </div>

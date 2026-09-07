@@ -88,7 +88,7 @@ export function ActivityFeed({ limit = 20, className }: Props) {
               marginTop: 5,
             }}
           />
-          <div style={{ flex: 1, minWidth: 0 }}>
+          <div className="flex-1 min-w-0">
             <p className="text-xs" style={{ color: 'var(--fg)', lineHeight: 1.4, wordBreak: 'break-word' }}>
               {event.message}
             </p>

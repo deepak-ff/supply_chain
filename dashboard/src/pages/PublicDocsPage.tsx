@@ -86,7 +86,7 @@ export function PublicDocsPage({ onNavigateHome }: { onNavigateHome?: () => void
   };
 
   return (
-    <div className="min-h-screen" style={{ background: 'var(--bg-base)', color: 'var(--fg)' }}>
+    <div className="min-h-screen bg-bg-base text-text-primary">
       {/* Header */}
       <header className="border-b border-border-color bg-surface sticky top-0 z-50 backdrop-blur-sm bg-surface/90">
         <div className="max-w-6xl mx-auto px-6 py-3.5 flex items-center justify-between">
@@ -212,8 +212,7 @@ export function PublicDocsPage({ onNavigateHome }: { onNavigateHome?: () => void
           <ScreenshotCard
             src="/docs/images/dashboard-overview.png"
             alt="ChainWarden SOC Dashboard"
-            caption="Security posture overview — severity cards, 30-day trend, donut chart, top risks, engine coverage, and fix rate"
-          />
+            caption="Security posture overview — severity cards, 30-day trend, donut chart, top risks, engine coverage, and fix rate" />
 
           <h3 className="text-base font-semibold text-text-primary mt-8 mb-4">30+ pages across 7 categories</h3>
 
@@ -235,14 +234,12 @@ export function PublicDocsPage({ onNavigateHome }: { onNavigateHome?: () => void
           <ScreenshotCard
             src="/docs/images/attack-surface.png"
             alt="Attack Surface — Dependency Topology"
-            caption="Attack surface mapping — dependency topology graph with exposure breakdown by ecosystem"
-          />
+            caption="Attack surface mapping — dependency topology graph with exposure breakdown by ecosystem" />
 
           <ScreenshotCard
             src="/docs/images/scan-now.png"
             alt="Vulnerability Scanner"
-            caption="Multi-engine vulnerability scanner with registry, upload, and remote scan tabs"
-          />
+            caption="Multi-engine vulnerability scanner with registry, upload, and remote scan tabs" />
 
           <h3 className="text-base font-semibold text-text-primary mt-8 mb-3">Default credentials</h3>
           <p className="text-text-secondary text-[0.88rem] mb-3">

@@ -4,6 +4,7 @@ import {
   LineChart, Line, XAxis, YAxis, CartesianGrid,
   Tooltip as RechartsTooltip, ResponsiveContainer, Legend,
 } from 'recharts';
+import { axisProps, gridProps, tooltipProps } from '../lib/chartTheme';
 import {
   Activity, Shield, ShieldAlert, ShieldBan, ShieldCheck,
   Clock, History, AlertTriangle, Package, Zap,
@@ -102,30 +103,19 @@ function TrendCard() {
       <div className="px-3 pb-3">
         <ResponsiveContainer width="100%" height={200}>
           <LineChart data={points} margin={{ top: 8, right: 12, left: -16, bottom: 0 }}>
-            <CartesianGrid strokeDasharray="3 3" stroke="var(--border-color)" vertical={false} />
-            <XAxis dataKey="date" tick={{ fill: 'var(--text-muted)', fontSize: 10 }}
+            <CartesianGrid {...gridProps} />
+            <XAxis dataKey="date" {...axisProps}
               tickFormatter={(v: string) => {
                 const d = new Date(v);
                 return d.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
               }} interval="preserveStartEnd" />
-            <YAxis tick={{ fill: 'var(--text-muted)', fontSize: 10 }} />
-            <RechartsTooltip
-              contentStyle={{ background: 'var(--surface)', border: '1px solid var(--border-color)', borderRadius: 8, fontSize: 11 }}
-              labelStyle={{ color: 'var(--text-primary)', fontWeight: 600 }}
-            />
+            <YAxis {...axisProps} />
+            <RechartsTooltip {...tooltipProps} />
             <Legend iconType="plainline" wrapperStyle={{ fontSize: 10, paddingTop: 4 }} />
-            <Line type="monotone" dataKey="critical" name="Critical" stroke={SEV.critical.hex} strokeWidth={2.5}
-              dot={{ r: 4, fill: SEV.critical.hex, stroke: SEV.critical.hex, strokeWidth: 1 }}
-              activeDot={{ r: 6, fill: SEV.critical.hex, stroke: '#fff', strokeWidth: 2 }} />
-            <Line type="monotone" dataKey="high" name="High" stroke={SEV.high.hex} strokeWidth={2.5}
-              dot={{ r: 4, fill: SEV.high.hex, stroke: SEV.high.hex, strokeWidth: 1 }}
-              activeDot={{ r: 6, fill: SEV.high.hex, stroke: '#fff', strokeWidth: 2 }} />
-            <Line type="monotone" dataKey="medium" name="Medium" stroke={SEV.medium.hex} strokeWidth={2.5}
-              dot={{ r: 4, fill: SEV.medium.hex, stroke: SEV.medium.hex, strokeWidth: 1 }}
-              activeDot={{ r: 6, fill: SEV.medium.hex, stroke: '#fff', strokeWidth: 2 }} />
-            <Line type="monotone" dataKey="low" name="Low" stroke={SEV.low.hex} strokeWidth={2}
-              dot={{ r: 3.5, fill: SEV.low.hex, stroke: SEV.low.hex, strokeWidth: 1 }}
-              activeDot={{ r: 5.5, fill: SEV.low.hex, stroke: '#fff', strokeWidth: 2 }} />
+            <Line type="monotone" dataKey="critical" name="Critical" stroke={SEV.critical.hex} strokeWidth={2} dot={false} isAnimationActive animationDuration={200} />
+            <Line type="monotone" dataKey="high" name="High" stroke={SEV.high.hex} strokeWidth={2} dot={false} isAnimationActive animationDuration={200} />
+            <Line type="monotone" dataKey="medium" name="Medium" stroke={SEV.medium.hex} strokeWidth={2} dot={false} isAnimationActive animationDuration={200} />
+            <Line type="monotone" dataKey="low" name="Low" stroke={SEV.low.hex} strokeWidth={2} dot={false} isAnimationActive animationDuration={200} />
           </LineChart>
         </ResponsiveContainer>
       </div>
@@ -246,13 +236,11 @@ function DenyListCard() {
           <input
             value={pkg} onChange={e => setPkg(e.target.value)}
             placeholder="Package name"
-            className="flex-1 min-w-[140px] px-2.5 py-1.5 rounded-lg text-[0.78rem] font-mono border border-border-color bg-surface-muted text-text-primary placeholder:text-text-muted focus:outline-none focus:border-primary-blue"
-          />
+            className="flex-1 min-w-[140px] px-2.5 py-1.5 rounded-lg text-[0.78rem] font-mono border border-border-color bg-surface-muted text-text-primary placeholder:text-text-muted focus:outline-none focus:border-primary-blue" />
           <input
             value={reason} onChange={e => setReason(e.target.value)}
             placeholder="Reason (optional)"
-            className="flex-[1.5] min-w-[180px] px-2.5 py-1.5 rounded-lg text-[0.78rem] font-mono border border-border-color bg-surface-muted text-text-primary placeholder:text-text-muted focus:outline-none focus:border-primary-blue"
-          />
+            className="flex-[1.5] min-w-[180px] px-2.5 py-1.5 rounded-lg text-[0.78rem] font-mono border border-border-color bg-surface-muted text-text-primary placeholder:text-text-muted focus:outline-none focus:border-primary-blue" />
           <button
             disabled={!pkg.trim() || loading === 'new'}
             onClick={() => doAction('quarantine', pkg.trim(), reason.trim())}
@@ -429,7 +417,7 @@ export default function MonitorPage() {
   const lastRefresh = dataUpdatedAt ? new Date(dataUpdatedAt) : null;
 
   return (
-    <div className="flex flex-col h-full overflow-y-auto">
+    <div className="flex flex-col">
       <div className="p-5 flex flex-col gap-4">
         {/* Header */}
         <div className="flex items-center justify-between">
@@ -446,8 +434,8 @@ export default function MonitorPage() {
           ) : (
             <span className="flex items-center gap-1.5 text-[0.72rem]" style={{ color: 'var(--success)' }}>
               <span className="relative flex h-2 w-2">
-                <span className="animate-ping absolute inline-flex h-full w-full rounded-full opacity-75" style={{ background: 'var(--success)' }} />
-                <span className="relative inline-flex rounded-full h-2 w-2" style={{ background: 'var(--success)' }} />
+                <span className="animate-ping absolute inline-flex h-full w-full rounded-full opacity-75 bg-success" />
+                <span className="relative inline-flex rounded-full h-2 w-2 bg-success" />
               </span>
               {stats?.ecosystems_covered?.length ?? 0} ecosystems monitored
             </span>
@@ -507,8 +495,8 @@ export default function MonitorPage() {
                       title="Live activity"
                       badge={
                         <span className="relative flex h-2 w-2">
-                          <span className="animate-ping absolute inline-flex h-full w-full rounded-full opacity-75" style={{ background: 'var(--success)' }} />
-                          <span className="relative inline-flex rounded-full h-2 w-2" style={{ background: 'var(--success)' }} />
+                          <span className="animate-ping absolute inline-flex h-full w-full rounded-full opacity-75 bg-success" />
+                          <span className="relative inline-flex rounded-full h-2 w-2 bg-success" />
                         </span>
                       }
                     />
