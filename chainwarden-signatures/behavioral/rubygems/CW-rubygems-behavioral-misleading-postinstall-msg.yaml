@@ -1,0 +1,32 @@
+id: CW-rubygems-behavioral-misleading-postinstall-msg
+name: Gem post_install_message contains misleading or malicious instructions
+
+type: behavioral_rule
+ecosystem: rubygems
+severity: MEDIUM
+
+rule: |
+  Gem specification contains a post_install_message that:
+    - Instructs the user to run shell commands:
+      "Run `curl ... | sh`", "Execute `sudo ...`", "Run this command to complete setup"
+    - OR directs the user to visit a URL and download/run software:
+      "Visit <URL> to install the required component"
+    - OR instructs the user to modify system configuration files:
+      "Add the following to your ~/.bashrc", "Add to /etc/hosts"
+    - OR contains social engineering language creating urgency:
+      "CRITICAL: You must run...", "SECURITY UPDATE: Please execute..."
+    - OR impersonates official RubyGems or Ruby core team communications
+  AND the instructions, if followed, would grant elevated privileges, install additional
+  software, or modify security-relevant system configuration
+
+description: |
+  RubyGems' post_install_message is displayed to the user after gem installation.
+  Attackers can abuse this trusted communication channel to social-engineer developers
+  into running malicious commands, visiting phishing sites, or modifying their system
+  configuration. Because the message appears to come from the gem installation process
+  itself, users may trust it as a legitimate setup step. This is particularly effective
+  when combined with typosquatting, where a developer who installed the wrong gem receives
+  convincing instructions that appear to complete the installation.
+
+author: chainwarden
+tags: [post-install-message, social-engineering, misleading-instructions, rubygems]

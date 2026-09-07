@@ -1,0 +1,32 @@
+id: CW-ai-pickle-import-injection
+name: Pickle model imports malicious or unexpected modules during deserialization
+
+type: pickle_rule
+ecosystem: huggingface
+severity: CRITICAL
+
+rule: |
+  Model file (.bin, .pkl, .pickle, .pt, .pth) contains pickled objects with GLOBAL or
+  STACK_GLOBAL opcodes referencing modules outside the expected set for ML models.
+  Suspicious imports include: ctypes, importlib, zipimport, code, codeop, compileall,
+  webbrowser, antigravity, smtplib, ftplib, telnetlib, xmlrpc, multiprocessing,
+  _thread, signal, resource, gc (with set_debug), sys (with path manipulation)
+  Expected/safe modules: torch, numpy, collections, _codecs, copy_reg, sklearn
+
+description: |
+  This rule detects model files that import unexpected or dangerous Python modules during
+  pickle deserialization. The pickle GLOBAL opcode can import any installed Python module,
+  and attackers abuse this to load ctypes (for calling C functions and shellcode),
+  importlib (to dynamically load attacker-controlled modules from manipulated sys.path),
+  smtplib (to exfiltrate data via email), or multiprocessing (to spawn persistent
+  background processes). A legitimate PyTorch model should only reference torch, numpy,
+  collections, and a small set of standard serialization helpers. Any import outside
+  this expected set is a strong indicator of malicious intent.
+
+references:
+  - https://blog.trail-of-bits.com/2021/03/15/never-a-dill-moment-exploiting-machine-learning-pickle-files/
+  - https://docs.python.org/3/library/pickle.html#restricting-globals
+  - https://research.jfrog.com/vulnerability-research/the-danger-of-pickle-in-ml/
+
+author: chainwarden
+tags: [pickle, import-injection, module-hijack, arbitrary-code-execution, ai-model]

@@ -1,0 +1,21 @@
+id: CW-actions-behavioral-runner-memory-scrape
+name: GitHub Actions runner memory scraping
+type: behavioral_rule
+ecosystem: actions
+severity: CRITICAL
+rule: |
+  Detect GitHub Actions workflows or steps that attempt to read memory
+  from Runner.Worker processes or other runner infrastructure processes.
+  Look for: /proc/*/mem access patterns, process memory dump tools
+  (gcore, procdump), Runner.Worker process targeting, or patterns that
+  extract environment variables and secrets from runner process memory
+  rather than from the standard $GITHUB_ENV or secrets context.
+description: |
+  The Trivy GitHub Actions compromise (March 2026) by TeamPCP used a
+  three-stage payload that included memory scraping from Runner.Worker
+  processes to extract secrets that are not exposed via standard GitHub
+  Actions secret mechanisms. This technique can recover secrets from
+  other steps in the same job, OIDC tokens, and other sensitive data
+  held in runner process memory.
+author: chainwarden
+tags: [behavioral, actions, memory-scraping, runner-worker, teampcp, trivy]

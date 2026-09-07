@@ -1,0 +1,30 @@
+id: CW-pypi-behavioral-homoglyph-attack
+name: Package uses confusable Unicode characters in identifiers (homoglyph attack)
+
+type: behavioral_rule
+ecosystem: pypi
+severity: MEDIUM
+
+rule: |
+  Package source contains Python identifiers (function names, variable names, class names,
+  module names) that use Unicode characters visually similar to ASCII equivalents:
+    - Cyrillic: а(U+0430) for a, е(U+0435) for e, о(U+043E) for o, р(U+0440) for p,
+      с(U+0441) for c, х(U+0445) for x
+    - Greek: ο(U+03BF) for o, Α(U+0391) for A, Β(U+0392) for B
+    - Latin extended: ɑ(U+0251) for a, ɡ(U+0261) for g
+    - Mathematical symbols or fullwidth forms used in identifiers
+  AND the homoglyph identifier shadows or mimics a standard library or popular package
+  function name (e.g. rеquests.gеt instead of requests.get)
+  OR the package name itself contains homoglyph characters that mimic a popular package
+
+description: |
+  Homoglyph attacks exploit the visual similarity between Unicode characters from
+  different scripts. A function named with Cyrillic 'е' instead of Latin 'e' looks
+  identical in most editors and code review tools but is a completely different identifier.
+  Attackers use this to create trojan functions that appear to call legitimate APIs but
+  actually execute malicious code. Python 3 supports Unicode identifiers by default,
+  making this attack viable. This technique can bypass code review and automated scanning
+  that relies on ASCII string matching.
+
+author: chainwarden
+tags: [homoglyph, unicode-confusion, trojan-source, visual-spoofing, code-review-bypass]

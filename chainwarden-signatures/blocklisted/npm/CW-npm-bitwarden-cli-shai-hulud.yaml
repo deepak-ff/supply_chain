@@ -1,0 +1,18 @@
+id: CW-npm-bitwarden-cli-shai-hulud
+name: Bitwarden CLI compromised with self-propagating Shai-Hulud worm
+type: blocklisted_package
+ecosystem: npm
+severity: CRITICAL
+package: "@bitwarden/cli"
+version_range: "=2026.4.0"
+description: |
+  @bitwarden/cli v2026.4.0 (78K weekly downloads) was compromised with a self-propagating worm
+  identified as "Shai-Hulud: The Third Coming". The preinstall hook executes bw_setup.js which
+  downloads Bun and runs a 10MB credential harvester targeting SSH keys, cloud credentials
+  (AWS/GCP/Azure), npm tokens, Claude auth, MCP configs, and .env files. C2 masquerades as
+  audit.checkmarx.cx:443/v1/telemetry. Exfiltrates to GitHub repos with Dune-themed names.
+cve: ~
+references:
+  - https://www.aikido.dev/blog/shai-hulud-npm-bitwarden-cli-compromise
+author: chainwarden
+tags: [shai-hulud, worm, credential-theft, self-propagating, supply-chain]

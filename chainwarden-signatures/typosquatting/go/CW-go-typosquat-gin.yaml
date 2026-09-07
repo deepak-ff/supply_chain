@@ -1,0 +1,38 @@
+id: CW-go-typosquat-gin
+name: Typosquatting target — github.com/gin-gonic/gin
+
+type: typosquatting_target
+ecosystem: go
+severity: HIGH
+
+target: "github.com/gin-gonic/gin"
+
+similar_names:
+  - "github.com/gin-gonic/gn"
+  - "github.com/gin-gonic/giin"
+  - "github.com/gin-gomic/gin"
+  - "github.com/gim-gonic/gin"
+  - "github.com/gin-gonlc/gin"
+  - "github.com/gin-gonic/ginn"
+  - "github.com/gin-gonnic/gin"
+  - "github.com/gln-gonic/gin"
+  - "github.com/gin-goinc/gin"
+  - "github.com/g1n-gonic/gin"
+  - "github.com/gin-g0nic/gin"
+  - "github.com/gin-gonic/gin-web"
+  - "github.com/giin-gonic/gin"
+  - "github.com/gin-gonic/gn-http"
+  - "gitlab.com/gin-gonic/gin"
+
+description: |
+  Gin is the most popular HTTP web framework for Go with over 80,000 GitHub stars. Go modules
+  use full repository paths as import identifiers, so typosquatting attacks target both the
+  organization name (gin-gonic) and the module name. Attackers can create lookalike GitHub
+  repositories or use alternative hosting platforms (gitlab.com, gitea) to intercept developers
+  who mistype the import path in their go.mod files.
+
+references:
+  - https://pkg.go.dev/github.com/gin-gonic/gin
+
+author: chainwarden
+tags: [typosquatting]

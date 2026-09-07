@@ -1,0 +1,26 @@
+id: CW-actions-reviewdog-action-setup
+name: reviewdog/action-setup — GitHub Actions supply chain compromise
+
+type: blocklisted_package
+ecosystem: actions
+severity: CRITICAL
+
+package: reviewdog/action-setup
+version_range: "=1.0.0"
+
+description: |
+  In March 2025, the reviewdog/action-setup GitHub Action was compromised as part
+  of the same attack wave that hit tj-actions/changed-files. The attacker gained
+  access to the reviewdog organization and modified the action to inject malicious
+  code that exfiltrated CI/CD secrets from workflow runs. This compromise served
+  as the initial vector for the broader attack — a compromised reviewdog PAT was
+  used in the tj-actions CI workflow, enabling the cascading compromise. The incident
+  demonstrated how trust chains between GitHub Actions can amplify supply chain attacks.
+
+cve: CVE-2025-30154
+references:
+  - https://www.wiz.io/blog/new-github-action-supply-chain-attack-reviewdog-action-setup
+  - https://github.com/advisories/GHSA-qfvq-7g7p-x956
+
+author: chainwarden
+tags: [github-actions, secret-exfiltration, cascading-compromise, ci-cd]

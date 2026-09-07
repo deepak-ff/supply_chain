@@ -1,0 +1,38 @@
+id: CW-rubygems-typosquat-devise
+name: Typosquatting target — devise (100M+ total downloads)
+
+type: typosquatting_target
+ecosystem: rubygems
+severity: HIGH
+
+target: devise
+
+similar_names:
+  - devse
+  - deivse
+  - devies
+  - devisse
+  - devize
+  - d3vise
+  - devie
+  - devsie
+  - devisee
+  - devise_
+  - _devise
+  - devisse
+  - dewise
+  - devies
+  - devies-auth
+
+description: |
+  devise is the standard authentication solution for Ruby on Rails with over 100 million
+  total downloads. It handles user registration, login, password reset, and session
+  management. A typosquatted devise gem is extremely dangerous because it would directly
+  control authentication flows, enabling credential theft, session hijacking, or backdoor
+  account creation in Rails applications.
+
+references:
+  - https://rubygems.org/gems/devise
+
+author: chainwarden
+tags: [typosquatting]

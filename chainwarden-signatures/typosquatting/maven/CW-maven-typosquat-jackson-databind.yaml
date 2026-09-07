@@ -1,0 +1,39 @@
+id: CW-maven-typosquat-jackson-databind
+name: Typosquatting target — com.fasterxml.jackson.core:jackson-databind
+
+type: typosquatting_target
+ecosystem: maven
+severity: HIGH
+
+target: "com.fasterxml.jackson.core:jackson-databind"
+
+similar_names:
+  - "com.fasterxml.jackson.core:jackson-databnd"
+  - "com.fasterxml.jackson.core:jacksn-databind"
+  - "com.fasterxml.jackson.core:jackson-datbind"
+  - "com.fasterxml.jackson.core:jackson-databindd"
+  - "com.fasterxml.jackson.core:jakson-databind"
+  - "com.fasterxm1.jackson.core:jackson-databind"
+  - "com.fasterxml.jackson.core:jakcson-databind"
+  - "com.fasterxml.jackson.core:jackson-databid"
+  - "com.fasterxml.jacksonn.core:jackson-databind"
+  - "com.fasterxml.jackson.core:jackson-databiind"
+  - "com.fasterxml.jackson.core:jackson-datband"
+  - "com.fasterxml.jackson:jackson-databind"
+  - "com.fasterxml.jackson.core:jackson-data-bind"
+  - "io.github.fasterxml.jackson:jackson-databind"
+  - "com.fasterxml.jackson.core:jackson-databing"
+
+description: |
+  Jackson Databind is the most widely used JSON serialization library in the Java ecosystem,
+  present in virtually every Spring Boot application and enterprise Java service. Its complex
+  Maven coordinate with multiple segments (fasterxml.jackson.core:jackson-databind) creates
+  numerous typosquatting opportunities across both groupId and artifactId. Jackson has been
+  the subject of many deserialization CVEs, making developers accustomed to updating it
+  frequently, which increases the risk of installing a typosquatted variant during upgrades.
+
+references:
+  - https://mvnrepository.com/artifact/com.fasterxml.jackson.core/jackson-databind
+
+author: chainwarden
+tags: [typosquatting]

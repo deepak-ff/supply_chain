@@ -1,0 +1,31 @@
+id: CW-go-behavioral-init-binary-exec
+name: Module downloads and executes external binary in init() function
+
+type: behavioral_rule
+ecosystem: go
+severity: CRITICAL
+
+rule: |
+  Go module source contains an init() function that:
+    - Downloads a file from an external URL:
+      net/http.Get(), net/http.DefaultClient.Do(), or equivalent HTTP client calls
+    - AND writes the downloaded content to disk:
+      os.Create(), os.WriteFile(), io.Copy() to a file
+    - AND executes the downloaded file:
+      os/exec.Command(), syscall.Exec(), os.StartProcess()
+    - OR uses os.Chmod() to set executable permissions before execution
+  OR init() decodes an embedded binary (base64, hex) and executes it
+  AND the binary is not a well-known tool distributed via Go (e.g. protoc, buf)
+
+description: |
+  Downloading and executing an external binary in init() combines two dangerous
+  behaviors: automatic execution without user action and running arbitrary unaudited
+  machine code. Because Go modules are fetched and cached by the go toolchain, a
+  compromised module version can persist in the module cache and execute its payload
+  every time any binary importing it is built or run. The downloaded binary runs with
+  the same privileges as the Go process, potentially as root in CI/CD environments.
+  This pattern bypasses Go's source-level analysis tools since the malicious behavior
+  is in the downloaded binary, not the Go source.
+
+author: chainwarden
+tags: [init-function, binary-drop, download-execute, remote-payload, go-module]

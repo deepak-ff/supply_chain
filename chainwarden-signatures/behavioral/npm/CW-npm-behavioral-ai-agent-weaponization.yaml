@@ -1,0 +1,23 @@
+id: CW-npm-behavioral-ai-agent-weaponization
+name: AI coding agent weaponization via postinstall
+type: behavioral_rule
+ecosystem: npm
+severity: CRITICAL
+rule: |
+  Detect npm packages whose install scripts invoke AI coding agents
+  (claude, gemini, amazon-q, cursor, copilot, aider, cody) with
+  permission-bypass flags such as --dangerously-skip-permissions,
+  --yolo, --trust-all-tools, or --no-confirm. The Nx attack (Aug 2025)
+  demonstrated that malware can leverage these agents to perform
+  filesystem reconnaissance and credential exfiltration on behalf
+  of the attacker, bypassing traditional detection.
+description: |
+  First observed in the August 2025 Nx supply chain compromise, this
+  technique weaponizes locally installed AI coding agents by invoking
+  them with dangerous permission-bypass flags. The malware prompts
+  the AI to inventory sensitive files (SSH keys, .env, cloud creds)
+  and write results to /tmp/inventory.txt, then reads and exfiltrates
+  them. This represents a novel attack vector where AI tools become
+  unwitting accomplices in credential theft.
+author: chainwarden
+tags: [behavioral, ai-weaponization, ai-agent, permission-bypass, nx-attack]

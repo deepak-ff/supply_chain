@@ -1,0 +1,18 @@
+id: CW-npm-cache-manager-compromise
+name: cache-manager malicious release (Keyv campaign)
+type: blocklisted_package
+ecosystem: npm
+severity: CRITICAL
+package: cache-manager
+version_range: "=7.2.10"
+description: |
+  Part of the August 2026 Keyv/Cacheable ecosystem compromise. cache-manager
+  version 7.2.10 was published with an identical malicious preinstall hook
+  executing setup.mjs which fetched a second-stage payload (Math_Symbol.js).
+  The payload harvested developer credentials including GitHub/npm tokens,
+  cloud provider keys, private SSH keys, and Kubernetes service tokens.
+cve: ~
+references:
+  - https://snyk.io/blog/inside-keyv-npm-compromise-preinstall-malware-trusted-provenance-ide-hooks/
+author: chainwarden
+tags: [supply-chain, npm, credential-theft, keyv-campaign]

@@ -1,0 +1,17 @@
+id: CW-npm-flat-cache-shai-hulud
+name: flat-cache npm package compromised by Shai-Hulud worm
+type: blocklisted_package
+ecosystem: npm
+severity: CRITICAL
+package: flat-cache
+version_range: "=6.1.24"
+description: |
+  flat-cache v6.1.24 (580M monthly downloads) was compromised as part of the Mini Shai-Hulud
+  npm worm campaign alongside keyv. The preinstall hook downloads Bun runtime and executes an
+  obfuscated credential stealer targeting npm tokens, GitHub tokens, AWS credentials, Vault
+  tokens, Stripe/Slack API keys, and SSH private keys. Exfiltration via npm-cache.com:443.
+cve: ~
+references:
+  - https://www.aikido.dev/blog/keyv-and-friends-compromised-in-npm-supply-chain-attack
+author: chainwarden
+tags: [shai-hulud, worm, credential-theft, npm, supply-chain]

@@ -1,0 +1,25 @@
+id: CW-npm-getcookies-backdoor
+name: getcookies — hidden backdoor with remote command execution
+
+type: blocklisted_package
+ecosystem: npm
+severity: CRITICAL
+
+package: getcookies
+version_range: "=1.0.0"
+
+description: |
+  In May 2018, the getcookies npm package was discovered to contain a sophisticated
+  backdoor that allowed remote code execution. The malicious code was hidden within
+  an Express.js middleware function and activated via specially crafted HTTP request
+  headers containing encoded commands. The backdoor was injected through the
+  dependency chain via the mailparser package. This was one of the early examples
+  of a deeply hidden backdoor in the npm ecosystem.
+
+cve: ~
+references:
+  - https://blog.npmjs.org/post/173526807575
+  - https://snyk.io/vuln/npm:getcookies:20180502
+
+author: chainwarden
+tags: [backdoor, remote-code-execution, hidden-payload]

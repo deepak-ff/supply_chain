@@ -1,0 +1,21 @@
+id: CW-npm-axios-rat-compromise
+name: Axios npm RAT compromise (Sapphire Sleet)
+type: blocklisted_package
+ecosystem: npm
+severity: CRITICAL
+package: axios
+version_range: "=1.14.1||=0.30.4"
+description: |
+  On March 30, 2026, North Korean threat actor Sapphire Sleet (UNC1069)
+  compromised the lead Axios maintainer's npm account and published two
+  poisoned versions (1.14.1 and 0.30.4) that injected a phantom dependency
+  plain-crypto-js@4.2.1. The postinstall hook dropped a cross-platform RAT
+  capable of arbitrary command execution, credential exfiltration, and
+  persistence on macOS, Windows, and Linux. Live for ~3 hours before removal.
+cve: ~
+references:
+  - https://snyk.io/blog/axios-npm-package-compromised-supply-chain-attack-delivers-cross-platform/
+  - https://socket.dev/blog/axios-npm-package-compromised
+  - https://www.trendmicro.com/en_us/research/26/c/axios-npm-package-compromised.html
+author: chainwarden
+tags: [supply-chain, npm, rat, north-korea, sapphire-sleet, axios, maintainer-compromise]

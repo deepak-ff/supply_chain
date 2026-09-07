@@ -1,0 +1,38 @@
+id: CW-pypi-typosquat-scrapy
+name: Typosquatting target — scrapy (3M+ monthly downloads)
+
+type: typosquatting_target
+ecosystem: pypi
+severity: HIGH
+
+target: scrapy
+
+similar_names:
+  - scapy
+  - scrayp
+  - scrapy_
+  - scrapyy
+  - scrappy
+  - scraap
+  - scrapu
+  - scrpy
+  - scrapey
+  - scrapy2
+  - scrapyi
+  - scraapy
+  - scrapy-lib
+  - scrapylib
+  - scrap1
+
+description: |
+  scrapy is the leading Python web scraping framework with over 3 million monthly PyPI
+  downloads. It is commonly confused with scapy (the packet manipulation library), creating
+  a natural typosquatting vector. Scrapy environments typically run automated crawlers with
+  network access, making a malicious variant dangerous for data exfiltration or as a pivot
+  point into internal networks.
+
+references:
+  - https://pypi.org/project/Scrapy/
+
+author: chainwarden
+tags: [typosquatting]

@@ -1,0 +1,32 @@
+id: CW-ai-safetensors-bypass
+name: Model advertised as SafeTensors but ships pickle files alongside for execution
+
+type: pickle_rule
+ecosystem: huggingface
+severity: HIGH
+
+rule: |
+  Model repository contains .safetensors files AND also contains .bin, .pkl, .pickle,
+  .pt, or .pth files in the same directory or a subdirectory
+  AND the config.json or model loading code references the pickle-format file
+  (e.g., torch_dtype, weights_file, or custom loading script pointing to .bin)
+  OR the pickle file has a more recent modification timestamp than the safetensors file
+  OR the pickle file contains different weight checksums than the safetensors file
+
+description: |
+  This rule detects a bait-and-switch attack where a model repository appears to use the
+  safe SafeTensors format but also includes pickle-serialized files that may be loaded
+  instead. The attacker publishes a model with both formats, but configures the model
+  card, config.json, or a custom loading script to prefer the pickle file — which contains
+  malicious code. Users see ".safetensors" in the file listing and assume the model is
+  safe, but the actual loading path deserializes the pickle. This bypass is especially
+  effective against automated scanners that check only for the presence of safetensors
+  files without verifying they are the files actually loaded.
+
+references:
+  - https://huggingface.co/docs/safetensors/index
+  - https://huggingface.co/docs/hub/security-pickle
+  - https://research.jfrog.com/vulnerability-research/the-danger-of-pickle-in-ml/
+
+author: chainwarden
+tags: [safetensors-bypass, bait-and-switch, pickle, trust-confusion, ai-model]

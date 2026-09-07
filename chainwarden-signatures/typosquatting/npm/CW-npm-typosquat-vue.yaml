@@ -1,0 +1,37 @@
+id: CW-npm-typosquat-vue
+name: Typosquatting target — vue (5M+ weekly downloads)
+
+type: typosquatting_target
+ecosystem: npm
+severity: HIGH
+
+target: vue
+
+similar_names:
+  - veu
+  - vue_
+  - _vue
+  - vuee
+  - vve
+  - v-ue
+  - vue2
+  - vue3
+  - vuejs
+  - vue-js
+  - vuw
+  - vur
+  - vuce
+  - vuue
+  - vu3
+
+description: |
+  vue (Vue.js) is one of the three major frontend JavaScript frameworks with over 5 million
+  weekly npm downloads. Its extremely short three-letter name means even a single character
+  transposition or substitution creates a plausible typosquat. Attackers have previously
+  targeted short framework names to deliver credential-stealing malware to frontend developers.
+
+references:
+  - https://www.npmjs.com/package/vue
+
+author: chainwarden
+tags: [typosquatting]

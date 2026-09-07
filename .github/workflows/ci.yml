@@ -1,0 +1,160 @@
+name: CI
+
+on:
+  push:
+    branches: [main, develop]
+  pull_request:
+    branches: [main, develop]
+
+permissions:
+  contents: read
+  packages: write
+
+env:
+  GO_VERSION: "1.25"
+  NODE_VERSION: "22"
+
+jobs:
+  # ── Go: vet + test ──────────────────────────────────────────────────────
+  go-test:
+    name: Go Test
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-go@v5
+        with:
+          go-version: ${{ env.GO_VERSION }}
+          cache: true
+
+      - name: go vet
+        run: go vet ./internal/... ./cmd/...
+
+      - name: go test
+        run: go test -race -coverprofile=coverage.out -covermode=atomic ./internal/... ./cmd/...
+
+      - name: Upload coverage
+        uses: actions/upload-artifact@v4
+        with:
+          name: go-coverage
+          path: coverage.out
+
+  go-build:
+    name: Go Build
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-go@v5
+        with:
+          go-version: ${{ env.GO_VERSION }}
+          cache: true
+
+      - name: Build all binaries
+        run: |
+          CGO_ENABLED=0 go build -ldflags="-s -w" -o /dev/null ./cmd/cwctl/
+          CGO_ENABLED=0 go build -ldflags="-s -w" -o /dev/null ./cmd/cw-agent/
+          CGO_ENABLED=0 go build -ldflags="-s -w" -o /dev/null ./cmd/intel-agent/
+          CGO_ENABLED=0 go build -ldflags="-s -w" -o /dev/null ./internal/api/
+
+  # ── TypeScript: lint + type-check + test + build ──────────────────────────
+  ts-ci:
+    name: TypeScript CI
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: dashboard
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: npm
+          cache-dependency-path: dashboard/package-lock.json
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Type check
+        run: npx tsc --noEmit
+
+      - name: Lint
+        run: npm run lint
+
+      - name: Unit tests
+        run: npm test
+
+      - name: Dependency audit
+        run: npm audit --audit-level=critical
+        continue-on-error: true
+
+      - name: Build
+        run: npm run build
+
+      - name: Upload dist
+        uses: actions/upload-artifact@v4
+        with:
+          name: dashboard-dist
+          path: dashboard/dist
+
+  # ── Security: Semgrep SAST ────────────────────────────────────────────────
+  semgrep:
+    name: Semgrep SAST
+    runs-on: ubuntu-latest
+    container:
+      image: returntocorp/semgrep
+    steps:
+      - uses: actions/checkout@v4
+      - run: semgrep --config=auto --error --json --output=semgrep.json . || true
+      - uses: actions/upload-artifact@v4
+        with:
+          name: semgrep-results
+          path: semgrep.json
+
+  # ── Docker: build, push to GHCR ─────────────────────────────────────────
+  docker-publish:
+    name: Docker Build & Publish
+    runs-on: ubuntu-latest
+    if: github.ref == 'refs/heads/main'
+    needs: [go-build, ts-ci]
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set lowercase owner
+        run: echo "OWNER_LC=$(echo '${{ github.repository_owner }}' | tr '[:upper:]' '[:lower:]')" >> $GITHUB_ENV
+
+      - uses: docker/setup-buildx-action@v3
+
+      - name: Log in to GHCR
+        uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Build and push all-in-one image
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          file: ./Dockerfile
+          push: true
+          tags: |
+            ghcr.io/${{ env.OWNER_LC }}/chainwarden:latest
+            ghcr.io/${{ env.OWNER_LC }}/chainwarden:main
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+
+      - name: Build and push API-only image
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          file: ./internal/api/Dockerfile
+          push: true
+          tags: |
+            ghcr.io/${{ env.OWNER_LC }}/chainwarden-api:latest
+            ghcr.io/${{ env.OWNER_LC }}/chainwarden-api:main
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+

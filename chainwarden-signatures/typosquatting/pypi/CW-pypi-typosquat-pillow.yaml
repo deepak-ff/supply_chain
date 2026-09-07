@@ -1,0 +1,38 @@
+id: CW-pypi-typosquat-pillow
+name: Typosquatting target — pillow (50M+ monthly downloads)
+
+type: typosquatting_target
+ecosystem: pypi
+severity: HIGH
+
+target: pillow
+
+similar_names:
+  - piilow
+  - pilow
+  - pilllow
+  - pilloww
+  - pilliow
+  - pillw
+  - pillo
+  - p1llow
+  - pillow_
+  - _pillow
+  - pillwo
+  - ppillow
+  - pilllw
+  - pellow
+  - piloww
+
+description: |
+  pillow (PIL fork) is the standard Python imaging library with over 50 million monthly
+  PyPI downloads. It is a dependency of web frameworks, data science tools, and image
+  processing pipelines. The double-l in the name commonly leads to typos with single or
+  triple l variants. A malicious typosquat could exploit image processing contexts to
+  achieve code execution through crafted payloads.
+
+references:
+  - https://pypi.org/project/pillow/
+
+author: chainwarden
+tags: [typosquatting]

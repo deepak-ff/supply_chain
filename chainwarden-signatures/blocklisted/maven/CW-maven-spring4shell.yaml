@@ -1,0 +1,26 @@
+id: CW-maven-spring4shell
+name: Spring4Shell — RCE in Spring Framework via data binding
+
+type: blocklisted_package
+ecosystem: maven
+severity: CRITICAL
+
+package: org.springframework:spring-webmvc
+version_range: ">=5.3.0,<=5.3.17"
+
+description: |
+  CVE-2022-22965 (Spring4Shell), disclosed in March 2022, was a critical remote
+  code execution vulnerability in the Spring Framework. The flaw existed in the
+  data binding mechanism when running on JDK 9+ with Apache Tomcat as the servlet
+  container. Attackers could exploit ClassLoader manipulation via crafted HTTP
+  requests to modify Tomcat's logging configuration and write a JSP web shell,
+  achieving full remote code execution. The vulnerability affected Spring MVC
+  and Spring WebFlux applications deployed as WAR files on Tomcat.
+
+cve: CVE-2022-22965
+references:
+  - https://spring.io/blog/2022/03/31/spring-framework-rce-early-announcement
+  - https://nvd.nist.gov/vuln/detail/CVE-2022-22965
+
+author: chainwarden
+tags: [rce, data-binding, spring-framework, web-shell]

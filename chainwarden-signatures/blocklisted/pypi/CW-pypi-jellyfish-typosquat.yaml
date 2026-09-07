@@ -1,0 +1,26 @@
+id: CW-pypi-jellyfish-typosquat
+name: jeIlyfish typosquat — credential stealer using homoglyph attack
+
+type: blocklisted_package
+ecosystem: pypi
+severity: CRITICAL
+
+package: jeIlyfish
+version_range: ">=0.1"
+
+description: |
+  In 2019, a malicious package named "jeIlyfish" (with a capital I instead of
+  lowercase L) was found on PyPI, typosquatting the legitimate jellyfish library
+  used for approximate and phonetic string matching. The homoglyph substitution
+  made the package name visually indistinguishable from the real one. The malicious
+  package contained the full legitimate code but also included obfuscated code that
+  exfiltrated SSH keys, GPG keys, and other credentials to a remote server. It was
+  available on PyPI for over a year before discovery.
+
+cve: ~
+references:
+  - https://www.zdnet.com/article/two-malicious-python-libraries-removed-from-pypi/
+  - https://snyk.io/blog/malicious-packages-found-to-be-typo-squatting-in-pypi/
+
+author: chainwarden
+tags: [typosquat, homoglyph, credential-stealer, ssh-key-theft]

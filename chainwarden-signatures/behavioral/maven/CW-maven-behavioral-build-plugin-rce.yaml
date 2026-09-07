@@ -1,0 +1,33 @@
+id: CW-maven-behavioral-build-plugin-rce
+name: POM with build plugin that executes arbitrary commands during build
+
+type: behavioral_rule
+ecosystem: maven
+severity: CRITICAL
+
+rule: |
+  POM.xml or build.gradle contains a build plugin configuration that executes commands:
+    - maven-antrun-plugin with <exec> tasks running shell commands
+    - exec-maven-plugin (org.codehaus.mojo:exec-maven-plugin) with arbitrary commands
+    - groovy-maven-plugin with inline Groovy scripts that invoke Runtime.exec()
+    - maven-enforcer-plugin custom rules that execute system commands
+    - OR custom plugin with <configuration> containing shell commands, curl/wget invocations
+  AND the commands include any of:
+    - Downloads from external URLs (curl, wget, PowerShell Invoke-WebRequest)
+    - Execution of downloaded files (sh, bash, cmd, powershell)
+    - Network exfiltration (curl POST with system data, DNS lookups)
+    - Access to credentials (~/.m2/settings.xml, environment variables)
+  AND the plugin execution is bound to early lifecycle phases (validate, initialize,
+  generate-sources, process-sources, compile)
+
+description: |
+  Maven build plugins execute during the build lifecycle with the full privileges of the
+  build process. The exec-maven-plugin and maven-antrun-plugin can run arbitrary system
+  commands. When a malicious dependency's POM injects a build plugin bound to an early
+  lifecycle phase, it executes before any application code is compiled. This is the Java
+  ecosystem's equivalent of npm's postinstall attack vector. Maven Central has seen
+  dependency confusion attacks where malicious POMs inject exec-maven-plugin configurations
+  to exfiltrate CI secrets or download backdoors during builds.
+
+author: chainwarden
+tags: [maven-plugin, build-lifecycle, rce, exec-plugin, antrun, pom-injection]

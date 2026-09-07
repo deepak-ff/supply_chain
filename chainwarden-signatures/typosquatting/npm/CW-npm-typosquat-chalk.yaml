@@ -1,0 +1,37 @@
+id: CW-npm-typosquat-chalk
+name: Typosquatting target — chalk (100M+ weekly downloads)
+
+type: typosquatting_target
+ecosystem: npm
+severity: HIGH
+
+target: chalk
+
+similar_names:
+  - chalck
+  - challk
+  - chlak
+  - cahalk
+  - chak
+  - chalke
+  - chalkk
+  - chalj
+  - cha1k
+  - chailk
+  - chalk_
+  - chalkjs
+  - _chalk
+  - cchalk
+  - chaalk
+
+description: |
+  chalk is a terminal string styling library with over 100 million weekly npm downloads,
+  making it one of the most depended-upon packages in the Node.js ecosystem. Its short,
+  easy-to-mistype name creates numerous typosquatting opportunities through character
+  transposition and adjacent-key errors on standard keyboard layouts.
+
+references:
+  - https://www.npmjs.com/package/chalk
+
+author: chainwarden
+tags: [typosquatting]

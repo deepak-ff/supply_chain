@@ -1,0 +1,25 @@
+id: CW-npm-coa-hijack
+name: coa hijacked — malware injection via compromised maintainer account
+
+type: blocklisted_package
+ecosystem: npm
+severity: CRITICAL
+
+package: coa
+version_range: ">=2.0.3,<=2.0.4"
+
+description: |
+  In November 2021, the npm package coa (Command-Option-Argument) was hijacked
+  through a compromised maintainer account. Malicious versions 2.0.3 and 2.0.4
+  were published containing obfuscated code that downloaded and executed a trojan
+  targeting Windows systems. The package had approximately 9 million weekly
+  downloads and was a dependency of react-scripts, causing widespread CI/CD
+  build failures that initially alerted the community to the compromise.
+
+cve: ~
+references:
+  - https://github.com/nicedream/coa/issues/99
+  - https://blog.sonatype.com/npm-packages-coa-and-rc-hijacked
+
+author: chainwarden
+tags: [hijack, malware, account-compromise, trojan]

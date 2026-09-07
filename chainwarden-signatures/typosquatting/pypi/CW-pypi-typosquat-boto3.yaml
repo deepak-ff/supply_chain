@@ -1,0 +1,39 @@
+id: CW-pypi-typosquat-boto3
+name: Typosquatting target — boto3 (200M+ monthly downloads)
+
+type: typosquatting_target
+ecosystem: pypi
+severity: HIGH
+
+target: boto3
+
+similar_names:
+  - botto3
+  - bot03
+  - botoo3
+  - boto33
+  - b0to3
+  - botot3
+  - boto
+  - bto3
+  - bota3
+  - boto3_
+  - _boto3
+  - boto-3
+  - btoo3
+  - booto3
+  - botoe3
+
+description: |
+  boto3 is the official AWS SDK for Python with over 200 million monthly PyPI downloads,
+  making it one of the most installed packages in the entire PyPI ecosystem. It is present
+  in virtually every Python application that interacts with AWS services. Typosquatting boto3
+  is an extremely high-value attack because the package inherently operates with AWS
+  credentials, and a malicious variant could directly exfiltrate IAM keys, session tokens,
+  and access to cloud infrastructure.
+
+references:
+  - https://pypi.org/project/boto3/
+
+author: chainwarden
+tags: [typosquatting]

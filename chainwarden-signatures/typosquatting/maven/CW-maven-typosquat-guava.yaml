@@ -1,0 +1,38 @@
+id: CW-maven-typosquat-guava
+name: Typosquatting target — com.google.guava:guava
+
+type: typosquatting_target
+ecosystem: maven
+severity: HIGH
+
+target: "com.google.guava:guava"
+
+similar_names:
+  - "com.google.guva:guva"
+  - "com.google.guava:guavaa"
+  - "com.google.guava:guaba"
+  - "com.google.guvaa:guava"
+  - "com.gooogle.guava:guava"
+  - "com.google.gaava:guava"
+  - "com.google.guava:guav"
+  - "com.googl3.guava:guava"
+  - "com.google.guava:guawa"
+  - "com.google.guuava:guava"
+  - "com.google.guava:guvaa"
+  - "com.google.guava:gauva"
+  - "com.google.guva:guava"
+  - "com.google.guava:guaava"
+  - "io.github.google.guava:guava"
+
+description: |
+  Google Guava is one of the most widely used Java utility libraries, providing collections,
+  caching, concurrency utilities, and common annotations. It is a core dependency in a vast
+  number of enterprise Java applications. Maven coordinate typosquatting targets both the
+  groupId and artifactId components, and attackers may register similar groupIds to intercept
+  developers who mistype the dependency declaration in pom.xml or build.gradle.
+
+references:
+  - https://mvnrepository.com/artifact/com.google.guava/guava
+
+author: chainwarden
+tags: [typosquatting]

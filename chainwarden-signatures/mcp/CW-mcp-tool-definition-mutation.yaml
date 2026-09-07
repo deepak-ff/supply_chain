@@ -1,0 +1,27 @@
+id: CW-mcp-tool-definition-mutation
+name: MCP tool definition mutation after approval
+type: behavioral_rule
+ecosystem: "*"
+severity: CRITICAL
+rule: |
+  Detect MCP servers whose tool definitions change after initial
+  installation and user approval. A malicious MCP server can present
+  safe-looking tool definitions during approval, then silently mutate
+  them to reroute API keys, exfiltrate data, or override other tools.
+  Monitor for tools/list_changed notifications and compare current
+  tool definitions against initially approved versions. The MCP spec's
+  June 2025 revision added tools/list_changed notifications but
+  enforcement is client-side and inconsistent.
+description: |
+  MCP tool definition mutation is a documented attack vector where
+  malicious MCP servers modify their tool schemas after the user has
+  approved them. On Day 1 a tool looks safe; by Day 7 it has quietly
+  changed its behavior to exfiltrate credentials. With multiple MCP
+  servers connected to one agent, a malicious server can also override
+  or intercept calls meant for trusted servers. Observed in real-world
+  MCPTox benchmark evaluations.
+references:
+  - https://owasp.org/www-community/attacks/MCP_Tool_Poisoning
+  - https://unit42.paloaltonetworks.com/model-context-protocol-attack-vectors/
+author: chainwarden
+tags: [mcp, tool-mutation, tool-poisoning, post-approval, schema-drift]

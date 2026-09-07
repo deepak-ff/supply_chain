@@ -1,0 +1,31 @@
+id: CW-maven-behavioral-remote-classpath
+name: JAR with manifest Class-Path pointing to remote URL for remote class loading
+
+type: behavioral_rule
+ecosystem: maven
+severity: HIGH
+
+rule: |
+  JAR file manifest (META-INF/MANIFEST.MF) contains:
+    - Class-Path entry with HTTP/HTTPS URLs instead of local paths
+    - OR Main-Class pointing to a class that loads remote classes via URLClassLoader
+  OR JAR source code contains:
+    - URLClassLoader with external URL arguments (new URLClassLoader(new URL[]{"http://..."}))
+    - Class.forName() with classes loaded from remote sources
+    - Reflection-based loading of classes downloaded at runtime
+    - javax.script.ScriptEngine evaluating remotely-fetched code
+  AND the remote URL is not a well-known Maven repository or CDN
+  AND the loaded classes are executed (instantiated, method invoked, or cast to a known interface)
+
+description: |
+  A JAR manifest with a Class-Path pointing to a remote URL or code using URLClassLoader
+  with external URLs enables remote class loading, allowing an attacker to serve arbitrary
+  Java bytecode at runtime. The attacker controls the remote server and can change the
+  served classes at any time, serve different payloads to different targets, or activate
+  a dormant backdoor on command. This technique bypasses signature verification on the
+  original JAR since the malicious code is loaded separately. Remote class loading was
+  a key vector in historical Java security exploits and remains relevant in supply chain
+  attacks against the Maven ecosystem.
+
+author: chainwarden
+tags: [remote-classloading, urlclassloader, manifest, classpath, java-rce]

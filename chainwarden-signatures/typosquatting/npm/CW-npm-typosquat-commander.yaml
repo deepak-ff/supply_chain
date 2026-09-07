@@ -1,0 +1,37 @@
+id: CW-npm-typosquat-commander
+name: Typosquatting target — commander (90M+ weekly downloads)
+
+type: typosquatting_target
+ecosystem: npm
+severity: HIGH
+
+target: commander
+
+similar_names:
+  - comander
+  - commaner
+  - commmander
+  - commandr
+  - commandeer
+  - comandr
+  - ccommander
+  - commanderr
+  - c0mmander
+  - commnader
+  - commaander
+  - commander_
+  - commanderjs
+  - commender
+  - comander-js
+
+description: |
+  commander is the leading CLI argument parser for Node.js with over 90 million weekly
+  downloads. It is a transitive dependency in thousands of npm packages. The double-m and
+  multiple vowels in the name make it prone to typos, and its widespread use in CLI tooling
+  means a malicious typosquat could execute code during development or CI builds.
+
+references:
+  - https://www.npmjs.com/package/commander
+
+author: chainwarden
+tags: [typosquatting]

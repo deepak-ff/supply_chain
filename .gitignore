@@ -1,9 +1,91 @@
-venv/
+# ─── Secrets ──────────────────────────────────────────────────────────────
 .env
-__pycache__/
-*.pyc
-*.pyo
-*.db
-instance/
-logs/*.log
+.env.local
+*.pem
+*.key
+*.p12
+*.pfx
+
+# ─── Internal / private (not for public repo) ────────────────────────────
+/CLAUDE.md
+/DESIGN.md
+/.claude/skills/
+/testenv/
+/GUIDE.md
+/THREAT_MODEL.md
+/MODES.md
+/WORKFLOWS.md
+
+# ─── Infrastructure (keep initdb for docker-compose) ─────────────────────
+/infra/terraform/
+/infra/k8s/base/
+/infra/k8s/overlays/
+/infra/dependency-track/
+/infra/grafana/
+/infra/prometheus/
+/docker-compose.enterprise.yml
+/docker-compose.dev.yml
+/docker-compose.base.yml
+/PRIVACY.md
+/TESTING.md
+
+# ─── Compiled binaries (root level) ───────────────────────────────────────
+/cwctl
+/cw-agent
+/intel-agent
+/cwctl.exe
+/cw-agent.exe
+/intel-agent.exe
+/api.exe
+/license-gen.exe
+
+# ─── Internal tooling (not shipped) ──────────────────────────────────────
+/cmd/license-gen/
+
+# ─── Build output ─────────────────────────────────────────────────────────
+/bin/
+/dist/
+dashboard-dist.tar.gz
+*.test
+coverage.out
+*.out
+*.prof
+
+# ─── Go ───────────────────────────────────────────────────────────────────
+vendor/
+
+# ─── Dashboard build output ──────────────────────────────────────────────
+/dashboard/dist/
+/dashboard/node_modules/
+
+# ─── Docker / local service data ──────────────────────────────────────────
+infra/dependency-track/
+postgres-data/
+redis-data/
+minio-data/
+
+# ─── Logs ─────────────────────────────────────────────────────────────────
+*.log
+*.log.*
+
+# ─── OS & Editor ──────────────────────────────────────────────────────────
 .DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
+Thumbs.db
+.idea/
+.vscode/settings.json
+.vscode/launch.json
+*.swp
+*.swo
+*~
+
+# ─── Test artifacts ───────────────────────────────────────────────────────
+/tmp/cw-test-results/
+testenv/targets/ai-model-unsafe/model.pkl
+
+# Local preview override (not part of the project)
+/dashboard/vite.preview.mjs

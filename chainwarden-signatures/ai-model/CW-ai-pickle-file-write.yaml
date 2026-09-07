@@ -1,0 +1,33 @@
+id: CW-ai-pickle-file-write
+name: Pickle model writes files to disk when deserialized acting as a dropper
+
+type: pickle_rule
+ecosystem: huggingface
+severity: CRITICAL
+
+rule: |
+  Model file (.bin, .pkl, .pickle, .pt, .pth) contains pickled objects referencing
+  any of: builtins.open (with 'w', 'a', 'wb', 'ab' modes), io.open, os.makedirs,
+  os.mkdir, shutil.copy, shutil.move, pathlib.Path.write_text, pathlib.Path.write_bytes,
+  tempfile.NamedTemporaryFile
+  Detection via: pickletools.dis() output contains "builtins\nopen" combined with
+  write-mode string arguments, or references to file-writing functions in the opcode
+  stream; also detect paths to sensitive locations like ~/.bashrc, ~/.ssh/, crontab
+
+description: |
+  This rule detects model files that write files to disk during deserialization, functioning
+  as a malware dropper. A pickled payload can write executable scripts to cron directories,
+  inject commands into shell profiles (~/.bashrc, ~/.zshrc), plant SSH authorized_keys for
+  persistent access, or drop additional malware binaries. This is a classic dropper pattern
+  adapted for the ML supply chain — the model file is the delivery vehicle and
+  deserialization is the trigger. Researchers loading models in shared environments (cloud
+  notebooks, CI pipelines) are particularly vulnerable as the dropped files may execute
+  with elevated privileges.
+
+references:
+  - https://research.jfrog.com/vulnerability-research/the-danger-of-pickle-in-ml/
+  - https://blog.huntr.com/malicious-ml-models-on-hugging-face
+  - https://protectai.com/blog/attacking-machine-learning-models
+
+author: chainwarden
+tags: [pickle, file-write, dropper, persistence, ai-model]

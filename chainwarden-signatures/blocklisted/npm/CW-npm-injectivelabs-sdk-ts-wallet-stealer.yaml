@@ -1,0 +1,17 @@
+id: CW-npm-injectivelabs-sdk-ts-wallet-stealer
+name: Injective Labs SDK compromised with wallet key stealer
+type: blocklisted_package
+ecosystem: npm
+severity: CRITICAL
+package: "@injectivelabs/sdk-ts"
+version_range: "=1.20.21"
+description: |
+  @injectivelabs/sdk-ts v1.20.21 was compromised to intercept wallet mnemonic and private key
+  derivation via PrivateKey.fromMnemonic() and PrivateKey.fromHex(). Stolen keys are exfiltrated
+  via POST to testnet.archival.chain.grpc-web.injective.network, encoded in X-Request-Id headers
+  to disguise as gRPC-web traffic. 17 additional @injectivelabs packages pulled the poisoned SDK.
+cve: ~
+references:
+  - https://www.aikido.dev/blog/compromised-injectivelabs-exfiltrates-keys
+author: chainwarden
+tags: [cryptocurrency, wallet-stealer, mnemonic-theft, supply-chain, web3]

@@ -1,0 +1,82 @@
+version: "3.9"
+
+# Full platform stack — postgres + redis + ChainWarden (API + dashboard).
+#
+# Quick start:
+#   cwctl setup                      # generates .env with random POSTGRES_PASSWORD
+#   docker compose up -d
+#   open http://localhost:3000
+#   Login: admin@chainwarden.local / changeme123
+#
+# Or set POSTGRES_PASSWORD manually:
+#   POSTGRES_PASSWORD=$(openssl rand -hex 16) docker compose up -d
+#
+# Custom credentials:
+#   CW_ADMIN_EMAIL=you@example.com CW_ADMIN_PASSWORD=YourSecurePass \
+#     POSTGRES_PASSWORD=secret docker compose up -d
+
+networks:
+  chainwarden:
+    driver: bridge
+
+volumes:
+  postgres_data:
+  redis_data:
+  fg_data:
+
+services:
+  # ── Metadata store ──────────────────────────────────────────────────────────
+  postgres:
+    image: postgres:16-alpine
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: chainwarden
+      POSTGRES_USER: chainwarden
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?Set POSTGRES_PASSWORD in .env or environment}
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+      - ./infra/k8s/initdb:/docker-entrypoint-initdb.d:ro
+    ports:
+      - "5432:5432"
+    networks: [chainwarden]
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U chainwarden"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+  # ── Job queue ───────────────────────────────────────────────────────────────
+  redis:
+    image: redis:7-alpine
+    restart: unless-stopped
+    command: redis-server --appendonly yes
+    volumes:
+      - redis_data:/data
+    ports:
+      - "6379:6379"
+    networks: [chainwarden]
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+
+  # ── ChainWarden (API + Dashboard) ─────────────────────────────────────────
+  chainwarden:
+    build: .
+    restart: unless-stopped
+    environment:
+      DATABASE_URL: postgres://chainwarden:${POSTGRES_PASSWORD:?Set POSTGRES_PASSWORD in .env or environment}@postgres:5432/chainwarden?sslmode=disable
+      ANTHROPIC_API_KEY: ${ANTHROPIC_API_KEY:-}
+      CW_ADMIN_EMAIL: ${CW_ADMIN_EMAIL:-}
+      CW_ADMIN_PASSWORD: ${CW_ADMIN_PASSWORD:-}
+      CW_SESSION_SECRET: ${CW_SESSION_SECRET:-}
+      CW_COOKIE_SECURE: "false"
+    ports:
+      - "3000:3000"
+    volumes:
+      - fg_data:/data
+    networks: [chainwarden]
+    depends_on:
+      postgres:
+        condition: service_healthy

@@ -1,0 +1,38 @@
+id: CW-npm-typosquat-axios
+name: Typosquatting target — axios (45M+ weekly downloads)
+
+type: typosquatting_target
+ecosystem: npm
+severity: HIGH
+
+target: axios
+
+similar_names:
+  - axois
+  - axiso
+  - axxios
+  - axio
+  - axioss
+  - ax1os
+  - axlos
+  - axious
+  - axiox
+  - axi0s
+  - axos
+  - axias
+  - axios_
+  - _axios
+  - axiosjs
+
+description: |
+  axios is one of the most popular HTTP client libraries on npm with over 45 million weekly
+  downloads. It is used extensively in both browser and Node.js environments for API
+  communication. Its short name and common transposition patterns (axois, axiso) make it a
+  frequent typosquatting target, with several malicious variants historically detected on npm.
+
+references:
+  - https://www.npmjs.com/package/axios
+  - https://jfrog.com/blog/malicious-npm-packages-typosquatting/
+
+author: chainwarden
+tags: [typosquatting]

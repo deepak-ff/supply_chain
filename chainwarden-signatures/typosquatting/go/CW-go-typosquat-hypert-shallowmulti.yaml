@@ -1,0 +1,21 @@
+id: CW-go-typosquat-hypert-shallowmulti
+name: Go hypert typosquat (shallowmulti)
+type: blocklisted_package
+ecosystem: go
+severity: CRITICAL
+package: github.com/shallowmulti/hypert
+version_range: "*"
+description: |
+  Discovered February 2025, one of four malicious Go modules impersonating
+  the legitimate github.com/areknoster/hypert library (HTTP API client testing
+  tool). The package embedded concealed functions enabling remote code execution
+  by downloading and executing a malicious script from the C2 domain
+  alturastreet.icu (typosquatted banking domain). Specifically targeted
+  developers in the financial sector. Deployed loader malware targeting
+  Linux and macOS systems.
+cve: ~
+references:
+  - https://socket.dev/blog/typosquatted-go-packages-deliver-malware-loader
+  - https://thehackernews.com/2025/03/seven-malicious-go-packages-found.html
+author: chainwarden
+tags: [typosquatting, go, rce, malware-loader, hypert, financial-sector]

@@ -1,0 +1,17 @@
+id: CW-npm-behavioral-bun-preinstall-dropper
+name: Bun runtime bootstrap in npm preinstall hook
+type: behavioral_rule
+ecosystem: npm
+severity: CRITICAL
+rule: |
+  Flag npm packages where the preinstall or postinstall script downloads and executes the Bun
+  JavaScript runtime. Check for: "bun run" in lifecycle scripts, references to oven-sh/setup-bun,
+  setup.mjs files that download binaries from github.com/oven-sh/bun, or preinstall scripts
+  that spawn detached background processes with stdio:ignore and windowsHide:true options.
+description: |
+  The Mini Shai-Hulud campaign and its derivatives use Bun as a bootstrapper across dozens of
+  compromised npm packages (keyv, flat-cache, SAP CAP.js, Bitwarden CLI, TanStack, @antv).
+  Legitimate npm packages almost never download and execute the Bun runtime at install time.
+  This behavioral pattern has been the most reliable indicator across the entire campaign family.
+author: chainwarden
+tags: [shai-hulud, bun-dropper, behavioral, npm, preinstall]

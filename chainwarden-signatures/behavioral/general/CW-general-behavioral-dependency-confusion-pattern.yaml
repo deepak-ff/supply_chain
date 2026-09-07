@@ -1,0 +1,34 @@
+id: CW-general-behavioral-dependency-confusion-pattern
+name: Package published with identical name to known internal/private package
+
+type: behavioral_rule
+ecosystem: "*"
+severity: CRITICAL
+
+rule: |
+  Package name matches patterns commonly used for internal/private packages:
+    - Contains organizational identifiers: -internal, -private, -corp, -enterprise,
+      -staging, -dev, -infra, -platform, -core-lib, -service, -microservice
+    - OR matches known internal naming conventions:
+      <company>-<service>, <company>_<utility>, <org>.<project>.<module>
+    - OR is an unscoped version of a known scoped package (@org/pkg published as org-pkg)
+  AND the package exhibits dependency confusion indicators:
+    - Version number is artificially high (>= 99.0.0 or >= 9999.0.0)
+    - OR first published version is >= 1.0.0 with no prior versions
+    - OR published within 24 hours of a reference appearing in a public leak
+      (package-lock.json, requirements.txt, go.sum in public repos)
+  AND the package has zero or near-zero legitimate downloads
+  AND the package contains install-time scripts or init-time code execution
+
+description: |
+  Dependency confusion attacks exploit the resolution order of package managers that
+  check public registries before (or alongside) private registries. An attacker publishes
+  a public package with the same name as a company's private package, often at a much
+  higher version number. Build systems then pull the malicious public version instead
+  of the intended private one. Alex Birsan demonstrated this against 35+ major tech
+  companies in 2021. This rule generalizes across all ecosystems — npm, PyPI, RubyGems,
+  Maven, Go, and Cargo all have variants of this vulnerability depending on their
+  registry resolution behavior.
+
+author: chainwarden
+tags: [dependency-confusion, namespace-confusion, private-package, registry-resolution, supply-chain]

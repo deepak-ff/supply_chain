@@ -1,0 +1,31 @@
+id: CW-npm-behavioral-obfuscated-eval-base64
+name: Obfuscated code execution via eval(Buffer.from(base64)) pattern
+
+type: behavioral_rule
+ecosystem: npm
+severity: HIGH
+
+rule: |
+  Package source contains eval() or Function() constructor
+  AND the argument to eval/Function involves Base64 decoding:
+    - eval(Buffer.from('<base64>', 'base64').toString())
+    - eval(atob('<base64>'))
+    - new Function(Buffer.from('<base64>', 'base64').toString())()
+    - eval(Buffer.from('<hex>', 'hex').toString())
+  OR the source contains heavily obfuscated patterns:
+    - Multiple layers of String.fromCharCode() concatenation
+    - eval() with array of character codes being joined
+    - require() with Base64-encoded module names
+  AND the package is not a well-known obfuscation tool (e.g. javascript-obfuscator)
+
+description: |
+  Encoding malicious payloads in Base64 and executing them via eval() is the most common
+  obfuscation technique in npm malware. It evades simple string matching and static
+  analysis while being trivially deobfuscatable at runtime. This pattern was present in
+  the event-stream attack (flatmap-stream), ua-parser-js hijack, and hundreds of confirmed
+  malicious npm packages. Legitimate packages have no reason to Base64-encode and eval
+  their own source code. The presence of eval(Buffer.from()) in a package should be treated
+  as a strong malware indicator.
+
+author: chainwarden
+tags: [obfuscation, eval, base64, code-execution, anti-analysis]

@@ -1,0 +1,32 @@
+id: CW-general-behavioral-empty-package-complex-install
+name: Package with zero or minimal functional code but complex install scripts
+
+type: behavioral_rule
+ecosystem: "*"
+severity: HIGH
+
+rule: |
+  Package exhibits a disproportion between functional code and install-time behavior:
+    - Main module / library code is empty, contains only pass/noop, or < 10 lines
+    - AND install scripts (postinstall, setup.py, extconf.rb, build plugin) contain
+      > 50 lines of code or invoke external processes
+  OR package has:
+    - No exports, no public API, no documented functionality
+    - AND a complex lifecycle script with network access, file system operations,
+      or subprocess execution
+  OR package README/description is minimal or auto-generated
+    - AND package has install scripts that perform significant operations
+  AND the package was published recently (< 90 days) with no prior version history
+
+description: |
+  Legitimate packages exist to provide reusable functionality — their main code should
+  be substantial relative to their install scripts. A package with no meaningful library
+  code but complex install-time behavior is a strong indicator of a malicious payload
+  carrier. The package's sole purpose is to execute the install script; the published
+  module is just a delivery mechanism. This heuristic catches a wide class of supply
+  chain attacks across all ecosystems, including dependency confusion probes, credential
+  harvesters, and dropper packages. The pattern is ecosystem-agnostic and applies to
+  npm, PyPI, RubyGems, Go modules, Maven, and Cargo crates alike.
+
+author: chainwarden
+tags: [empty-package, install-script-ratio, dropper, payload-carrier, heuristic]

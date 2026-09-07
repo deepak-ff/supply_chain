@@ -1,0 +1,26 @@
+id: CW-mcp-resource-uri-ssrf
+name: MCP resource URI points to local filesystem or internal network for SSRF
+
+type: mcp_injection_pattern
+ecosystem: mcp
+severity: CRITICAL
+
+pattern: "(?i)(file://|\\\\\\\\|//localhost|//127\\.0\\.0\\.|//10\\.|//172\\.(1[6-9]|2[0-9]|3[01])\\.|//192\\.168\\.|//169\\.254\\.|//0\\.0\\.0\\.0|//\\[::1\\]|//metadata\\.google|//169\\.254\\.169\\.254|gopher://|dict://|ldap://|ftp://localhost)"
+
+description: |
+  This pattern detects MCP resource URIs that reference local filesystem paths (file://),
+  internal network addresses (RFC 1918 ranges, localhost, link-local), or cloud metadata
+  endpoints (169.254.169.254). A malicious MCP server can declare resources with URIs
+  pointing to sensitive local files (/etc/passwd, ~/.ssh/id_rsa, ~/.aws/credentials) or
+  internal services, turning the MCP client into an SSRF proxy. When the LLM or MCP client
+  fetches these resources, it inadvertently reads internal data and may surface it to the
+  attacker through subsequent tool calls or conversation output. Cloud metadata SSRF can
+  expose IAM credentials, instance identity tokens, and infrastructure secrets.
+
+references:
+  - https://portswigger.net/web-security/ssrf
+  - https://cheatsheetseries.owasp.org/cheatsheets/Server_Side_Request_Forgery_Prevention_Cheat_Sheet.html
+  - https://spec.modelcontextprotocol.io/specification/2024-11-05/server/resources/
+
+author: chainwarden
+tags: [ssrf, file-inclusion, internal-network, cloud-metadata, mcp]

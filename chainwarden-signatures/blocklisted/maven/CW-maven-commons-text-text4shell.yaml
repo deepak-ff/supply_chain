@@ -1,0 +1,27 @@
+id: CW-maven-commons-text-text4shell
+name: Text4Shell — RCE in Apache Commons Text string interpolation
+
+type: blocklisted_package
+ecosystem: maven
+severity: HIGH
+
+package: org.apache.commons:commons-text
+version_range: ">=1.5,<=1.9"
+
+description: |
+  CVE-2022-42889 (Text4Shell), disclosed in October 2022, was a remote code
+  execution vulnerability in Apache Commons Text. The StringSubstitutor class
+  performed unsafe interpolation of string lookups, including script, dns, and url
+  prefixes. Attackers could inject crafted interpolation strings (e.g.,
+  ${script:javascript:java.lang.Runtime.getRuntime().exec('cmd')}) to achieve
+  arbitrary code execution. While less universally exploitable than Log4Shell
+  due to requiring specific API usage patterns, it affected applications that
+  passed untrusted input through Commons Text string interpolation.
+
+cve: CVE-2022-42889
+references:
+  - https://nvd.nist.gov/vuln/detail/CVE-2022-42889
+  - https://www.rapid7.com/blog/post/2022/10/17/cve-2022-42889-keep-calm-and-stop-saying-4shell/
+
+author: chainwarden
+tags: [rce, string-interpolation, text4shell, code-injection]

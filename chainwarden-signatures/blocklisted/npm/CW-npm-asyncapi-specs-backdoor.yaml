@@ -1,0 +1,17 @@
+id: CW-npm-asyncapi-specs-backdoor
+name: AsyncAPI specs npm package backdoored via GitHub Actions
+type: blocklisted_package
+ecosystem: npm
+severity: CRITICAL
+package: "@asyncapi/specs"
+version_range: "=6.11.2"
+description: |
+  @asyncapi/specs v6.11.2 was backdoored after an attacker exploited a pull_request_target
+  workflow vulnerability to steal npm publish tokens. The compromised package fetches encrypted
+  loaders from IPFS, writes sync.js payload, and establishes persistent reverse shell to
+  85.137.53.71:8080 using the Miasma toolkit. Beacons system info every ~30 seconds.
+cve: ~
+references:
+  - https://www.aikido.dev/blog/asyncapi-npm-packages-backdoored-via-github-actions
+author: chainwarden
+tags: [github-actions, pull-request-target, miasma, reverse-shell, ipfs, supply-chain]

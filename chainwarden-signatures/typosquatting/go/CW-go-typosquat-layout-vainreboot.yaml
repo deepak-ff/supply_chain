@@ -1,0 +1,19 @@
+id: CW-go-typosquat-layout-vainreboot
+name: Go layout typosquat (vainreboot)
+type: blocklisted_package
+ecosystem: go
+severity: CRITICAL
+package: github.com/vainreboot/layout
+version_range: "*"
+description: |
+  Discovered February 2025, one of three malicious Go modules impersonating
+  the legitimate github.com/loov/layout library. Part of a broader seven-package
+  Go typosquatting campaign that also targeted the hypert library. All fraudulent
+  versions follow the same obfuscation techniques and deploy identical loader
+  payloads targeting Linux and macOS systems for remote code execution.
+cve: ~
+references:
+  - https://socket.dev/blog/typosquatted-go-packages-deliver-malware-loader
+  - https://thehackernews.com/2025/03/seven-malicious-go-packages-found.html
+author: chainwarden
+tags: [typosquatting, go, rce, malware-loader, layout]

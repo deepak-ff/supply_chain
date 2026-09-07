@@ -1,0 +1,29 @@
+id: CW-npm-behavioral-preinstall-binary-drop
+name: preinstall script downloads and executes external binary
+
+type: behavioral_rule
+ecosystem: npm
+severity: CRITICAL
+
+rule: |
+  Package has a preinstall lifecycle script defined in package.json
+  AND the script or referenced file performs an HTTP/HTTPS download:
+    - Uses child_process to invoke curl, wget, fetch, or similar download utilities
+    - OR uses http/https/node-fetch/axios/got to download a file to disk
+  AND the downloaded content is subsequently executed:
+    - Via child_process.exec(), child_process.spawn(), child_process.execFile()
+    - OR via fs.chmod() followed by child_process invocation
+    - OR written to a file with executable extension (.sh, .exe, .bat, .bin)
+  AND the package is not a well-known binary distribution tool (e.g. esbuild, swc, turbo)
+
+description: |
+  A preinstall script that downloads and executes an external binary is the canonical
+  supply chain attack pattern. The preinstall hook runs before the package is fully
+  installed and before any dependency integrity checks complete, making it the earliest
+  possible execution point. This technique was used in the ua-parser-js hijack (2021),
+  coa/rc compromises (2021), and numerous npm malware campaigns. Legitimate packages
+  that distribute platform-specific binaries use dedicated mechanisms like optionalDependencies
+  or postinstall with well-known tools like node-pre-gyp, not raw HTTP downloads in preinstall.
+
+author: chainwarden
+tags: [preinstall, binary-drop, download-execute, supply-chain]

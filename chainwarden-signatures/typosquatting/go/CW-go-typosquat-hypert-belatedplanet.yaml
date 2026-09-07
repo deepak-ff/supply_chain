@@ -1,0 +1,19 @@
+id: CW-go-typosquat-hypert-belatedplanet
+name: Go hypert typosquat (belatedplanet)
+type: blocklisted_package
+ecosystem: go
+severity: CRITICAL
+package: github.com/belatedplanet/hypert
+version_range: "*"
+description: |
+  One of four malicious Go modules discovered February 2025, impersonating
+  the legitimate github.com/areknoster/hypert HTTP API testing library.
+  Contains concealed functions enabling remote code execution via loader
+  malware that contacts attacker C2 infrastructure. Part of a seven-package
+  Go typosquatting campaign that also targeted the layout library.
+cve: ~
+references:
+  - https://socket.dev/blog/typosquatted-go-packages-deliver-malware-loader
+  - https://thehackernews.com/2025/03/seven-malicious-go-packages-found.html
+author: chainwarden
+tags: [typosquatting, go, rce, malware-loader, hypert]

@@ -1,0 +1,29 @@
+id: CW-npm-behavioral-parasitic-injection
+name: Package modifies other packages' code in node_modules (parasitic injection)
+
+type: behavioral_rule
+ecosystem: npm
+severity: CRITICAL
+
+rule: |
+  Package source contains file system operations targeting paths outside its own directory:
+    - fs.writeFile, fs.writeFileSync, fs.appendFile, fs.appendFileSync
+      with path containing "../" or "node_modules/<other-package>"
+    - OR replaces or patches files in sibling node_modules directories
+    - OR uses require.resolve() to locate another package and then modifies its files
+  AND the modification injects new code, replaces function implementations, or appends
+  payload code to existing JavaScript files
+  AND the target is a high-value package (express, axios, lodash, react, next, etc.)
+
+description: |
+  Parasitic injection is a stealthy supply chain technique where a malicious package
+  modifies the source code of other installed packages in node_modules. By injecting
+  code into widely-trusted packages like express or axios, the attacker's payload runs
+  in a trusted context, evading detection that focuses only on the malicious package
+  itself. The injected code persists even if the malicious package is later removed,
+  as long as the victim packages are not reinstalled. This technique was demonstrated
+  in academic supply chain research and observed in real-world npm malware targeting
+  request interception in express middleware.
+
+author: chainwarden
+tags: [parasitic, code-injection, node-modules, persistence, tampering]

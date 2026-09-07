@@ -1,0 +1,32 @@
+id: CW-ai-gguf-metadata-injection
+name: GGUF model file contains malicious metadata fields with prompt injection
+
+type: pickle_rule
+ecosystem: huggingface
+severity: HIGH
+
+rule: |
+  GGUF model file (.gguf) metadata fields contain prompt injection patterns in any of:
+  general.description, general.author, general.url, general.license, general.source.url,
+  tokenizer.chat_template, or custom metadata keys
+  Detection: parse GGUF header metadata and scan string-type values for injection patterns
+  including "ignore previous", "system:", "you are", "[INST]", "<<SYS>>", "<|im_start|>",
+  or any chat template markup that injects instructions outside the expected template format
+
+description: |
+  This rule detects GGUF model files with metadata fields containing prompt injection
+  payloads. The GGUF format (used by llama.cpp, ollama, and other local inference engines)
+  stores model metadata as key-value pairs in the file header. Attackers can inject prompt
+  injection into fields like general.description or — most critically — the
+  tokenizer.chat_template field, which defines how user messages are formatted. A poisoned
+  chat_template can prepend hidden system instructions to every user message, creating a
+  persistent jailbreak that activates every time the model processes input. Since GGUF
+  files are often downloaded from unverified sources, metadata is rarely inspected.
+
+references:
+  - https://github.com/ggerganov/ggml/blob/master/docs/gguf.md
+  - https://huggingface.co/docs/hub/gguf
+  - https://arxiv.org/abs/2403.02691
+
+author: chainwarden
+tags: [gguf, metadata-injection, chat-template, prompt-injection, ai-model]

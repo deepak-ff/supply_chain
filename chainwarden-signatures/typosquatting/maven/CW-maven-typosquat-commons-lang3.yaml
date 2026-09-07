@@ -1,0 +1,38 @@
+id: CW-maven-typosquat-commons-lang3
+name: Typosquatting target — org.apache.commons:commons-lang3
+
+type: typosquatting_target
+ecosystem: maven
+severity: HIGH
+
+target: "org.apache.commons:commons-lang3"
+
+similar_names:
+  - "org.apache.commons:commons-lang"
+  - "org.apache.commons:common-lang3"
+  - "org.apache.commons:commons-lang33"
+  - "org.apache.common:commons-lang3"
+  - "org.apache.commons:commons-lng3"
+  - "org.apache.commons:commos-lang3"
+  - "org.apach3.commons:commons-lang3"
+  - "org.apache.commons:commons-lang2"
+  - "org.apache.commons:comons-lang3"
+  - "org.apaache.commons:commons-lang3"
+  - "org.apache.commmons:commons-lang3"
+  - "org.apache.commons:commons-langg3"
+  - "io.github.apache.commons:commons-lang3"
+  - "org.apache.commons:commons-langs3"
+  - "org.apache.commons:commonslang3"
+
+description: |
+  Apache Commons Lang is one of the most depended-upon Java libraries, providing utility
+  methods for core Java classes including string manipulation, number handling, and reflection.
+  The long Maven coordinate with multiple repeated words (commons:commons) makes it highly
+  susceptible to typos. Confusion between commons-lang (v2) and commons-lang3 (v3) is a
+  known issue that attackers can exploit by registering intermediate variants.
+
+references:
+  - https://mvnrepository.com/artifact/org.apache.commons/commons-lang3
+
+author: chainwarden
+tags: [typosquatting]

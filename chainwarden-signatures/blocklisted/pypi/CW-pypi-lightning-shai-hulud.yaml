@@ -1,0 +1,18 @@
+id: CW-pypi-lightning-shai-hulud
+name: PyTorch Lightning package compromised by Shai-Hulud
+type: blocklisted_package
+ecosystem: pypi
+severity: CRITICAL
+package: lightning
+version_range: ">=2.6.2,<=2.6.3"
+description: |
+  PyTorch Lightning (lightning) versions 2.6.2-2.6.3 were compromised by the Mini Shai-Hulud
+  campaign. Malicious code in __init__.py spawns a daemon thread executing start.py, which
+  downloads Bun 1.3.13 and runs router_runtime.js (11MB payload). Steals SSH keys, crypto
+  wallets (Bitcoin, Monero, Exodus, Ledger), VPN credentials, Discord/Slack sessions, and
+  cloud configs. Exfiltrates RSA-2048 encrypted data to public GitHub repositories.
+cve: ~
+references:
+  - https://www.aikido.dev/blog/pytorch-lightning-pypi-compromise-mini-shai-hulud
+author: chainwarden
+tags: [shai-hulud, pytorch, credential-theft, crypto-wallet, supply-chain]

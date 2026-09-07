@@ -1,0 +1,19 @@
+id: CW-npm-ngx-bootstrap-shai-hulud
+name: ngx-bootstrap Shai-Hulud worm compromise
+type: blocklisted_package
+ecosystem: npm
+severity: CRITICAL
+package: ngx-bootstrap
+version_range: "=20.0.4||=20.0.5||=20.0.6||=19.0.3||=18.1.4||=20.0.3"
+description: |
+  Beginning September 15, 2025, the Shai-Hulud worm-like malware campaign
+  compromised ngx-bootstrap across multiple versions (20.0.3-20.0.6, 19.0.3,
+  18.1.4). The postinstall script (bundle.js) harvested developer tokens
+  including npm, GitHub, and cloud credentials, then exfiltrated secrets
+  via webhooks and attacker-controlled GitHub repositories. The campaign
+  also targeted CI/CD environments through GitHub Actions exfiltration.
+cve: ~
+references:
+  - https://snyk.io/blog/embedded-malicious-code-in-tinycolor-and-ngx-bootstrap-releases-on-npm/
+author: chainwarden
+tags: [supply-chain, npm, shai-hulud, worm, credential-theft, teampcp]

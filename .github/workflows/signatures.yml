@@ -1,0 +1,45 @@
+name: Validate signatures
+
+on:
+  pull_request:
+    paths:
+      - "chainwarden-signatures/**/*.yaml"
+      - "chainwarden-signatures/**/*.yml"
+      - "chainwarden-signatures/scripts/build_bundle.py"
+  push:
+    branches: [main]
+    paths:
+      - "chainwarden-signatures/**"
+
+permissions:
+  contents: write
+
+jobs:
+  validate-and-build:
+    name: Validate + compile signatures.json
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: chainwarden-signatures
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Install dependencies
+        run: pip install pyyaml
+
+      - name: Validate + compile signatures.json
+        run: python3 scripts/build_bundle.py
+
+      - name: Commit updated dist/signatures.json
+        if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+        run: |
+          git config user.name "chainwarden-bot"
+          git config user.email "bot@users.noreply.github.com"
+          git add dist/signatures.json
+          git diff --cached --quiet && echo "no changes" && exit 0
+          git commit -m "chore: rebuild signatures.json [skip ci]"
+          git push

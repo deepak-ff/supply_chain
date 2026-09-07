@@ -1,0 +1,23 @@
+id: CW-actions-behavioral-tag-force-push
+name: GitHub Actions version tag force-push detection
+type: behavioral_rule
+ecosystem: actions
+severity: CRITICAL
+rule: |
+  Detect when multiple GitHub Actions version tags are force-pushed in
+  rapid succession. The TeamPCP attacks on trivy-action (75/76 tags),
+  kics-github-action (all release tags), and setup-trivy (7 tags) all
+  used force-pushes to redirect existing pinned references to malicious
+  commits. Monitor for: bulk tag updates within short time windows,
+  tag updates that change the commit hash without a corresponding
+  release, and tags pointing to commits not in the main branch history.
+description: |
+  The March 2026 TeamPCP campaign systematically force-pushed malicious
+  commits to version tags across multiple GitHub Actions (Trivy, KICS,
+  AST). This technique is particularly dangerous because many workflows
+  pin to version tags (e.g., @v1) rather than commit SHAs. A force-push
+  to a tag silently redirects all pinned workflows to malicious code.
+  The only defense is pinning to full commit SHAs and monitoring tag
+  integrity via Sigstore/SLSA attestations.
+author: chainwarden
+tags: [behavioral, actions, tag-force-push, teampcp, trivy, supply-chain]

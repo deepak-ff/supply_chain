@@ -1,0 +1,17 @@
+id: CW-npm-cacheable-shai-hulud
+name: cacheable npm package compromised by Shai-Hulud worm
+type: blocklisted_package
+ecosystem: npm
+severity: CRITICAL
+package: cacheable
+version_range: "=2.5.1"
+description: |
+  cacheable v2.5.1 (30M monthly downloads) was compromised in the Mini Shai-Hulud campaign
+  that also hit keyv and flat-cache. The worm propagates via stolen npm publish tokens,
+  injecting preinstall hooks that download Bun and execute obfuscated credential stealers.
+  Over 444 community packages were secondarily infected across 1,381 versions.
+cve: ~
+references:
+  - https://www.aikido.dev/blog/keyv-and-friends-compromised-in-npm-supply-chain-attack
+author: chainwarden
+tags: [shai-hulud, worm, credential-theft, npm, supply-chain, self-propagating]

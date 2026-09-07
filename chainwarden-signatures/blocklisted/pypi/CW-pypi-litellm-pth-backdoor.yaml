@@ -1,0 +1,22 @@
+id: CW-pypi-litellm-pth-backdoor
+name: LiteLLM PyPI credential stealer and wiper
+type: blocklisted_package
+ecosystem: pypi
+severity: CRITICAL
+package: litellm
+version_range: "=1.82.7||=1.82.8"
+description: |
+  On March 24, 2026, TeamPCP published two malicious versions of litellm
+  (1.82.7 and 1.82.8) to PyPI using credentials stolen from the prior Trivy
+  compromise. The payload used a .pth file that auto-executes with any Python
+  interpreter startup. The three-stage attack harvested credentials, attempted
+  lateral movement across Kubernetes clusters, and installed a persistent
+  systemd backdoor polling for additional payloads from check.git-service.com
+  via rope.pyz second-stage. Live for ~40 minutes. LiteLLM has 95M+ monthly
+  downloads and is widely used in AI agent frameworks.
+cve: ~
+references:
+  - https://snyk.io/blog/poisoned-security-scanner-backdooring-litellm/
+  - https://docs.litellm.ai/blog/security-update-march-2026
+author: chainwarden
+tags: [supply-chain, pypi, teampcp, litellm, ai-framework, credential-theft, wiper, pth-injection]

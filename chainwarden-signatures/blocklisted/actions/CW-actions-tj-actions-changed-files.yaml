@@ -1,0 +1,26 @@
+id: CW-actions-tj-actions-changed-files
+name: tj-actions/changed-files — GitHub Actions secret exfiltration
+
+type: blocklisted_package
+ecosystem: actions
+severity: CRITICAL
+
+package: tj-actions/changed-files
+version_range: "<=45.0.1"
+
+description: |
+  In March 2025, the popular GitHub Action tj-actions/changed-files was compromised
+  when an attacker modified the action's code via a forced tag update. The malicious
+  version injected a step that dumped all CI/CD secrets and environment variables
+  into the GitHub Actions workflow logs, making them publicly visible in the build
+  output of any public repository using the action. The action had over 23,000
+  dependent repositories. The compromise was traced back to a cascading attack
+  originating from the reviewdog/action-setup action.
+
+cve: CVE-2025-30066
+references:
+  - https://www.stepsecurity.io/blog/harden-runner-detection-tj-actions-changed-files-action-is-compromised
+  - https://github.com/advisories/GHSA-mcph-m25j-8mg8
+
+author: chainwarden
+tags: [github-actions, secret-exfiltration, tag-mutation, ci-cd-compromise]

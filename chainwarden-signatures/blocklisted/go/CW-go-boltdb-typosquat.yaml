@@ -1,0 +1,26 @@
+id: CW-go-boltdb-typosquat
+name: boltdb-go/bolt typosquat — cryptominer targeting bbolt users
+
+type: blocklisted_package
+ecosystem: go
+severity: CRITICAL
+
+package: github.com/boltdb-go/bolt
+version_range: ">=1.3.1"
+
+description: |
+  In early 2025, a malicious Go module github.com/boltdb-go/bolt was discovered
+  typosquatting the legitimate and widely-used github.com/etcd-io/bbolt (formerly
+  boltdb/bolt) embedded key-value database. The malicious package contained a
+  cryptominer that was downloaded and executed upon import. The attack exploited
+  Go's module proxy caching, which made it difficult to remove the malicious module
+  once cached. The legitimate bbolt package is a dependency of Kubernetes etcd and
+  many other critical Go infrastructure projects.
+
+cve: ~
+references:
+  - https://socket.dev/blog/malicious-go-module-boltdb-go-bolt
+  - https://www.bleepingcomputer.com/news/security/malicious-go-package-hides-cryptominer-targeting-linux-and-macos/
+
+author: chainwarden
+tags: [typosquat, cryptominer, go-module-proxy, impersonation]

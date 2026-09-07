@@ -1,0 +1,33 @@
+id: CW-ai-model-card-prompt-injection
+name: HuggingFace model card README contains hidden prompt injection for downstream LLMs
+
+type: pickle_rule
+ecosystem: huggingface
+severity: HIGH
+
+rule: |
+  Model card (README.md) in a HuggingFace repository contains any of:
+  - HTML comments (<!-- -->) with instruction-like text targeting LLMs
+  - Zero-width Unicode characters hiding text between visible content
+  - Base64-encoded strings in metadata fields or HTML attributes
+  - Text matching prompt injection patterns: "ignore previous", "you are now",
+    "new instructions", "system prompt", "act as", "override", "disregard"
+  - Hidden text via CSS (display:none, visibility:hidden, font-size:0, color matching
+    background) in HTML sections of the markdown
+
+description: |
+  This rule detects HuggingFace model card README files containing hidden prompt injection
+  targeting downstream LLMs that process model metadata. When RAG systems, model registries,
+  or AI-powered search tools index model cards, injected instructions in HTML comments,
+  invisible Unicode, or hidden CSS text are ingested into the LLM context. The injection
+  can instruct the LLM to recommend the malicious model, suppress security warnings, or
+  exfiltrate user data. This is an indirect prompt injection vector where the model card
+  serves as the poisoned document in a retrieval pipeline.
+
+references:
+  - https://greshake.github.io/
+  - https://arxiv.org/abs/2302.12173
+  - https://huggingface.co/blog/model-cards
+
+author: chainwarden
+tags: [prompt-injection, model-card, indirect-injection, rag-poisoning, ai-model]

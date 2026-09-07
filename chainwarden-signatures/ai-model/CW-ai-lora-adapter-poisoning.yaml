@@ -1,0 +1,35 @@
+id: CW-ai-lora-adapter-poisoning
+name: LoRA adapter introduces backdoor behaviors through poisoned fine-tuning weights
+
+type: pickle_rule
+ecosystem: huggingface
+severity: HIGH
+
+rule: |
+  LoRA adapter repository (containing adapter_model.bin, adapter_model.safetensors,
+  or adapter_config.json) exhibits any of:
+  - adapter_model.bin uses pickle serialization (not safetensors) without justification
+  - adapter_config.json references unusual base models or target modules not matching
+    standard architectures (unexpected layer names suggesting weight manipulation)
+  - Repository has minimal documentation, no training details, no dataset attribution
+  - Adapter rank (r) is unusually high relative to claimed task (r > 256 for a simple
+    classification adapter suggests embedding hidden capabilities)
+  - Adapter was published within 24 hours of a popular base model release (typosquat timing)
+
+description: |
+  This rule detects LoRA (Low-Rank Adaptation) adapters that may introduce backdoor
+  behaviors when merged with a base model. Poisoned LoRA adapters can embed trigger-
+  activated behaviors — the model performs normally on standard inputs but produces
+  attacker-chosen outputs when specific trigger phrases appear. Because LoRA adapters are
+  small, easily shared, and perceived as "just fine-tuning weights," they receive less
+  security scrutiny than full models. An adapter using pickle serialization compounds the
+  risk by enabling arbitrary code execution during loading in addition to inference-time
+  backdoors.
+
+references:
+  - https://arxiv.org/abs/2310.13828
+  - https://arxiv.org/abs/2305.18292
+  - https://huggingface.co/docs/peft/main/en/conceptual_guides/lora
+
+author: chainwarden
+tags: [lora, adapter-poisoning, backdoor, fine-tuning, supply-chain, ai-model]

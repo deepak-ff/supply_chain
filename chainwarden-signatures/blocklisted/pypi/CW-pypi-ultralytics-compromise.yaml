@@ -1,0 +1,25 @@
+id: CW-pypi-ultralytics-compromise
+name: ultralytics compromised — cryptominer via GitHub Actions injection
+
+type: blocklisted_package
+ecosystem: pypi
+severity: CRITICAL
+
+package: ultralytics
+version_range: ">=8.3.41,<=8.3.42"
+
+description: |
+  In December 2024, the popular ultralytics YOLO computer vision library was
+  compromised through a sophisticated attack on its GitHub Actions CI/CD pipeline.
+  Attackers exploited a known vulnerability in the build process to inject malicious
+  code into PyPI releases 8.3.41 and 8.3.42. The compromised versions contained
+  a cryptominer (XMRig) that was downloaded and executed on installation. The package
+  has over 50 million total downloads. Clean version 8.3.43 was released promptly.
+
+cve: ~
+references:
+  - https://blog.yossarian.net/2024/12/06/zizmor-ultralytics-injection
+  - https://www.reversinglabs.com/blog/supply-chain-attack-ultralytics-ai-model
+
+author: chainwarden
+tags: [ci-cd-compromise, cryptominer, github-actions, build-pipeline]

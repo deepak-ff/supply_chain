@@ -1,0 +1,21 @@
+id: CW-npm-nx-ai-weaponization
+name: Nx AI-weaponized credential theft
+type: blocklisted_package
+ecosystem: npm
+severity: CRITICAL
+package: nx
+version_range: "=21.5.0||=20.9.0||=20.10.0||=21.6.0||=20.11.0||=21.7.0||=21.8.0||=20.12.0"
+description: |
+  On August 26-27, 2025, eight malicious Nx releases were published via a
+  compromised npm token stolen through a flawed GitHub Actions workflow. The
+  postinstall script (telemetry.js) weaponized local AI coding agents (Claude
+  Code with --dangerously-skip-permissions, Gemini CLI with --yolo) to
+  inventory sensitive files. The payload harvested GitHub tokens, npm tokens,
+  SSH keys, .env files, and crypto wallet artifacts, then exfiltrated data
+  via attacker-created GitHub repositories. Also appended shutdown commands
+  to shell configs. Live for ~5 hours before removal.
+cve: ~
+references:
+  - https://snyk.io/blog/weaponizing-ai-coding-agents-for-malware-in-the-nx-malicious-package/
+author: chainwarden
+tags: [supply-chain, npm, ai-weaponization, credential-theft, nx, github-actions]

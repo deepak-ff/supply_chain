@@ -1,0 +1,154 @@
+version: 2
+
+project_name: chainwarden
+
+before:
+  hooks:
+    - go mod tidy
+
+builds:
+  - id: cwctl
+    main: ./cmd/cwctl/
+    binary: cwctl
+    env:
+      - CGO_ENABLED=0
+    goos:
+      - linux
+      - darwin
+      - windows
+    goarch:
+      - amd64
+      - arm64
+    ignore:
+      - goos: windows
+        goarch: arm64
+    ldflags:
+      - -s -w
+      - -X main.version={{.Version}}
+      - -X main.commit={{.Commit}}
+      - -X main.buildTime={{.Date}}
+      - -X github.com/deepak-ff/supply_chain/internal/license.publicKeyHex={{.Env.CW_LICENSE_PUBLIC_KEY}}
+
+  - id: cw-agent
+    main: ./cmd/cw-agent/
+    binary: cw-agent
+    env:
+      - CGO_ENABLED=0
+    goos:
+      - linux
+      - darwin
+      - windows
+    goarch:
+      - amd64
+      - arm64
+    ignore:
+      - goos: windows
+        goarch: arm64
+    ldflags:
+      - -s -w
+      - -X main.version={{.Version}}
+      - -X main.commit={{.Commit}}
+      - -X main.buildTime={{.Date}}
+      - -X github.com/deepak-ff/supply_chain/internal/license.publicKeyHex={{.Env.CW_LICENSE_PUBLIC_KEY}}
+
+  - id: intel-agent
+    main: ./cmd/intel-agent/
+    binary: intel-agent
+    env:
+      - CGO_ENABLED=0
+    goos:
+      - linux
+      - darwin
+      - windows
+    goarch:
+      - amd64
+      - arm64
+    ignore:
+      - goos: windows
+        goarch: arm64
+    ldflags:
+      - -s -w
+      - -X main.version={{.Version}}
+      - -X main.commit={{.Commit}}
+      - -X main.buildTime={{.Date}}
+      - -X github.com/deepak-ff/supply_chain/internal/license.publicKeyHex={{.Env.CW_LICENSE_PUBLIC_KEY}}
+
+archives:
+  - id: default
+    formats:
+      - tar.gz
+    format_overrides:
+      - goos: windows
+        formats:
+          - zip
+    name_template: "{{ .ProjectName }}_{{ .Version }}_{{ .Os }}_{{ .Arch }}"
+    files:
+      - README.md
+      - LICENSE
+
+checksum:
+  name_template: "checksums.txt"
+  algorithm: sha256
+
+changelog:
+  sort: asc
+  filters:
+    exclude:
+      - "^docs:"
+      - "^test:"
+      - "^chore:"
+      - Merge pull request
+      - Merge branch
+
+brews:
+  - name: chainwarden
+    ids:
+      - default
+    repository:
+      owner: chainwarden
+      name: homebrew-tap
+      branch: main
+      token: "{{ .Env.HOMEBREW_TAP_TOKEN }}"
+    directory: Formula
+    homepage: "https://github.com/deepak-ff/supply_chain"
+    description: "AI-powered supply chain security scanner for software packages"
+    license: "Apache-2.0"
+    install: |
+      bin.install "cwctl"
+      bin.install "cw-agent"
+      bin.install "intel-agent"
+    test: |
+      assert_match version.to_s, shell_output("#{bin}/cwctl version")
+
+release:
+  github:
+    owner: chainwarden
+    name: chainwarden
+  draft: false
+  prerelease: auto
+  extra_files:
+    - glob: dashboard-dist.tar.gz
+  name_template: "ChainWarden {{.Version}}"
+  header: |
+    ## ChainWarden {{.Version}}
+
+    ### Install (one script — auto-detects OS, installs everything)
+    **Linux / macOS / Git Bash:**
+    ```bash
+    curl -sSfL https://raw.githubusercontent.com/deepak-ff/supply_chain/main/install.sh | bash
+    ```
+    **Windows PowerShell:**
+    ```powershell
+    irm https://raw.githubusercontent.com/deepak-ff/supply_chain/main/install.ps1 | iex
+    ```
+    Then start:
+    ```bash
+    cwctl serve    # → http://localhost:8080
+    ```
+
+    ### Docker
+    ```bash
+    docker run -d --name chainwarden -p 3000:3000 ghcr.io/deepak-ff/chainwarden:{{.Tag}}
+    ```
+
+    Or download a prebuilt binary below.

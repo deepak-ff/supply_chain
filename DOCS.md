@@ -1,0 +1,1584 @@
+# ChainWarden — Complete Documentation
+
+> Local-first AI-native Software Supply Chain Security Platform  
+> Version 2.0.0 · June 2026
+
+---
+
+## Table of Contents
+
+1. [Overview](#1-overview)
+2. [Prerequisites](#2-prerequisites)
+3. [Installation](#3-installation)
+4. [Configuration](#4-configuration)
+5. [CLI Quick Reference — cwctl](#5-cli-quick-reference--cwctl)
+6. [CLI Quick Reference — cw-agent](#6-cli-quick-reference--cw-agent)
+7. [CLI Quick Reference — intel-agent](#7-cli-quick-reference--intel-agent)
+8. [Local Project Scanning](#8-local-project-scanning)
+9. [Scan Output Modes](#9-scan-output-modes)
+10. [Inline Remediation Hints](#10-inline-remediation-hints)
+11. [Monitor Mode](#11-monitor-mode)
+12. [System Audit Mode](#12-system-audit-mode)
+13. [SARIF Output for CI](#13-sarif-output-for-ci)
+14. [Doctor / Self-diagnostic Mode](#14-doctor--self-diagnostic-mode)
+15. [Debug Command](#15-debug-command)
+16. [Config Command](#16-config-command)
+17. [Web Dashboard](#17-web-dashboard)
+18. [Docker Profiles](#18-docker-profiles)
+19. [Test Environments](#19-test-environments)
+20. [Vulnerable Packages for Testing](#20-vulnerable-packages-for-testing)
+21. [Full Walkthrough Examples](#21-full-walkthrough-examples)
+22. [Troubleshooting](#22-troubleshooting)
+24. [Policy-as-Code](#24-policy-as-code)
+25. [Risk Score](#25-risk-score)
+25b. [Dynamic Trust Score](#25b-dynamic-trust-score)
+26. [Webhook Notifications](#26-webhook-notifications)
+27. [Product Modes](#27-product-modes)
+28. [Trust & Privacy](#28-trust--privacy)
+29. [Competitive Landscape](#29-competitive-landscape)
+
+---
+
+## 1. Overview
+
+ChainWarden is a CLI-first supply chain security platform that covers:
+
+| Capability | What it does |
+|-----------|-------------|
+| **Local project scan** | `cwctl scan .` — finds all manifests, scans every pinned dep |
+| **Remote package scan** | `cwctl scan npm/lodash@4.17.20` — dot-notation or explicit flags |
+| **Inline fix hints** | Every finding shows the exact safe version to upgrade to |
+| **Output modes** | `--compact`, `--summary`, `--quiet`, `--severity`, `--only-fixable` |
+| **SARIF export** | `--format=sarif` for GitHub Code Scanning / CI integration |
+| **Live monitor** | `cwctl monitor --watch .` — re-scans on manifest change, diffs findings |
+| **System audit** | `cwctl audit system` — scans npm globals, pip globals, cargo bins, Go bins |
+| **Self-diagnostic** | `cwctl doctor` — checks tools, API key, signatures, disk space |
+| **Debug report** | `cwctl debug` — collects diagnostics for bug reports |
+| **Config system** | `cwctl config show/set/init` — `~/.chainwarden/config.yaml` |
+| **Hermetic build** | Downloads + SHA256-verifies packages with zero network after fetch |
+| **Multi-engine scan** | Grype + OSV + Semgrep + Trivy + Behavioral + Malware + AI model + MCP |
+| **AI advisory** | AI-powered plain-English advisories with risk scoring |
+| **Autonomous patch** | AI agent reads manifests and proposes/applies upgrades |
+| **SBOM** | CycloneDX 1.5 JSON/XML + SPDX 2.3 JSON/TV with AI/MCP extensions |
+| **Sigstore signing** | Ephemeral ECDSA + Rekor transparency log + SLSA v1.0 provenance |
+| **Continuous monitor** | Dependency-Track integration for ongoing CVE alerts |
+| **Community signatures** | Community-format detection signatures for known malicious packages and patterns |
+
+**Supported ecosystems:** npm · PyPI · Maven · Go · RubyGems · crates.io · HuggingFace · MCP servers · OCI
+
+---
+
+## 2. Prerequisites
+
+### Required
+
+| Tool | Version | Install |
+|------|---------|---------|
+| Go | 1.25+ | https://go.dev/dl/ |
+| Git | any | system package manager |
+| Internet access | — | package downloads + OSV API |
+
+### Optional (enhances scan coverage)
+
+| Tool | Purpose | Install |
+|------|---------|---------|
+| `grype` | CVE scanning (Grype DB) | `brew install anchore/grype/grype` |
+| `semgrep` | Static analysis | `pip install semgrep` or `brew install semgrep` |
+| `trivy` | CVE + misconfiguration scanning | `brew install trivy` |
+
+When optional tools are not installed, those scan engines are skipped and a single consolidated warning is shown at the top of the output — not once per package. Run `cwctl doctor` to see what's missing.
+
+### For AI features
+
+| Requirement | Details |
+|------------|---------|
+| AI provider API key | Required for `advisory`, `cw-agent`, `intel-agent` — see Settings for supported providers |
+
+---
+
+## 3. Installation
+
+### Go install (recommended)
+
+```bash
+go install github.com/deepak-ff/supply_chain/cmd/cwctl@latest
+go install github.com/deepak-ff/supply_chain/cmd/cw-agent@latest
+go install github.com/deepak-ff/supply_chain/cmd/intel-agent@latest
+```
+
+### Homebrew
+
+```bash
+brew tap deepak-ff/supply_chain
+brew install chainwarden
+```
+
+### Curl installer
+
+```bash
+curl -sSfL https://raw.githubusercontent.com/deepak-ff/supply_chain/main/install.sh | bash
+```
+
+Optional env vars for the installer:
+```bash
+CHAINWARDEN_VERSION=v0.1.0 bash install.sh   # pin a version
+INSTALL_DIR=$HOME/.local/bin bash install.sh    # custom install directory
+CHAINWARDEN_INSTALL_MODE=full bash install.sh # set install mode (see below)
+CHAINWARDEN_LOCAL_BUNDLE=/path/to/bundle.tar.gz bash install.sh  # air-gapped CI
+```
+
+**Install modes** (`CHAINWARDEN_INSTALL_MODE`):
+
+| Mode | Behaviour |
+|------|-----------|
+| `auto` *(default)* | Tries GitHub release download first; falls back to local source build on network failure (5s probe timeout) |
+| `local` | Builds from source using local Go toolchain (`go build`) |
+| `offline` | Uses pre-built binaries from `./bin/` — no network required |
+| `minimal` | Installs `cwctl` only (no agent binaries) |
+| `full` | Installs all binaries + Cosign signatures + npm dashboard dependencies |
+| `dev` | `full` + starts docker compose dev stack after install |
+
+All curl calls in the installer include retry logic (3 attempts) and a 30s timeout. Network failures produce a clear error message and fall back gracefully.
+
+### Build from source
+
+```bash
+git clone https://github.com/deepak-ff/supply_chain
+cd chainwarden
+bash scripts/bootstrap.sh   # validates Go ≥1.25, Node ≥20, optional tools; runs go build + npm ci
+make build                  # → bin/cwctl  bin/cw-agent  bin/intel-agent
+./bin/cwctl doctor
+```
+
+### First run — download signatures
+
+```bash
+cwctl update
+# Updated: +24 signatures (total: 24)
+```
+
+This downloads the latest community detection signatures. Run it before your first scan and regularly to stay current. Running `cwctl` from inside a git clone of this repo already loads the same 24 signatures automatically from `signatures/` — `cwctl update` is for picking up newer ones published after your clone.
+
+---
+
+## 4. Configuration
+
+### Environment variables
+
+| Variable | Required | Description |
+|----------|----------|-------------|
+| AI provider key | For AI features | Set the API key for your chosen provider (see Settings) |
+| `DATABASE_URL` | For server mode | PostgreSQL connection string |
+| `REDIS_URL` | For server mode | Redis connection string |
+| `MINIO_ENDPOINT` | For server mode | MinIO host:port |
+| `MINIO_ACCESS_KEY` | For server mode | MinIO access key (default: `minioadmin`) |
+| `MINIO_SECRET_KEY` | For server mode | MinIO secret key (default: `minioadmin`) |
+| `CHAINWARDEN_API_URL` | Optional | API URL override (default: `http://localhost:8080`) |
+| `NO_COLOR` | Optional | Disable ANSI color output |
+
+Set for current session:
+```bash
+export CW_AI_PROVIDER=your-provider
+```
+
+### Config file
+
+ChainWarden stores persistent config in `~/.chainwarden/config.yaml`. Create it with:
+
+```bash
+cwctl config init
+```
+
+Default contents:
+```yaml
+api_url: http://localhost:8080
+scan:
+  workers: 4
+  timeout: 10m
+  fail_on: ""
+  min_severity: ""
+signing:
+  rekor_url: ""
+```
+
+Manage with:
+```bash
+cwctl config show
+cwctl config set scan.workers=8
+cwctl config set scan.fail_on=high
+cwctl config set api_url=http://my-api:8080
+```
+
+Valid config keys: `api_url` · `scan.workers` · `scan.timeout` · `scan.fail_on` · `scan.min_severity` · `signing.rekor_url`
+
+### Local data directory
+
+```
+~/.chainwarden/
+├── signatures.json    ← community detection signatures (cwctl update writes here)
+├── config.yaml        ← user config (cwctl config init writes here)
+└── .initialized       ← marker file, set after first run
+```
+
+---
+
+## 5. CLI Quick Reference — cwctl
+
+### Trust (behavioural drift)
+
+```bash
+cwctl trust list                                     # every tracked package, worst trust first
+cwctl trust show npm:express                         # baseline + deviations for one package
+cwctl trust from-scan scan.json --package npm:express  # learn from `cwctl scan --format json`
+cwctl trust record npm:left-pad --version 1.3.0 --network 1 --hooks 0
+cwctl trust simulate --scenario hijack               # demo the engine with no data
+cwctl trust forget npm:express                       # delete a ledger
+```
+
+Flags: `--json`, `--fail-on <amber|red>` (CI gate), `--dir <path>` (ledger location,
+default `~/.chainwarden/trust`, override with `$CW_TRUST_DIR`), `--state <state>` (filter `list`).
+
+Full model: [Section 25b](#25b-dynamic-trust-score) and [docs/TRUST_SCORE.md](docs/TRUST_SCORE.md).
+
+### Scan
+
+```bash
+# Local project scan (finds all manifests recursively)
+cwctl scan .
+cwctl scan ./my-project
+
+# Dot-notation (ecosystem/package@version)
+cwctl scan npm/lodash@4.17.20
+cwctl scan pypi/PyYAML@5.3.1
+cwctl scan maven/org.apache.logging.log4j:log4j-core@2.14.1
+
+# Explicit flags
+cwctl scan --recipe=npm --package=lodash --version=4.17.20
+
+# Output modes
+cwctl scan . --compact                # one line per finding
+cwctl scan . --summary                # summary table only
+cwctl scan . --quiet                  # no output (CI — check exit code)
+
+# Filtering
+cwctl scan . --severity=high          # only HIGH+ findings
+cwctl scan . --ecosystem=npm          # only npm packages
+cwctl scan . --only-fixable           # only findings with a known fix version
+
+# CI flags
+cwctl scan . --fail-on=high           # exit 2 if any HIGH+ finding
+cwctl scan . --format=sarif           # SARIF 2.1.0 output
+cwctl scan . --format=json            # JSON output
+
+# Performance
+cwctl scan . --workers=8 --timeout=5m
+
+# Remote host scan (SSH — read-only, nothing written to remote)
+cwctl scan --remote user@host                              # scan remote $HOME
+cwctl scan --remote deploy@10.0.4.12 --remote-path /opt/app  # scan specific directory
+cwctl scan --remote deploy@10.0.4.12 --remote-port 2222   # custom SSH port
+cwctl scan --remote user@host --identity ~/.ssh/id_ed25519 # explicit key file
+cwctl scan --remote user@host --remote-max-depth 5         # limit directory depth
+cwctl scan --remote user@host --accept-new-host-key        # trust unknown host (first connect)
+cwctl scan --remote user@host --keep-temp                  # keep pulled manifests locally (debug)
+
+# Remote + output/filter flags combine freely
+cwctl scan --remote user@host --severity=high --format=json
+cwctl scan --remote user@host --fail-on=high --compact
+```
+
+### Patch
+
+```bash
+cwctl patch .                          # delegates to cw-agent --apply
+cwctl patch . npm/lodash@4.17.20       # patch one specific package
+```
+
+### Monitor
+
+```bash
+cwctl monitor .                        # one-shot scan and exit
+cwctl monitor --watch .                # watch for manifest changes, re-scan on change
+cwctl monitor --watch . --interval=5s  # custom poll interval
+```
+
+### Audit
+
+```bash
+cwctl audit system    # scan all globally installed packages
+```
+
+### Doctor
+
+```bash
+cwctl doctor
+```
+
+### Debug
+
+```bash
+cwctl debug           # diagnostic report (human-readable)
+cwctl debug --json    # JSON output for tooling
+```
+
+### Config
+
+```bash
+cwctl config show
+cwctl config set key=value
+cwctl config init
+```
+
+### Advisory (requires API key)
+
+```bash
+cwctl advisory npm/lodash@4.17.20
+cwctl advisory npm/lodash@4.17.20 --json
+```
+
+### SBOM
+
+```bash
+cwctl sbom npm/chalk@5.3.0
+cwctl sbom npm/chalk@5.3.0 --format=spdx-json --out=chalk.spdx.json
+```
+
+SBOM formats: `cyclonedx-json` (default) · `cyclonedx-xml` · `spdx-json` · `spdx-tv`
+
+> **Banner suppression:** `cwctl sbom .` (and any `cwctl sbom` invocation without `--out`) automatically suppresses the ASCII banner because SBOM output is machine-readable JSON. The banner is only printed when `--out <file>` is present (output goes to a file, not stdout).
+
+### Sign + Verify
+
+```bash
+# Sign (produces attestation.json)
+cwctl sign npm/chalk@5.3.0 --out=chalk.att.json
+
+# Verify
+SHA=$(jq -r '.sha256' chalk.att.json)
+cwctl verify --attestation=chalk.att.json --sha256=$SHA
+```
+
+### Update signatures
+
+```bash
+cwctl update                          # alias for: cwctl intel update
+cwctl intel update                    # pull latest community signatures
+cwctl intel list                      # list loaded signatures
+cwctl intel list --type=malware_pattern --ecosystem=npm
+```
+
+### Community signature toolkit — cwctl intel
+
+```bash
+# Create a new signature (interactive wizard — 5 questions, writes YAML)
+cwctl intel new
+cwctl intel new --out=./CW-npm-my-sig.yaml
+
+# Validate a signature YAML (schema + regex + required fields)
+cwctl intel validate ./CW-npm-my-sig.yaml
+cwctl intel validate signatures/**/*.yaml   # glob — validate all
+
+# Test a signature against a live package
+cwctl intel test ./CW-npm-my-sig.yaml \
+  --ecosystem=npm --package=evil-pkg --version=1.0.0
+# Downloads real package, extracts, runs relevant engines, shows MATCH/NO MATCH
+
+# List loaded signatures
+cwctl intel list
+cwctl intel list --type=blocklisted_package
+cwctl intel list --ecosystem=pypi
+
+# Pull community bundle
+cwctl intel update
+cwctl intel update --url=https://your-mirror.example.com/signatures.json
+```
+
+Signature types:
+
+| Type | Required field | What it catches |
+|---|---|---|
+| `blocklisted_package` | `package:` | Confirmed malicious package versions |
+| `typosquatting_target` | `target:` | Popular packages to monitor for name-squatting |
+| `behavioral_rule` | `rule:` | Dangerous install script patterns |
+| `malware_pattern` | `pattern:` | Regex matching malicious code |
+| `mcp_injection_pattern` | `pattern:` | Prompt injection in MCP tool descriptions |
+| `pickle_rule` | `rule:` | Unsafe AI model configurations |
+
+### Validate a community signature (legacy)
+
+```bash
+cwctl sig validate ./my-signature.json   # legacy JSON format still supported
+```
+
+### Version
+
+```bash
+cwctl version
+# ChainWarden v0.1.0 (commit: abc1234, built: 2026-05-24T10:00:00Z)
+```
+
+### Help
+
+```bash
+cwctl help
+cwctl help scan
+```
+
+---
+
+## 6. CLI Quick Reference — cw-agent
+
+The autonomous patch agent reads manifest files and proposes (or applies) version upgrades.
+
+```bash
+# Dry run — shows proposed changes, writes nothing
+cw-agent --recipe=npm --package=lodash --version=4.17.20 \
+  --project-dir=./my-project
+
+# Apply changes to manifest files
+cw-agent --recipe=npm --package=lodash --version=4.17.20 \
+  --project-dir=./my-project --apply
+
+# JSON output
+cw-agent --recipe=npm --package=lodash --version=4.17.20 --json
+```
+
+**Key flags:**
+
+| Flag | Default | Description |
+|------|---------|-------------|
+| `--apply` | false | Write changes to manifest files |
+| `--project-dir` | `.` | Directory containing manifests |
+| `--max-turns` | 10 | Max AI agent turns |
+| `--api-key` | env auto-detect | AI provider API key |
+
+**What the agent does:**
+1. Downloads and SHA256-verifies the package
+2. Runs all scan engines in parallel
+3. Generates a security advisory
+4. Reads your manifests, plans the safest upgrade
+5. Reviews the plan
+6. If `--apply`: writes file changes
+
+---
+
+## 7. CLI Quick Reference — intel-agent
+
+Polls OSV, OpenSSF malicious-packages, and npm/PyPI popularity feeds. Generates community detection signatures and writes them to the local signature store.
+
+```bash
+# One-shot run
+intel-agent --ecosystems=npm,pypi,go
+
+# Continuous daemon (default in enterprise docker-compose)
+intel-agent --loop --interval=6h
+
+# Dry run (print without saving)
+intel-agent --dry-run --verbose
+
+# Skip AI generation (feeds only)
+intel-agent --skip-ai
+```
+
+---
+
+## 8. Local Project Scanning
+
+`cwctl scan .` is the recommended workflow for scanning your own codebase.
+
+### What it scans
+
+| Manifest file | Ecosystem |
+|--------------|-----------|
+| `package.json` | npm (dependencies + devDependencies + peerDependencies) |
+| `requirements.txt` | pypi |
+| `pyproject.toml` | pypi |
+| `go.mod` | go |
+| `Cargo.toml` | crates |
+| `pom.xml` | maven |
+| `Gemfile` | rubygems |
+
+### Skipped directories
+
+`node_modules` · `vendor` · `.git` · `__pycache__` · `target` · `.tox` · `dist` · `build`
+
+### Version handling
+
+- Pinned versions (e.g. `"lodash": "4.17.20"`) → scanned
+- Range-only (e.g. `"requests>=2.26"`) → shown as `[SKIP]` with original string
+- Prefix stripped (e.g. `"^4.17.21"` → scanned as `4.17.21`)
+
+### Missing tool deduplication
+
+When optional scan engines (grype, semgrep, trivy) are not installed, a **single** consolidated warning is printed at the top of the output:
+
+```
+[WARN] 2 scan engine(s) unavailable: grype, semgrep
+       Install missing tools for better coverage — run: cwctl doctor
+```
+
+This replaces the old behavior of repeating the warning for every scanned package.
+
+### Example output
+
+```
+ChainWarden — Local Project Scan
+  Project: /Users/alice/myapp
+
+  [WARN] 1 scan engine(s) unavailable: grype
+         Install missing tools for better coverage — run: cwctl doctor
+
+  package.json (npm)
+    [CRITICAL] lodash@4.17.20   CVE-2021-23337 — Command injection via template()
+               → Fix: upgrade to 4.17.21   (run: cwctl patch . to apply)
+    [HIGH]     axios@0.21.1     GHSA-42xw-2xvc — SSRF vulnerability
+               → Fix: upgrade to 0.21.2
+    [SKIP]     react@^18.0.0    version range — install to pin
+
+  go.mod (go)
+    [MEDIUM]   github.com/gin-gonic/gin@1.6.3   GHSA-... — HTTP smuggling
+               → Fix: upgrade to 1.9.0
+    [LOW]      golang.org/x/crypto@0.0.0-...    CVE-2020-29652
+
+  Summary: 47 packages scanned · 3 findings (1 CRITICAL · 1 HIGH · 1 MEDIUM)
+  Run 'cwctl advisory npm/lodash@4.17.20' for AI remediation advice.
+```
+
+### Concurrency
+
+Local scans run packages concurrently. Default workers: 4. Override with `--workers=8`.
+
+---
+
+## 9. Scan Output Modes
+
+| Flag | Description |
+|------|-------------|
+| *(default)* | Full output: banner, per-manifest findings with descriptions |
+| `--compact` | One line per package with grouped severity counts: `axios@1.3.4  — 19 findings [CRIT:1 HIGH:1 MED:17]  fix: >=1.12.0` |
+| `--summary` | Summary severity table only — no individual findings |
+| `--quiet` | No output at all; use exit code to determine pass/fail |
+| `--severity=high` | Filter: only show HIGH and CRITICAL findings. Note: unknown/empty severity values are always excluded when this flag is set (see §9 note below) |
+| `--ecosystem=npm` | Filter: only packages from the specified ecosystem (local scan) |
+| `--only-fixable` | Filter: only findings where a fix version is known; also excludes INFORMATIONAL findings |
+| `--verbose` | Expand all grouped findings (default: top 3 per package) |
+| `--debug` | Show engine errors and raw scan metadata |
+| `--prod-only` | Exclude devDependencies from local project scan |
+| `--exclude-dev` | Alias for `--prod-only` |
+| `--ci` | CI mode shortcut: `--quiet --format=sarif --fail-on=high` combined |
+| `--executive` | Executive summary: severity table only |
+| `--no-banner` | Suppress the ASCII logo banner |
+| `--no-color` | Disable ANSI color output |
+| `--fail-on=high` | Exit code 2 if any finding meets or exceeds this severity |
+| `--format=sarif` | SARIF 2.1.0 JSON — for GitHub Code Scanning |
+| `--format=json` | Machine-readable JSON with full finding metadata |
+
+Compact mode example:
+```
+lodash@4.17.20  — 2 findings [CRIT:1 HIGH:1]  fix: >=4.17.21
+axios@0.21.1    — 1 finding  [HIGH:1]          fix: >=0.21.2
+Summary: 47 scanned · 3 findings (1 CRITICAL · 1 HIGH · 1 MEDIUM)
+```
+
+> **Note — `--severity` filtering:** `severityOrd()` returns `-1` for unknown or empty severity values. This means findings with no recognized severity level are always excluded when `--severity` is set, rather than accidentally passing through. If you need to see all findings including INFORMATIONAL, omit the `--severity` flag or use `--severity=informational` explicitly.
+
+---
+
+## 10. Inline Remediation Hints
+
+Every finding that has a known safe version shows the upgrade target inline:
+
+```
+[CRITICAL] lodash@4.17.20   CVE-2021-23337 — Command injection via template()
+           → Fix: upgrade to 4.17.21   (run: cwctl patch . to apply)
+```
+
+The fix version is sourced from:
+- **OSV API** — `affected[].ranges[].events[].fixed`
+- **Grype** — `vulnerability.fix.versions[]`
+
+If no fix is available (zero-day), the hint is omitted. Use `--only-fixable` to hide unfixed findings in CI.
+
+---
+
+## 11. Monitor Mode
+
+Watch a project directory for manifest changes and re-scan automatically:
+
+```bash
+cwctl monitor --watch .
+cwctl monitor --watch /path/to/project --interval=5s --workers=8
+```
+
+**How it works:**
+- Polls manifest file `mtime` at the configured interval (default: 3s)
+- On change: re-runs a full local scan
+- Diffs findings against the previous scan
+- Prints `NEW` (red) or `RESOLVED` (green) for each changed finding, with a `[HH:MM:SS]` timestamp and the affected package name on every diff line
+
+```
+  Watching /Users/alice/myapp for manifest changes (poll interval: 3s)...
+  Press Ctrl+C to stop.
+
+  [14:32:01] Initial scan: 2 finding(s)
+  [14:32:15] package.json changed — rescanning...
+  [14:32:17] NEW     [14:32:17] express@4.19.2  [HIGH] CVE-2024-29041 — Open redirect
+  [14:32:17] 1 new, 0 resolved
+  [14:35:40] package.json changed — rescanning...
+  [14:35:42] RESOLVED [14:35:42] express@4.19.2  CVE-2024-29041 — Open redirect
+  [14:35:42] 0 new, 1 resolved
+```
+
+Without `--watch`, `cwctl monitor .` runs a one-shot scan and exits (same as `cwctl scan .`).
+
+---
+
+## 12. System Audit Mode
+
+Enumerate and scan all globally installed packages:
+
+```bash
+cwctl audit system
+```
+
+**Sources scanned:**
+
+| Source | Command used |
+|--------|-------------|
+| npm globals | `npm -g list --json --depth=0` |
+| pip globals | `pip list --format=json` |
+| cargo installed bins | `cargo install --list` |
+| Go bins | `$GOPATH/bin` directory listing |
+
+**Example output:**
+
+```
+  Auditing globally installed packages...
+
+  npm globals (12 packages)
+    [HIGH]  nodemon@2.0.20       CVE-2022-... — Prototype pollution
+    [PASS]  typescript@5.4.5
+
+  pip globals (34 packages)
+    [MEDIUM] Pillow@9.5.0        CVE-2023-44271 — Uncontrolled resource consumption
+    [PASS]  requests@2.31.0
+
+  cargo bins (5 packages)
+    [PASS]  ripgrep@14.1.0
+
+  Go bins ($GOPATH/bin) (8 packages)
+    [SKIP]  staticcheck  — version not parseable
+
+  System Audit Summary: 59 packages audited · 2 finding(s) (1 HIGH · 1 MEDIUM)
+```
+
+---
+
+## 12b. Signature Statistics — `cwctl stats`
+
+View a breakdown of the locally loaded detection signatures:
+
+```bash
+cwctl stats                        # formatted table (human-readable)
+cwctl stats --json                 # JSON object (machine-readable)
+cwctl stats --store=./custom.json  # use a custom signature store path
+```
+
+**Example output:**
+
+```
+ChainWarden — Detection Signature Statistics
+──────────────────────────────────────────────
+  Total signatures:    1 247
+  Last updated:        2026-05-24 09:12:43
+
+  Breakdown by type:
+    malware_pattern          423
+    typosquat_target         318
+    behavioral_rule          201
+    blocklisted_package      187
+    mcp_injection_pattern     68
+    pickle_rule               50
+
+  Ecosystems covered:  npm · pypi · go · rubygems · crates · huggingface · mcp
+```
+
+**`--json` output:**
+
+```json
+{
+  "total": 1247,
+  "last_updated": "2026-05-24T09:12:43Z",
+  "by_type": {
+    "malware_pattern": 423,
+    "typosquat_target": 318,
+    "behavioral_rule": 201,
+    "blocklisted_package": 187,
+    "mcp_injection_pattern": 68,
+    "pickle_rule": 50
+  },
+  "ecosystems": ["npm","pypi","go","rubygems","crates","huggingface","mcp"]
+}
+```
+
+The banner also shows "Loaded N detection signatures" immediately after the logo whenever signatures are present.
+
+---
+
+## 13. SARIF Output for CI
+
+Output findings in SARIF 2.1.0 format for upload to GitHub Code Scanning:
+
+```bash
+cwctl scan . --format=sarif > results.sarif
+cwctl scan npm/lodash@4.17.20 --format=sarif | jq '.runs[0].results | length'
+```
+
+**Severity mapping:**
+
+| ChainWarden | SARIF level |
+|---------------|-------------|
+| CRITICAL / HIGH | `error` |
+| MEDIUM | `warning` |
+| LOW | `note` |
+| INFORMATIONAL | `none` |
+
+**GitHub Actions integration:**
+
+```yaml
+- name: Scan project
+  run: cwctl scan . --fail-on=high --format=sarif > results.sarif
+
+- name: Upload to GitHub Code Scanning
+  uses: github/codeql-action/upload-sarif@v3
+  if: always()
+  with:
+    sarif_file: results.sarif
+```
+
+---
+
+## 14. Doctor / Self-diagnostic Mode
+
+```bash
+cwctl doctor
+```
+
+### What it checks
+
+| Check | Pass condition | Details |
+|-------|---------------|---------|
+| `grype` | Binary in PATH | Reports version |
+| `semgrep` | Binary in PATH | Reports version |
+| `trivy` | Binary in PATH | Reports version |
+| AI provider key | Env var set | Warn if missing (AI features unavailable) |
+| `signatures` | `~/.chainwarden/signatures.json` exists + non-empty | Reports count |
+| `disk space` | ≥500 MB free on `$HOME` filesystem | Reports free space |
+| `Go version` | go binary in PATH | Reports version |
+| `API server` | `$CHAINWARDEN_API_URL` responds to `/healthz` | Only relevant in server mode |
+| `signatures freshness` | `~/.chainwarden/signatures.json` mtime ≤ 7 days | Warns (non-blocking) if stale — run `cwctl update` |
+| `Docker` | `docker` binary in PATH and daemon reachable | Non-blocking warn; required for hermetic builds |
+| `Node.js version` | `node --version` ≥ 20 | Required for dashboard development |
+| `dashboard dist` | `./dashboard/dist/` directory exists + non-empty | Warns if dashboard not built — run `make build-dashboard` |
+| `config YAML` | `~/.chainwarden/config.yaml` parses without error | Warns on malformed YAML — run `cwctl config init` to reset |
+
+### Auto-repair (`--fix`)
+
+```bash
+cwctl doctor --fix
+```
+
+`--fix` attempts to automatically resolve failed checks. Before running each repair command it prints the exact command it will execute:
+
+```
+[FIX] Running: brew install anchore/grype/grype
+[FIX] Running: cwctl update
+[FIX] Running: cwctl config init
+```
+
+### Exit codes
+
+- `0` — all checks pass or warn only
+- `1` — one or more checks failed
+
+---
+
+## 15. Debug Command
+
+Collect diagnostics for a bug report:
+
+```bash
+cwctl debug           # human-readable
+cwctl debug --json    # JSON for tooling
+```
+
+**Output includes:**
+- Version, commit hash, build time
+- OS and architecture
+- Go runtime version
+- Config file existence and size
+- Signature store count and last-modified date
+- API URL and reachability status
+- Tool locations (grype, semgrep, trivy)
+- AI provider key presence (masked)
+- Disk space free
+
+---
+
+## 16. Config Command
+
+Manage `~/.chainwarden/config.yaml`:
+
+```bash
+cwctl config show                       # print current config with file path
+cwctl config set scan.workers=8         # update a key
+cwctl config set scan.fail_on=high      # always fail on high in this environment
+cwctl config set api_url=http://my-api  # point to a remote API
+cwctl config init                       # write defaults to config file
+```
+
+**Valid keys:**
+
+| Key | Type | Default | Description |
+|-----|------|---------|-------------|
+| `api_url` | string | `http://localhost:8080` | ChainWarden API base URL |
+| `scan.workers` | int | `4` | Concurrent scan workers |
+| `scan.timeout` | duration | `10m` | Scan timeout per cycle |
+| `scan.fail_on` | string | `""` | Minimum severity to exit 2: `critical`/`high`/`medium`/`low` |
+| `scan.min_severity` | string | `""` | Filter output to this severity and above |
+| `signing.rekor_url` | string | `""` | Custom Rekor transparency log URL |
+
+CLI flags always override config file values.
+
+---
+
+## 17. Web Dashboard
+
+### Start the dashboard
+
+**Minimal (API only):**
+```bash
+make up                              # postgres + redis + api
+cd dashboard && npm ci && npm run dev
+# Open http://localhost:3000
+```
+
+**Full dev stack:**
+```bash
+make dev
+```
+
+**Makefile shortcuts:**
+
+| Command | Description |
+|---------|-------------|
+| `make up` | Start minimal docker stack |
+| `make down` | Stop all docker services |
+| `make logs` | Tail API container logs |
+| `make health` | Check API reachability |
+| `make dev` | Start full dev stack + dashboard |
+
+### API offline banner
+
+If the API is not running when you open the dashboard, an amber banner appears at the top:
+
+```
+ChainWarden API offline — Start the API: make api   OR   docker compose -f docker-compose.minimal.yml up -d
+```
+
+The banner auto-dismisses when the API comes back online (polls every 15s).
+
+### Pages
+
+The dashboard ships **28 routes** — all connected to live backend data:
+
+| Page | What it does |
+|---|---|
+| **Dashboard** | SOC-style overview — risk heatmap, activity feed, 30-day recharts timeline |
+| **Scan** | **Tab 1:** registry package scan — downloads real artifact, runs all 8 engines, shows engine status bar. **Tab 2:** drag-drop project archive (`.tar.gz`/`.zip`) for full scan |
+| **Inventory** | Paginated package list with search and ecosystem filter |
+| **Advisory** | AI-generated security advisory per package (needs AI provider API key) |
+| **SBOM** | Generate and download CycloneDX / SPDX in 4 formats |
+| **Sign / Verify** | Sigstore keyless signing + attestation verification |
+| **Monitor** | Live SBOM monitoring — auto-reconnect with exponential backoff |
+| **Intelligence** | Detection signatures list + manual refresh trigger |
+| **Risks** | Risk heatmap with A–F grades, sortable |
+| **Policy** | Policy rules display + last evaluation status |
+| **Alerts** | Real-time security alerts from DB — severity filter + one-click dismiss |
+| **Allowlist** | Add/remove trusted packages that bypass policy enforcement (full CRUD) |
+| **Projects** | Risk posture grouped by package |
+| **Dependency Drift** | 30-day vulnerability trend chart |
+| **AI Agents** | Live SSE feed of autonomous patch agent sessions — session status badge, event log, clear button |
+| **Webhooks** | Configure Slack/Discord alerts + test delivery |
+| **CI/CD** | GitHub Actions, GitLab CI, Makefile integration snippets |
+| **System Audit** | brew / gem / docker / PATH security audit |
+| **Recursive Scan** | Multi-package scan — comma-separated packages, per-package results |
+| **Exports** | SBOM format guide + generate links |
+| **AI Security** | AI supply chain threat explainer |
+| **Settings** | Config management |
+
+### Scan engine status bar
+
+Every scan result in the dashboard shows which engines ran:
+
+```
+✓ osv (3)    ✓ behavioral (1)    ✓ malware    ✗ grype (not installed)    ✗ semgrep (not installed)
+artifact downloaded — full scan
+```
+
+`✓` = ran · number = findings · `✗` = skipped with reason
+
+### File upload scan
+
+```
+Dashboard → Scan → Upload Project tab
+Drop any .tar.gz / .zip / .jar / .gem / .whl
+→ Uploads to POST /api/v1/scan/upload
+→ Extracts to temp dir
+→ Runs all 8 engines
+→ Returns findings + engine status
+```
+
+### Live agent feed
+
+`Dashboard → AI Agents` — connects to `GET /api/v1/agent/stream` (Server-Sent Events).  
+When `cwctl patch` runs, events stream in real time: `start` → `step` → `patch` → `done`.  
+No page refresh needed. Reconnects automatically on disconnect.
+
+### Theme
+
+Industrial SOC dark theme: `#0A0B0D` background · `#00FF87` green · `#FFAB40` amber · `#FF3D3D` red · JetBrains Mono for data.
+
+### Node version
+
+The dashboard requires Node 20 LTS (pinned in `.nvmrc`):
+```bash
+nvm use   # reads .nvmrc → uses Node 20
+```
+
+### API timeout
+
+All API calls in the dashboard have a 30-second AbortController timeout. Hung requests surface as `"API request timed out after 30s"` rather than spinning indefinitely.
+
+---
+
+## 18. Docker Profiles
+
+### Minimal
+
+```bash
+make up
+# postgres:5432  redis:6379  chainwarden-api:8080
+```
+
+Use for: API development, local testing, low-resource environments.
+
+### Dev
+
+```bash
+make dev
+# + minio:9000/9001  prometheus:9090  grafana:3002  chainwarden-worker
+```
+
+Use for: full local development with artifact storage and observability.
+
+### Enterprise
+
+```bash
+make docker-enterprise
+# + rekor-server:3001  trillian  dependency-track:8081  intel-agent
+```
+
+Use for: full stack with Sigstore transparency log, continuous monitoring, and automated intelligence.
+
+### Environment variables for docker
+
+```bash
+# .env file (git-ignored)
+POSTGRES_PASSWORD=devpassword
+GRAFANA_PASSWORD=admin
+```
+
+---
+
+## 19. Test Environments
+
+### Local machine (scan only — safe)
+
+Read-only operations are safe on your local machine:
+
+```bash
+cwctl scan npm/chalk@5.3.0
+cwctl sbom pypi/six@1.16.0
+cwctl sign npm/chalk@5.3.0 --out=/tmp/chalk.att.json
+```
+
+### Docker sandbox (recommended for agent testing)
+
+```bash
+docker run --rm -it \
+  golang:1.25-alpine sh
+
+# Inside container:
+go install github.com/deepak-ff/supply_chain/cmd/cwctl@latest
+go install github.com/deepak-ff/supply_chain/cmd/cw-agent@latest
+cw-agent --recipe=npm --package=lodash --version=4.17.20 \
+  --project-dir=/tmp/test-project --apply
+```
+
+### VM (full isolation for --apply testing)
+
+| Setting | Value |
+|---------|-------|
+| OS | Ubuntu 22.04 LTS |
+| RAM | 4 GB |
+| Disk | 40 GB |
+| Snapshot | Take snapshot before testing |
+
+### GitHub Codespaces
+
+`.devcontainer/devcontainer.json`:
+```json
+{
+  "image": "mcr.microsoft.com/devcontainers/go:1.25",
+  "postCreateCommand": "go install github.com/deepak-ff/supply_chain/cmd/cwctl@latest",
+  "containerEnv": {}
+}
+```
+
+---
+
+## 20. Vulnerable Packages for Testing
+
+> Run in a sandbox/VM. Do not install or execute these in production.
+
+### npm
+
+| Package | Version | CVE(s) | Type |
+|---------|---------|--------|------|
+| `lodash` | `4.17.20` | CVE-2021-23337, CVE-2020-28500 | Command injection, prototype pollution |
+| `minimist` | `1.2.5` | CVE-2021-44906 | Prototype pollution |
+| `axios` | `0.21.1` | CVE-2021-3749 | SSRF |
+| `qs` | `6.5.2` | CVE-2022-24999 | Prototype pollution |
+
+### PyPI
+
+| Package | Version | CVE(s) | Type |
+|---------|---------|--------|------|
+| `PyYAML` | `5.3.1` | CVE-2020-14343 | Arbitrary code execution |
+| `Pillow` | `8.3.1` | CVE-2021-34552 | Buffer overflow |
+| `requests` | `2.25.0` | CVE-2023-32681 | Credential leak via redirect |
+
+### Maven
+
+| Package | Version | CVE(s) | Type |
+|---------|---------|--------|------|
+| `org.apache.logging.log4j:log4j-core` | `2.14.1` | CVE-2021-44228 | **Log4Shell RCE** (CVSS 10.0) |
+| `org.springframework:spring-core` | `5.3.17` | CVE-2022-22965 | **Spring4Shell RCE** |
+
+### Go
+
+| Package | Version | CVE(s) | Type |
+|---------|---------|--------|------|
+| `github.com/gin-gonic/gin` | `v1.6.3` | GHSA-h395-qcrw-5vmq | HTTP request smuggling |
+| `golang.org/x/crypto` | `v0.0.0-20200109152110` | CVE-2020-29652 | SSH panic |
+
+### Recommended test progression
+
+```bash
+# 1. Clean package — green result
+cwctl scan npm/chalk@5.3.0
+
+# 2. Known CVEs with fix hints
+cwctl scan npm/lodash@4.17.20
+
+# 3. Famous Java CVE (Log4Shell)
+cwctl scan maven/org.apache.logging.log4j:log4j-core@2.14.1
+
+# 4. AI advisory (needs API key)
+cwctl advisory npm/lodash@4.17.20
+
+# 5. Autonomous patch agent dry-run
+mkdir /tmp/test && echo '{"dependencies":{"lodash":"4.17.20"}}' > /tmp/test/package.json
+cw-agent --recipe=npm --package=lodash --version=4.17.20 --project-dir=/tmp/test
+
+# 6. SARIF output
+cwctl scan npm/lodash@4.17.20 --format=sarif | jq '.runs[0].results | length'
+
+# 7. Monitor mode
+cwctl monitor --watch /tmp/test &
+echo '{"dependencies":{"lodash":"4.17.20","express":"4.19.2"}}' > /tmp/test/package.json
+# should see: NEW [CVE] express...
+
+# 8. System audit
+cwctl audit system
+```
+
+---
+
+## 21. Full Walkthrough Examples
+
+### Scan → SBOM → Sign → Verify (no API key)
+
+```bash
+PKG=chalk VER=5.3.0 ECO=npm
+
+cwctl scan $ECO/$PKG@$VER
+cwctl sbom $ECO/$PKG@$VER --format=cyclonedx-json --out=$PKG-sbom.json
+cwctl provenance $ECO/$PKG@$VER --out=$PKG-provenance.json
+cwctl sign $ECO/$PKG@$VER --out=$PKG-attestation.json
+SHA=$(jq -r '.sha256' $PKG-attestation.json)
+cwctl verify --attestation=$PKG-attestation.json --sha256=$SHA
+```
+
+### Full AI pipeline on a vulnerable package
+
+```bash
+mkdir /tmp/vuln-test
+cat > /tmp/vuln-test/package.json << 'EOF'
+{ "name": "test-app", "dependencies": { "lodash": "4.17.20" } }
+EOF
+
+# Scan (shows fix hint)
+cwctl scan /tmp/vuln-test
+
+# AI advisory
+cwctl advisory npm/lodash@4.17.20
+
+# Autonomous patch (dry-run first)
+cw-agent --recipe=npm --package=lodash --version=4.17.20 \
+  --project-dir=/tmp/vuln-test
+
+# Apply
+cw-agent --recipe=npm --package=lodash --version=4.17.20 \
+  --project-dir=/tmp/vuln-test --apply
+
+cat /tmp/vuln-test/package.json  # should show lodash@4.17.21
+```
+
+### CI with SARIF upload
+
+```bash
+# scan — exits 2 if HIGH+ finding, emits SARIF
+cwctl scan . --fail-on=high --format=sarif > results.sarif || true
+
+# upload to GitHub Code Scanning
+# (done by github/codeql-action/upload-sarif in the workflow)
+```
+
+### Scan local Go project with compact output
+
+```bash
+cd ~/projects/my-go-app
+cwctl scan . --compact --severity=high --fail-on=critical
+```
+
+### Audit all global tools
+
+```bash
+cwctl audit system
+# reviews npm -g, pip, cargo, and $GOPATH/bin
+```
+
+### Collect a bug report
+
+```bash
+cwctl debug --json > cw-debug.json
+# attach to GitHub issue
+```
+
+---
+
+## 22. Troubleshooting
+
+| Problem | Cause | Fix |
+|---------|-------|-----|
+| `AI provider not configured` | Missing API key | Set your provider API key (see Settings) |
+| `recipe "X" not found` | Typo | Use: `npm pypi maven go rubygems crates huggingface mcp` |
+| `grype not installed — skipped` | Binary not in PATH | `brew install anchore/grype/grype` |
+| `build failed: 404` | Package/version doesn't exist | Check on registry |
+| `rekor_verified: false` | Rekor upload failed (no internet) | Normal — local signing still works |
+| Dashboard shows amber offline banner | API not running | `make up` |
+| Dashboard shows API errors in Monitor | Same | Same |
+| `[SKIP]` in local scan | Version range (no pinned version) | Pin versions in manifest |
+| `cwctl: command not found` | Not in PATH | `export PATH=$PATH:$(go env GOPATH)/bin` |
+| Semgrep takes too long | Large package | `--timeout=20m` |
+| `conflicting replacements` in go build | `go.work` edited incorrectly | `git checkout go.work` |
+| `cwctl debug` shows config: not found | Config not initialised | `cwctl config init` |
+| `cwctl monitor` exits immediately | Missing `--watch` flag | `cwctl monitor --watch .` |
+
+---
+
+## 24. Policy-as-Code
+
+ChainWarden enforces security policy from `~/.chainwarden/policy.yaml`. Policy findings are appended after every scan with a `[POLICY]` prefix and never suppress scan results.
+
+### Default policy file
+
+```yaml
+version: 1
+fail_on: ""                 # "" | CRITICAL | HIGH | MEDIUM | LOW
+deny_packages: []           # exact package names to block
+allow_licenses: [MIT, Apache-2.0, BSD-3-Clause, BSD-2-Clause, ISC]
+max_package_age_days: 0     # 0 = disabled
+block_typosquatting: false
+block_abandoned: false
+require_signing: false
+```
+
+### Initialise and configure
+
+```bash
+cwctl policy init                          # create ~/.chainwarden/policy.yaml
+cwctl policy show                          # print current policy
+cwctl policy set fail_on=high              # block scans with high+ findings
+cwctl policy set block_typosquatting=true  # block typosquatting packages
+cwctl policy validate                      # check YAML syntax
+```
+
+### Policy finding IDs
+
+| Finding ID | Trigger | Severity |
+|-----------|---------|---------|
+| `POLICY-DENIED-PACKAGE` | Package name in `deny_packages` | CRITICAL |
+| `POLICY-TYPOSQUAT-BLOCKED` | `block_typosquatting=true` + behavioral typosquat signal | CRITICAL |
+
+### CI integration
+
+```yaml
+# .github/workflows/scan.yml
+- run: cwctl scan . --fail-on=high
+# exit code 2 = policy violated, exit code 1 = scan error, exit code 0 = clean
+```
+
+---
+
+## 25. Risk Score
+
+Every scanned package receives a 0–100 risk score and an A–F letter grade surfaced in the dashboard and (when using `--compact`) in the CLI.
+
+### Scoring model
+
+| Factor | Weight | Trigger |
+|--------|--------|---------|
+| Vulnerability | 0–40 pts | CVE severity: CRITICAL=40, HIGH=20, MEDIUM=8, LOW=3 |
+| Behavioral | 0–30 pts | Malware/behavioral findings: CRITICAL=30, HIGH=15 |
+| Supply chain | 0–20 pts | Typosquatting, dependency confusion signals |
+| Maintenance | 0–10 pts | Abandonment, extreme age signals |
+
+### Grade thresholds
+
+| Score | Grade | Meaning |
+|-------|-------|---------|
+| 0–20 | **A** | Low risk |
+| 21–40 | **B** | Moderate risk |
+| 41–60 | **C** | Elevated risk — review recommended |
+| 61–80 | **D** | High risk — action required |
+| 81–100 | **F** | Critical risk — block immediately |
+
+### Dashboard views
+
+- **Risks page** (`/risks`) — full prioritized table with grade column
+- **Dashboard** — Top 5 active risks widget + ecosystem risk heatmap
+- **Inventory** — per-package grade in expanded row
+
+---
+
+## 25b. Dynamic Trust Score
+
+The risk score above is *point-in-time*: it grades the findings of a single scan. The Dynamic Trust
+Score is *longitudinal*: it grades how far a release has drifted from the behaviour of every
+previous release of the same package.
+
+### Model
+
+| Metric | Weight | Penalised when |
+|---|--:|---|
+| Outbound network calls | 18 | increases |
+| Install lifecycle hooks | 16 | increases |
+| Obfuscation density | 14 | increases |
+| Process spawns | 12 | increases |
+| Writes outside package root | 10 | increases |
+| Newly added maintainers | 9 | increases |
+| Critical findings | 8 | increases |
+| High findings | 5 | increases |
+| Artifact size | 4 | moves either way |
+| Direct dependencies | 2 | moves either way |
+| Release cadence | 2 | moves either way |
+
+Each metric's baseline is the mean and standard deviation over the package's prior observations.
+Deviations are scored by z-score (`≥2` LOW, `≥3` MEDIUM, `≥4` HIGH, `≥6` CRITICAL) and deduct that
+fraction of the metric's weight. Metrics that have never varied are floored at MEDIUM when they move
+at all — first-ever behaviour is by definition unprecedented.
+
+| Score | State | Meaning |
+|---|---|---|
+| 80–100 | **GREEN** | Behaving like itself |
+| 50–79 | **AMBER** | Meaningful drift — review before upgrading |
+| 0–49 | **RED** | Unprecedented behaviour — treat as compromised until proven otherwise |
+| — | **LEARNING** | Fewer than 3 observations; never penalised |
+
+### Ledger
+
+```
+~/.chainwarden/trust/<ecosystem>/<package>.json
+```
+
+Plain JSON, atomic writes, `0600`. The CLI and the dashboard read the same file — no database
+required. Re-recording the same version replaces the previous entry.
+
+### CI gate
+
+```yaml
+- run: cwctl scan . --format json > scan.json
+- run: cwctl trust from-scan scan.json --package npm:${{ env.PKG }} --fail-on red
+```
+
+### API
+
+| Method | Path |
+|---|---|
+| `GET` | `/api/v1/trust` |
+| `GET` | `/api/v1/trust/:ecosystem/:name` |
+| `POST` | `/api/v1/trust/observe` |
+| `POST` | `/api/v1/trust/simulate` |
+
+### Dashboard
+
+**Monitor → Trust Score** (`/trust`): state histogram, drift simulator, tracked-package ledger, and
+a per-package view with the learned baseline, metric history chart and ranked deviations.
+
+---
+
+## 26. Webhook Notifications
+
+ChainWarden fires webhook notifications after scans when findings meet the configured severity threshold.
+
+### Configure
+
+```bash
+# Slack
+cwctl config set notify.slack_webhook_url=https://hooks.slack.com/services/...
+cwctl config set notify.on_severity=high
+
+# Discord
+cwctl config set notify.discord_webhook_url=https://discord.com/api/webhooks/...
+
+# Generic HTTP endpoint
+cwctl config set notify.webhook_url=https://your-siem.internal/ingest
+```
+
+Or edit `~/.chainwarden/config.yaml` directly:
+
+```yaml
+notify:
+  slack_webhook_url: "https://hooks.slack.com/services/..."
+  discord_webhook_url: ""
+  webhook_url: ""
+  on_severity: "high"   # CRITICAL | HIGH | MEDIUM | LOW | "" (disabled)
+```
+
+### Test webhook
+
+```bash
+curl -X POST http://localhost:8080/api/v1/webhooks/test
+```
+
+### Payload format (generic webhook)
+
+```json
+{
+  "event": "scan_finding",
+  "package": "lodash@4.17.20",
+  "severity": "HIGH",
+  "finding_id": "CVE-2021-23337",
+  "message": "lodash@4.17.20: [HIGH] CVE-2021-23337",
+  "timestamp": "2026-05-24T12:00:00Z"
+}
+```
+
+Notifications are best-effort — a failed webhook does not fail the scan.
+
+---
+
+## 27. Product Modes
+
+ChainWarden adapts to five deployment contexts. See `MODES.md` for full setup guides.
+
+| Mode | Primary User | Entry Point | Key Features |
+|------|-------------|-------------|--------------|
+| **Developer** | Individual engineer | `cwctl scan .` | IDE integration, inline hints, patch suggestions |
+| **CI/CD** | DevOps / pipelines | `cwctl scan . --format=sarif` | SARIF output, policy gates, exit codes, signed SBOMs |
+| **Monitoring** | Security engineer | `cwctl monitor --watch .` | Continuous re-scan, diff mode, webhook alerts |
+| **Enterprise** | Security team / SOC | `docker-compose.enterprise.yml` | Full dashboard, risk scores, policy, Grafana metrics |
+| **Offline / Air-gapped** | Classified / restricted | `--offline` flag | Local DB only, no outbound network, bundled signatures |
+
+Quick-start by mode:
+
+```bash
+# Developer
+cwctl scan .
+
+# CI (fail on high or above, SARIF output)
+cwctl scan . --fail-on=high --format=sarif > results.sarif
+
+# SOC Enterprise stack
+docker compose -f docker-compose.enterprise.yml up -d
+open http://localhost:3000
+
+# Air-gapped
+cwctl scan . --offline
+```
+
+---
+
+## 28. Trust & Privacy
+
+ChainWarden is designed around a local-first, zero-trust architecture.
+
+### What leaves your machine
+
+| Data | Leaves machine? | Notes |
+|------|----------------|-------|
+| Package names + versions | Yes — when scanning | Sent to OSV API for CVE lookups; package names only, no source code |
+| Source code | **Never** | All analysis is static/behavioral on the binary/manifest |
+| Scan results | **Never** | Results stored in local PostgreSQL or printed to stdout only |
+| Telemetry / analytics | **Never** | No usage tracking, no phone-home, no crash reports |
+| AI prompts (advisory) | Yes — when using `cwctl advisory` | Finding data sent to configured AI provider; requires explicit invocation |
+| Signing keys | **Never** | Ephemeral ECDSA keys generated per-signing event; never stored |
+
+### Air-gapped operation
+
+Run with `--offline` to disable all external API calls. Pre-download the OSV vulnerability database:
+
+```bash
+cwctl update --offline-bundle=/path/to/osv-bundle.zip
+cwctl scan . --offline
+```
+
+### Self-hosted deployment
+
+The full stack (API, dashboard, PostgreSQL) runs entirely on-premises via docker-compose. No AI provider key required for non-AI features.
+
+### AI provider API key usage
+
+The key is only used when:
+1. `cwctl advisory <package>` — AI-generated advisory
+2. `cw-agent` autonomous patch agent
+3. `intel-agent` signature generation
+
+It is sent only to the configured AI provider and never to any other third party.
+
+---
+
+## 29. Competitive Landscape
+
+See `COMPETITIVE.md` for detailed feature matrices. Summary:
+
+## ChainWarden Capability Summary
+
+| Capability | Status |
+|---|---|
+| Local-first scanning (no cloud required) | ✅ |
+| AI-native triage and advisory | ✅ |
+| HuggingFace / MCP ecosystem security | ✅ |
+| Community detection signatures | ✅ |
+| Policy-as-code (local enforcement) | ✅ |
+| Behavioral analysis | ✅ |
+| Monitor mode (live diff) | ✅ |
+| SARIF + CycloneDX + SPDX output | ✅ |
+| Sigstore / SLSA provenance | ✅ |
+| Self-hostable | ✅ |
+| Open source (Apache 2.0) | ✅ |
+
+---
+
+## 30. Changelog
+
+### v2.0.0 — 2026-06-13 — Full Platform Integration
+
+**Dashboard — scan now actually works:**
+- `TriggerScan` fixed: downloads real artifact from registry, extracts to temp dir, runs all 8 engines — was previously OSV-only with empty `LocalPath`
+- `POST /api/v1/scan/upload` — new endpoint: multipart file upload, extract, full scan
+- ScanPage rewritten: 2 tabs (registry + file upload), engine status bar per-scan, sha256 display, graceful degradation message when download fails
+
+**New API endpoints (8):**
+- `GET/POST/DELETE /api/v1/allowlist` + `GET /api/v1/allowlist/check`
+- `GET/POST /api/v1/alerts` + `POST /api/v1/alerts/:id/dismiss`
+- `GET /api/v1/agent/stream` (SSE) + `POST /api/v1/agent/events`
+
+**Dashboard pages wired to real data:**
+- `AlertsPage` — real DB alerts, severity filter, dismissed toggle, one-click dismiss
+- `AllowlistPage` — full CRUD (add with ecosystem/package/reason, delete by ID)
+- `AgentsPage` — live SSE event feed, session status badge, scrollable log, clear button
+- `RecursiveScanPage` — multi-package scan, comma-separated input, per-package results
+
+**Community signatures — Nuclei-style toolkit:**
+- `cwctl intel new` — interactive 5-question wizard, auto-generates ID, writes YAML
+- `cwctl intel validate` — schema + regex + required fields, supports globs
+- `cwctl intel test` — downloads real package, runs relevant engines, shows MATCH/NO MATCH
+- `cwctl intel update` — pulls from community repo URL
+- `cwctl intel list` — filterable by type and ecosystem
+- 24 community signatures added (blocklisted ×9, typosquatting ×3, behavioral ×4, malware ×4, mcp ×2, ai-model ×2)
+- `signatures/` directory with CI workflow (`validate.yml`) + bundle builder (`build_bundle.py`)
+
+**Security & stability:**
+- API key auth middleware (`X-Api-Key` / `Bearer`, constant-time compare, `/healthz` exempt)
+- Per-IP token bucket rate limiter (60 rps, burst 20, auto-evict stale IPs)
+- DB migration runner (embedded SQL, `schema_migrations` tracking, transactional per-file)
+- Scraper `--watch` flag + `CW_SCRAPER_INTERVAL` continuous scheduling
+- `CW_API_KEY` config field, dev-mode warning when unset
+- Dashboard `VITE_API_KEY` env var wired into all API calls
+
+**Tests: 43 total (was 0):**
+- `internal/core` — 9 tests (ScoreFindings, grade boundaries)
+- `internal/api/middleware` — 9 tests (auth ×6, rate limiter ×3)
+- `internal/policy` — 15 tests (enforce, thresholds, save/load)
+- `internal/notify` — 10 tests (webhook shape, threshold, HTTP errors)
+
+### v1.4.0 — 2026-05-24 — Phase 15: Final Pre-Release Platform Hardening
+
+**CLI & scanner:**
+- Competitor branding removed from all marketing copy (README, COMPETITIVE.md, GUIDE.md, DOCS.md)
+- INFORMATIONAL findings hidden by default; `--verbose` expands them
+- Banner stats line: "Loaded: • N signatures • N heuristics • N engines"
+- HIGH SevBadge color fix (FgHiRed)
+- Scan timing footer: "Completed in X.Xs"
+- Duplicate `stats` entry removed from help
+- `auditBrewPackages`, `auditGemPackages`, `auditDockerImages`, `checkPATHHijack` added to `cwctl audit system`
+
+**Dashboard:**
+- TopBar with live engine/severity counts
+- Sidebar: System Audit, Agents, Settings stub pages
+
+**Docs & security:**
+- `SECURITY.md` added ("How ChainWarden Secures Itself")
+- npm audit CI gate
+
+### v1.3.0 — 2026-05-24 — Phase 14: Production Polish + Operational Consistency
+
+**CLI fixes & polish:**
+- `preParseOutputFlags()` — scans `os.Args` before any `flag.Parse` call; `--format=sarif/json`, `--quiet`, `--ci`, `--no-banner` now suppress the banner before any subcommand runs, including when a positional argument precedes the flags (e.g. `cwctl scan . --format json`)
+- `--quiet` early return — no stdout leaks; advisory hints no longer bleed through
+- `cwctl sbom .` — auto-suppresses the banner when writing SBOM JSON to stdout; banner still prints when `--out` redirects to a file
+- `severityOrd()` fix — returns `-1` for unknown/empty severity (was `0`); `--severity high` now correctly excludes MEDIUM, LOW, and INFORMATIONAL findings
+- `--only-fixable` — also excludes INFORMATIONAL findings
+- `--compact` — now calls `PrintCompactGrouped()`, printing one line per package with bracket-grouped counts: `axios@1.3.4  — 19 findings [CRIT:1 HIGH:1 MED:17]  fix: >=1.12.0`
+- `cwctl stats` new command — signature runtime statistics table (total sigs, by type, ecosystems, last updated); supports `--json`
+- `cwctl audit system` — prints an ecosystem-level summary table instead of per-package output; `--verbose` expands to per-package
+- `cwctl monitor --watch` — every diff line now shows a `[HH:MM:SS]` timestamp, the package name, and is color-coded: `NEW` in red, `RESOLVED` in green
+- Banner — shows "Loaded N detection signatures" line after the logo when signatures are present
+
+**Dashboard fixes:**
+- `api.ts` — Content-Type check before `res.json()`; prevents the cryptic `"Unexpected token '<'"` error when the API is down
+- `ApiStatusBanner` — `retry: 3`, exponential backoff, `[RECONNECTING...]` amber state label
+- `MonitorPage` — same retry/reconnect state as ApiStatusBanner
+
+### v1.2.0 — 2026-05-24 — Phase 13: Production Hardening & Release Readiness
+
+20 production hardening improvements.
+
+---
+
+*ChainWarden is open source — community contributions welcome.*  
+*Documentation last updated: 2026-06-13*

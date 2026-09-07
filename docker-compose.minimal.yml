@@ -1,0 +1,85 @@
+version: "3.9"
+
+# Minimal stack — postgres + redis + API only.
+# Use this for CLI development, CI pipelines, and quick local testing.
+# Start: docker compose -f docker-compose.minimal.yml up -d
+
+networks:
+  chainwarden:
+    driver: bridge
+
+volumes:
+  postgres_data:
+  redis_data:
+
+services:
+  postgres:
+    image: postgres:16-alpine
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: chainwarden
+      POSTGRES_USER: chainwarden
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-devpassword}
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+      - ./infra/k8s/initdb:/docker-entrypoint-initdb.d:ro
+    ports:
+      - "5432:5432"
+    networks: [chainwarden]
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U chainwarden"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+    deploy:
+      resources:
+        limits:
+          cpus: "0.5"
+          memory: 512M
+
+  redis:
+    image: redis:7-alpine
+    restart: unless-stopped
+    command: redis-server --appendonly yes
+    volumes:
+      - redis_data:/data
+    ports:
+      - "6379:6379"
+    networks: [chainwarden]
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+    deploy:
+      resources:
+        limits:
+          cpus: "0.25"
+          memory: 256M
+
+  chainwarden-api:
+    build:
+      context: .
+      dockerfile: internal/api/Dockerfile
+    restart: unless-stopped
+    environment:
+      DATABASE_URL: postgres://chainwarden:${POSTGRES_PASSWORD:-devpassword}@postgres:5432/chainwarden?sslmode=disable
+      MINIO_ENDPOINT: ""
+      ANTHROPIC_API_KEY: ${ANTHROPIC_API_KEY:-}
+      CW_ADMIN_EMAIL: ${CW_ADMIN_EMAIL:-}
+      CW_ADMIN_PASSWORD: ${CW_ADMIN_PASSWORD:-}
+      CW_SESSION_SECRET: ${CW_SESSION_SECRET:-}
+      CW_DASHBOARD_ORIGIN: http://localhost:3000
+      CW_COOKIE_SECURE: "false"
+      LOG_LEVEL: info
+    ports:
+      - "8080:8080"
+    networks: [chainwarden]
+    depends_on:
+      postgres:
+        condition: service_healthy
+    deploy:
+      resources:
+        limits:
+          cpus: "0.5"
+          memory: 512M

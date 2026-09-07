@@ -1,0 +1,27 @@
+id: CW-rubygems-bootstrap-sass-backdoor
+name: bootstrap-sass gem hijacked — backdoor via malicious version
+
+type: blocklisted_package
+ecosystem: rubygems
+severity: CRITICAL
+
+package: bootstrap-sass
+version_range: "=3.2.0.3"
+
+description: |
+  In April 2019, the bootstrap-sass RubyGem was hijacked when an attacker gained
+  access to the maintainer's RubyGems.org account. The malicious version 3.2.0.3
+  was published containing a backdoor that allowed remote code execution via a
+  specially crafted cookie. The backdoor was hidden in a modified _precompile.rb
+  file and used Base64 encoding to obfuscate the payload. The legitimate
+  bootstrap-sass gem had millions of downloads and was used in many Rails
+  applications. The attack was discovered when the suspicious version appeared
+  in dependency resolution.
+
+cve: ~
+references:
+  - https://github.com/twbs/bootstrap-sass/issues/1195
+  - https://snyk.io/blog/malicious-remote-code-execution-backdoor-discovered-in-the-popular-bootstrap-sass-ruby-gem/
+
+author: chainwarden
+tags: [hijack, backdoor, rce, account-compromise, rubygems]

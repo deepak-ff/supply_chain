@@ -1,0 +1,17 @@
+id: CW-npm-cap-js-postgres-shai-hulud
+name: SAP CAP.js postgres package compromised by Shai-Hulud
+type: blocklisted_package
+ecosystem: npm
+severity: CRITICAL
+package: "@cap-js/postgres"
+version_range: "=2.2.2"
+description: |
+  @cap-js/postgres v2.2.2 was compromised alongside @cap-js/sqlite and @cap-js/db-service in
+  the Mini Shai-Hulud campaign. The preinstall hook bootstraps Bun runtime and executes an 11.7MB
+  obfuscated credential harvester and propagation framework. Uses GitHub commit markers containing
+  "OhNoWhatsGoingOnWithGitHub" and commits authored as claude@users.noreply.github.com.
+cve: ~
+references:
+  - https://www.aikido.dev/blog/mini-shai-hulud-has-appeared
+author: chainwarden
+tags: [shai-hulud, sap, credential-theft, bun-dropper, supply-chain]

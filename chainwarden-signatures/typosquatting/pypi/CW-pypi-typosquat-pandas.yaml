@@ -1,0 +1,38 @@
+id: CW-pypi-typosquat-pandas
+name: Typosquatting target — pandas (40M+ monthly downloads)
+
+type: typosquatting_target
+ecosystem: pypi
+severity: HIGH
+
+target: pandas
+
+similar_names:
+  - pandsa
+  - panads
+  - pands
+  - pandass
+  - paandas
+  - pnadas
+  - panddas
+  - pandaz
+  - p4ndas
+  - pandas_
+  - panda
+  - pandaslib
+  - pandqs
+  - pandaas
+  - ppandas
+
+description: |
+  pandas is the dominant data analysis library in Python with over 40 million monthly PyPI
+  downloads. It is ubiquitous in data engineering pipelines, Jupyter notebooks, and ETL
+  workflows. Typosquatting pandas is particularly dangerous because data science environments
+  frequently handle database credentials, API keys, and sensitive datasets that a malicious
+  package could exfiltrate.
+
+references:
+  - https://pypi.org/project/pandas/
+
+author: chainwarden
+tags: [typosquatting]

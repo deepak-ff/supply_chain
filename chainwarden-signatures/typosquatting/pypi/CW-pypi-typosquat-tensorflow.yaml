@@ -1,0 +1,38 @@
+id: CW-pypi-typosquat-tensorflow
+name: Typosquatting target — tensorflow (10M+ monthly downloads)
+
+type: typosquatting_target
+ecosystem: pypi
+severity: HIGH
+
+target: tensorflow
+
+similar_names:
+  - tensoflow
+  - tensroflow
+  - tensorflw
+  - tensorlfow
+  - tensorfow
+  - tesnorflow
+  - tenserflow
+  - tensorfllow
+  - tensor-flow
+  - tensorflow_
+  - tensorfloww
+  - t3nsorflow
+  - tensorfolw
+  - tensorlow
+  - tensofrlow
+
+description: |
+  tensorflow is Google's machine learning framework with over 10 million monthly PyPI
+  downloads. It is the foundation of production ML systems across industries. Its long
+  compound name (tensor + flow) creates many plausible typo variants. A malicious
+  typosquat could compromise ML training pipelines, steal model weights, or exfiltrate
+  training data containing sensitive information.
+
+references:
+  - https://pypi.org/project/tensorflow/
+
+author: chainwarden
+tags: [typosquatting]

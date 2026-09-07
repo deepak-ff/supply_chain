@@ -1,0 +1,32 @@
+id: CW-ai-pickle-network-access
+name: Pickle model opens network connections or makes HTTP requests on deserialization
+
+type: pickle_rule
+ecosystem: huggingface
+severity: CRITICAL
+
+rule: |
+  Model file (.bin, .pkl, .pickle, .pt, .pth) contains pickled objects referencing
+  any of: socket.socket, socket.create_connection, urllib.request.urlopen,
+  urllib.request.Request, http.client.HTTPConnection, http.client.HTTPSConnection,
+  requests.get, requests.post, requests.Session, httpx.Client, aiohttp.ClientSession
+  Detection via: pickletools.dis() output or binary scan for these module.function
+  pairs in the pickle opcode stream
+
+description: |
+  This rule detects model files that establish network connections when deserialized.
+  A malicious pickle payload can open raw sockets, make HTTP requests, or initiate
+  reverse shells — all triggered silently when a researcher runs torch.load(). Network
+  access during model loading enables command-and-control communication, credential
+  exfiltration to remote servers, downloading second-stage malware, and DNS-based data
+  exfiltration. Legitimate model files never need to make network connections during
+  deserialization — any network activity in a pickle stream is a definitive indicator
+  of malicious intent.
+
+references:
+  - https://research.jfrog.com/vulnerability-research/the-danger-of-pickle-in-ml/
+  - https://protectai.com/blog/attacking-machine-learning-models
+  - https://huggingface.co/docs/hub/security-pickle
+
+author: chainwarden
+tags: [pickle, network-access, socket, reverse-shell, c2, ai-model]

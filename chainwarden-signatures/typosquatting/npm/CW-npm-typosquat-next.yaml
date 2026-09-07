@@ -1,0 +1,37 @@
+id: CW-npm-typosquat-next
+name: Typosquatting target — next (5M+ weekly downloads)
+
+type: typosquatting_target
+ecosystem: npm
+severity: HIGH
+
+target: next
+
+similar_names:
+  - nexxt
+  - nxt
+  - nex
+  - nextt
+  - n3xt
+  - neext
+  - netx
+  - next_
+  - _next
+  - nextjs
+  - next-js
+  - nexx
+  - nnext
+  - nexct
+  - nxet
+
+description: |
+  next (Next.js) is a leading React framework with over 5 million weekly npm downloads,
+  widely used for server-side rendered applications. Its extremely short name makes collision
+  and typosquatting trivial. A compromised variant could inject malicious server-side code
+  that runs on every request, making it a high-value target for supply chain attackers.
+
+references:
+  - https://www.npmjs.com/package/next
+
+author: chainwarden
+tags: [typosquatting]

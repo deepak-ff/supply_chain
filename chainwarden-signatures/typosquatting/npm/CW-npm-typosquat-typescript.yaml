@@ -1,0 +1,37 @@
+id: CW-npm-typosquat-typescript
+name: Typosquatting target — typescript (45M+ weekly downloads)
+
+type: typosquatting_target
+ecosystem: npm
+severity: HIGH
+
+target: typescript
+
+similar_names:
+  - typescipt
+  - typscript
+  - tyepscript
+  - typescrpt
+  - typesript
+  - typescrip
+  - typescrpit
+  - typescriptt
+  - typ3script
+  - typesccript
+  - type-script
+  - typescript_
+  - typescrit
+  - typesciript
+  - typsecript
+
+description: |
+  typescript has over 45 million weekly npm downloads and is a critical build-time dependency
+  for a large portion of the JavaScript ecosystem. Because it runs as a compiler during builds
+  with full system access, a typosquatted variant could execute arbitrary code in CI/CD
+  pipelines. The long name with multiple syllables creates many plausible typo variants.
+
+references:
+  - https://www.npmjs.com/package/typescript
+
+author: chainwarden
+tags: [typosquatting]

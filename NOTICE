@@ -1,0 +1,21 @@
+ChainWarden
+Copyright 2026 ChainWarden Contributors
+
+This product includes software developed as part of the ForgeGuardian project
+(https://github.com/Mah3Sec/ForgeGuardian), Copyright 2026 ForgeGuardian
+Contributors, licensed under the Apache License, Version 2.0.
+
+ChainWarden is an independent derivative work. It changes, among other things:
+
+  * the Go module path            github.com/deepak-ff/supply_chain
+  * the CLI binaries              cwctl, cw-agent, intel-agent
+  * the configuration namespace   ~/.chainwarden, CW_* environment variables
+  * the signature namespace       CW-* identifiers, vendored in chainwarden-signatures/
+  * the detection surface         adds the Dynamic Trust Score engine (internal/trust)
+
+The bundled detection signature corpus in chainwarden-signatures/ derives from the
+forgeguardian-signatures project and remains under the MIT License; see
+chainwarden-signatures/LICENSE.
+
+The Dynamic Trust Score engine (internal/trust) is original work by the ChainWarden
+Contributors, derived from the SCBTSS prototype preserved in legacy/scbtss-prototype/.

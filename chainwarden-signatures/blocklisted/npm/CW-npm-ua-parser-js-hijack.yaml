@@ -1,0 +1,25 @@
+id: CW-npm-ua-parser-js-hijack
+name: ua-parser-js hijacked — cryptominer and password stealer
+
+type: blocklisted_package
+ecosystem: npm
+severity: CRITICAL
+
+package: ua-parser-js
+version_range: "=0.7.29"
+
+description: |
+  In October 2021, the npm account of the ua-parser-js maintainer was compromised
+  and versions 0.7.29, 0.8.0, and 1.0.0 were published containing malware. The
+  malicious code installed a cryptominer (jsextension/jsextension.exe) and a
+  credential-stealing trojan on Linux and Windows systems. With over 7 million
+  weekly downloads, the package was used by major companies and frameworks including
+  Facebook. The compromised versions were available for approximately 4 hours.
+
+cve: ~
+references:
+  - https://github.com/nicedream/ua-parser-js/issues/536
+  - https://blog.sonatype.com/ua-parser-js-npm-hijacked
+
+author: chainwarden
+tags: [hijack, cryptominer, credential-stealer, account-compromise]

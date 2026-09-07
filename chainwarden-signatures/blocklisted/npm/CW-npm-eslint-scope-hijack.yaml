@@ -1,0 +1,25 @@
+id: CW-npm-eslint-scope-hijack
+name: eslint-scope hijacked — npm token theft via compromised maintainer
+
+type: blocklisted_package
+ecosystem: npm
+severity: CRITICAL
+
+package: eslint-scope
+version_range: "=3.7.2"
+
+description: |
+  In July 2018, eslint-scope@3.7.2 was published using a compromised maintainer's
+  npm credentials. The malicious version contained a postinstall script that
+  attempted to steal npm tokens from the victim's .npmrc file and exfiltrate them
+  to a remote server. This was one of the first widely publicized npm supply chain
+  attacks and directly led to npm implementing two-factor authentication requirements
+  for popular packages. The package was a dependency of the widely-used eslint tool.
+
+cve: ~
+references:
+  - https://github.com/nicedream/eslint-scope/issues/39
+  - https://eslint.org/blog/2018/07/postmortem-for-malicious-package-publishes
+
+author: chainwarden
+tags: [hijack, token-theft, credential-exfiltration, account-compromise]
