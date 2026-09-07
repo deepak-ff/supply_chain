@@ -31,7 +31,7 @@ export function ApiStatusBanner() {
         gap: '12px',
         fontSize: '13px',
         color: '#FFAB40',
-        fontFamily: 'JetBrains Mono, monospace',
+        fontFamily: 'var(--font-mono)',
       }}
     >
       <span>

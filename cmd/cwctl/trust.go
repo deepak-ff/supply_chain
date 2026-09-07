@@ -12,6 +12,7 @@ import (
 
 	"github.com/deepak-ff/supply_chain/internal/trust"
 	"github.com/deepak-ff/supply_chain/internal/ui"
+	"github.com/fatih/color"
 )
 
 // runTrust implements `cwctl trust` — ChainWarden's Dynamic Trust Score.
@@ -40,6 +41,12 @@ func runTrust(args []string, log *slog.Logger, p *ui.Printer) error {
 		return runTrustList(rest, p)
 	case "simulate", "demo":
 		return runTrustSimulate(rest, p)
+	case "lock":
+		return runTrustLock(rest, p)
+	case "verify":
+		return runTrustVerify(rest, p)
+	case "diff":
+		return runTrustDiff(rest, p)
 	case "forget", "rm":
 		return runTrustForget(rest, p)
 	case "help", "-h", "--help":
@@ -65,6 +72,9 @@ Usage:
   cwctl trust record <eco:pkg> [flags]      Add a behavioural observation
   cwctl trust from-scan <scan.json> [flags] Derive an observation from scan JSON
   cwctl trust simulate [flags]              Score a synthetic compromise scenario
+  cwctl trust lock [--out <path>]           Freeze current behaviour into chainwarden.lock
+  cwctl trust verify [--lock <path>]        Check the ledger against the lockfile (CI gate)
+  cwctl trust diff <eco:pkg> [from] [to]    Metric delta between two releases
   cwctl trust forget <eco:pkg>              Delete a package ledger
 
 Common flags:
@@ -73,10 +83,19 @@ Common flags:
   --fail-on <state>   Exit non-zero when the score lands on amber or red (CI gate)
   --dir <path>        Ledger directory (default: ~/.chainwarden/trust, $CW_TRUST_DIR)
 
+Lockfile flags:
+  --out <path>        Lockfile to write (trust lock; default: ./chainwarden.lock)
+  --lock <path>       Lockfile to verify (trust verify; default: ./chainwarden.lock)
+  --strict            trust verify also fails on added/removed packages (default
+                      only fails on behaviour-changed and trust-dropped drift)
+
 Examples:
   cwctl trust record npm:left-pad --version 1.3.0 --network 1 --deps 0 --size-kb 12
   cwctl trust from-scan scan.json --package npm:express --fail-on red
   cwctl trust simulate --scenario hijack
+  cwctl trust lock
+  cwctl trust verify --strict
+  cwctl trust diff npm:left-pad 1.2.0 1.3.0
 `)
 }
 
@@ -464,6 +483,174 @@ func runTrustForget(args []string, p *ui.Printer) error {
 		return err
 	}
 	p.Success("forgot trust ledger for %s", trust.Key(eco, name))
+	return nil
+}
+
+// ---- lock / verify / diff ---------------------------------------------------
+
+func runTrustLock(args []string, p *ui.Printer) error {
+	fs := flag.NewFlagSet("trust lock", flag.ExitOnError)
+	dir := fs.String("dir", "", "ledger directory")
+	out := fs.String("out", "", "lockfile path (default: ./chainwarden.lock)")
+	jsonOut := fs.Bool("json", false, "output JSON")
+	if _, err := parseTrustArgs(fs, args); err != nil {
+		return err
+	}
+
+	store, err := trust.NewStore(*dir)
+	if err != nil {
+		return err
+	}
+	lock, err := store.BuildLock()
+	if err != nil {
+		return err
+	}
+	path := *out
+	if path == "" {
+		path = trust.DefaultLockFile
+	}
+	if err := trust.WriteLock(path, lock); err != nil {
+		return err
+	}
+	p.Success("behavioural lockfile written to %s (%d package(s), %s)", path, len(lock.Entries), lock.Generated.Format(time.RFC3339))
+	if *jsonOut {
+		return writeJSON(lock)
+	}
+	return nil
+}
+
+func runTrustVerify(args []string, p *ui.Printer) error {
+	fs := flag.NewFlagSet("trust verify", flag.ExitOnError)
+	dir := fs.String("dir", "", "ledger directory")
+	lockPath := fs.String("lock", "", "lockfile path (default: ./chainwarden.lock)")
+	jsonOut := fs.Bool("json", false, "output JSON")
+	strict := fs.Bool("strict", false, "also fail on added/removed packages")
+	if _, err := parseTrustArgs(fs, args); err != nil {
+		return err
+	}
+
+	store, err := trust.NewStore(*dir)
+	if err != nil {
+		return err
+	}
+	path := *lockPath
+	if path == "" {
+		path = trust.DefaultLockFile
+	}
+	locked, err := trust.ReadLock(path)
+	if err != nil {
+		return err
+	}
+	report, err := store.Verify(locked)
+	if err != nil {
+		return err
+	}
+
+	if *jsonOut {
+		return writeJSON(map[string]any{"lockfile": path, "report": report})
+	}
+
+	fmt.Fprintf(p.Out, "\nBehavioural lockfile verify  (%s)\n", path)
+	fmt.Fprintf(p.Out, "%s\n", strings.Repeat("─", 72))
+	fmt.Fprintf(p.Out, "  Checked %d · matched %d · drifted %d\n", report.Checked, report.Matched, len(report.Drifts))
+	for _, d := range report.Drifts {
+		line := fmt.Sprintf("  [%-16s] %s", d.Kind, trust.Key(d.Ecosystem, d.Package))
+		switch d.Kind {
+		case trust.DriftBehaviourChanged:
+			color.New(color.FgRed).Fprintln(p.Out, line)
+			fmt.Fprintf(p.Out, "    locked:   %s (score %d %s)\n", d.FromVersion, d.FromScore, d.FromState)
+			fmt.Fprintf(p.Out, "    current:  %s (score %d %s)\n", d.ToVersion, d.ToScore, d.ToState)
+			for _, del := range d.Deltas {
+				marker := " "
+				if del.Riskier {
+					marker = "!"
+				}
+				fmt.Fprintf(p.Out, "      %s %-28s %8.2f → %-8.2f  %+7.2f\n", marker, del.Label, del.From, del.To, del.Delta)
+			}
+		case trust.DriftTrustDropped:
+			color.New(color.FgRed).Fprintln(p.Out, line)
+			fmt.Fprintf(p.Out, "    trust %d (%s) → %d (%s) with unchanged behaviour\n", d.FromScore, d.FromState, d.ToScore, d.ToState)
+		default:
+			color.New(color.FgYellow).Fprintln(p.Out, line)
+			fmt.Fprintf(p.Out, "    %s\n", d.Message)
+		}
+	}
+	fmt.Fprintf(p.Out, "%s\n", strings.Repeat("─", 72))
+
+	if len(report.Drifts) == 0 {
+		p.Success("verify passed — ledger matches %s", path)
+		return nil
+	}
+
+	for _, d := range report.Drifts {
+		switch d.Kind {
+		case trust.DriftBehaviourChanged, trust.DriftTrustDropped:
+			return fmt.Errorf("trust verify: %d drift(s) against %s — run `cwctl trust lock` only after reviewing the change", len(report.Drifts), path)
+		case trust.DriftAdded, trust.DriftRemoved:
+			if *strict {
+				return fmt.Errorf("trust verify (--strict): %d drift(s) against %s — package set changed", len(report.Drifts), path)
+			}
+		}
+	}
+	p.Warn("verify found %d non-failing drift(s) (added/removed) — re-run with --strict to fail on these", len(report.Drifts))
+	return nil
+}
+
+func runTrustDiff(args []string, p *ui.Printer) error {
+	fs := flag.NewFlagSet("trust diff", flag.ExitOnError)
+	dir := fs.String("dir", "", "ledger directory")
+	jsonOut := fs.Bool("json", false, "output JSON")
+	positionals, err := parseTrustArgs(fs, args)
+	if err != nil {
+		return err
+	}
+	if len(positionals) < 1 {
+		return fmt.Errorf("trust diff: expected a package, e.g. `cwctl trust diff npm:left-pad 1.2.0 1.3.0` (versions optional — defaults to previous vs latest)")
+	}
+	if len(positionals) > 3 {
+		return fmt.Errorf("trust diff: too many arguments — usage: cwctl trust diff <eco:pkg> [from] [to]")
+	}
+
+	eco, name := splitPackageRef(positionals[0])
+	fromV, toV := "", ""
+	if len(positionals) >= 2 {
+		fromV = positionals[1]
+	}
+	if len(positionals) >= 3 {
+		toV = positionals[2]
+	}
+
+	store, err := trust.NewStore(*dir)
+	if err != nil {
+		return err
+	}
+	diff, err := store.DiffVersions(eco, name, fromV, toV)
+	if err != nil {
+		return err
+	}
+
+	if *jsonOut {
+		return writeJSON(diff)
+	}
+
+	fmt.Fprintf(p.Out, "\nRelease diff  %s\n", trust.Key(diff.Ecosystem, diff.Package))
+	fmt.Fprintf(p.Out, "%s\n", strings.Repeat("─", 72))
+	fmt.Fprintf(p.Out, "  %s → %s\n", diff.FromVersion, diff.ToVersion)
+	fmt.Fprintf(p.Out, "  score %d (%s) → %d (%s)\n", diff.FromScore, diff.FromState, diff.ToScore, diff.ToState)
+	fmt.Fprintf(p.Out, "  fingerprint %s → %s\n", diff.FromFingerprint, diff.ToFingerprint)
+	if len(diff.Deltas) == 0 {
+		fmt.Fprintf(p.Out, "  no metric drift between these releases\n\n")
+		return nil
+	}
+	fmt.Fprintf(p.Out, "  metric deltas (\"!\" = risk-increasing)\n")
+	for _, d := range diff.Deltas {
+		marker := " "
+		if d.Riskier {
+			marker = "!"
+		}
+		fmt.Fprintf(p.Out, "    %s %-28s %8.2f → %-8.2f  %+7.2f\n", marker, d.Label, d.From, d.To, d.Delta)
+	}
+	fmt.Fprintf(p.Out, "%s\n", strings.Repeat("─", 72))
 	return nil
 }
 

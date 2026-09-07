@@ -650,6 +650,83 @@ export interface TrustSimulation {
   score: TrustScore;
 }
 
+export interface TrustMetricDelta {
+  metric: string;
+  label: string;
+  from: number;
+  to: number;
+  delta: number;
+  riskier: boolean;
+  weighted: number;
+}
+
+export interface TrustVersionDiff {
+  ecosystem: string;
+  package: string;
+  from_version: string;
+  to_version: string;
+  from_fingerprint: string;
+  to_fingerprint: string;
+  from_score: number;
+  to_score: number;
+  from_state: TrustScore['state'];
+  to_state: TrustScore['state'];
+  metric_deltas: TrustMetricDelta[];
+}
+
+export interface TrustLockEntry {
+  ecosystem: string;
+  package: string;
+  version: string;
+  fingerprint: string;
+  score: number;
+  state: TrustScore['state'];
+  metrics: TrustMetrics;
+  locked_at: string;
+}
+
+export interface TrustLock {
+  version: number;
+  tool: string;
+  generated: string;
+  entries: TrustLockEntry[];
+}
+
+export type TrustDriftKind = 'behaviour-changed' | 'added' | 'removed' | 'trust-dropped';
+
+export interface TrustDrift {
+  kind: TrustDriftKind;
+  ecosystem: string;
+  package: string;
+  from_version?: string;
+  to_version?: string;
+  from_fingerprint?: string;
+  to_fingerprint?: string;
+  from_score?: number;
+  to_score?: number;
+  from_state?: TrustScore['state'];
+  to_state?: TrustScore['state'];
+  metric_deltas?: TrustMetricDelta[];
+  message?: string;
+}
+
+export interface TrustVerifyReport {
+  checked: number;
+  matched: number;
+  drifts: TrustDrift[];
+  ok: boolean;
+  verified_at: string;
+}
+
+export interface TrustLockView {
+  current: TrustLock;
+  tracked: number;
+  lockfile: string;
+  present: boolean;
+  lock?: TrustLock;
+  report?: TrustVerifyReport;
+}
+
 export const listTrust = () =>
   request<{
     packages: TrustSummary[];
@@ -659,10 +736,24 @@ export const listTrust = () =>
     store: string;
   }>('/api/v1/trust');
 
+// The per-package wildcard route lives under /trust/package/... so the
+// /trust tree can host literal routes (/trust/lock) without conflicting.
 export const getTrust = (ecosystem: string, pkg: string) =>
   request<{ baseline: TrustBaseline; score: TrustScore; observations: TrustObservation[] }>(
-    `/api/v1/trust/${encodeURIComponent(ecosystem)}/${encodeURIComponent(pkg)}`,
+    `/api/v1/trust/package/${encodeURIComponent(ecosystem)}/${encodeURIComponent(pkg)}`,
   );
+
+export const getTrustLock = () => request<TrustLockView>('/api/v1/trust/lock');
+
+export const getTrustDiff = (ecosystem: string, pkg: string, from?: string, to?: string) => {
+  const params = new URLSearchParams();
+  if (from) params.set('from', from);
+  if (to) params.set('to', to);
+  const qs = params.toString();
+  return request<TrustVersionDiff>(
+    `/api/v1/trust/diff/${encodeURIComponent(ecosystem)}/${encodeURIComponent(pkg)}${qs ? `?${qs}` : ''}`,
+  );
+};
 
 export const simulateTrust = (scenario: string, pkg = 'demo-lib', ecosystem = 'npm') =>
   request<TrustSimulation>('/api/v1/trust/simulate', {

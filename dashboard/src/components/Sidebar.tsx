@@ -7,7 +7,7 @@ import {
 } from 'lucide-react';
 import { useQuery } from '@tanstack/react-query';
 import { useUIStore } from '../store/ui';
-import { getAuthStatus } from '../lib/api';
+import { getAuthStatus, listTrust } from '../lib/api';
 import { cn } from './ui/utils';
 import { WorkspaceSwitcher } from './WorkspaceSwitcher';
 
@@ -168,23 +168,8 @@ export function Sidebar({ current, onNavigate, onLogout }: SidebarProps) {
         ))}
       </nav>
 
-      {/* Engine status */}
-      <div
-        className={cn(
-          'flex items-center gap-2 border-t border-border-color',
-          sidebarOpen ? 'px-3.5 py-2.5 justify-start' : 'py-2.5 justify-center'
-        )}
-      >
-        <div
-          className="w-[7px] h-[7px] rounded-full shrink-0 bg-success fg-pulse-healthy"
-          style={{ boxShadow: '0 0 5px var(--success)' }}
-        />
-        {sidebarOpen && (
-          <span className="text-[0.68rem] text-text-secondary">
-            Engine Status: All systems operational
-          </span>
-        )}
-      </div>
+      {/* Trust pulse — live behavioural-trust status for the whole ledger */}
+      <TrustPulse collapsed={!sidebarOpen} onNavigate={onNavigate} />
 
       {/* User profile + logout */}
       <UserProfile sidebarOpen={sidebarOpen} onLogout={onLogout} onNavigate={onNavigate} />
@@ -197,6 +182,64 @@ export function Sidebar({ current, onNavigate, onLogout }: SidebarProps) {
         {sidebarOpen ? <ChevronLeft size={15} /> : <ChevronRight size={15} />}
       </button>
     </aside>
+  );
+}
+
+const STATE_RANK: Record<string, number> = {
+  LEARNING: 0,
+  GREEN: 1,
+  AMBER: 2,
+  RED: 3,
+};
+
+// TrustPulse replaces the old static "Engine Status: All systems operational"
+// dot with live data from /api/v1/trust: the average trust score across the
+// tracked ledger, coloured by the WORST package state (red/amber/green).
+// Clicking it jumps to the Trust page.
+function TrustPulse({ collapsed, onNavigate }: { collapsed: boolean; onNavigate: (path: string) => void }) {
+  const trust = useQuery({
+    queryKey: ['trust-pulse'],
+    queryFn: listTrust,
+    refetchInterval: 60_000,
+    staleTime: 30_000,
+    retry: 1,
+  });
+
+  const pkgs = trust.data?.packages ?? [];
+  let worst = 'LEARNING';
+  for (const p of pkgs) {
+    if ((STATE_RANK[p.state] ?? 0) > (STATE_RANK[worst] ?? 0)) worst = p.state;
+  }
+  const color =
+    worst === 'RED' ? 'var(--critical)'
+    : worst === 'AMBER' ? 'var(--warning)'
+    : worst === 'GREEN' ? 'var(--success)'
+    : 'var(--text-muted)';
+
+  const average = trust.data?.average_score ?? null;
+  const label = trust.isError
+    ? 'Trust — API unreachable'
+    : pkgs.length === 0
+      ? 'Trust — no data yet'
+      : `Trust ${average ?? '—'} · ${worst.toLowerCase()}`;
+
+  return (
+    <div className={cn('border-t border-border-color', collapsed ? 'py-2.5 justify-center' : 'py-1')}>
+      <button
+        onClick={() => onNavigate('/trust')}
+        title="Dynamic Trust Score — click to open the Trust page"
+        className={cn(
+          'flex w-full items-center gap-2.5 bg-transparent text-left transition-colors hover:bg-surface-muted',
+          collapsed ? 'justify-center px-0 py-2' : 'px-3.5 py-2',
+        )}
+      >
+        <span
+          className="w-[7px] h-[7px] rounded-full shrink-0 fg-pulse-healthy"
+          style={{ background: color, boxShadow: `0 0 5px ${color}` }}
+        />
+        {!collapsed && <span className="text-[0.68rem] text-text-secondary">{label}</span>}
+      </button>
+    </div>
   );
 }
 

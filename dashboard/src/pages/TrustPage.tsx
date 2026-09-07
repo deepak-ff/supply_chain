@@ -6,10 +6,12 @@ import {
 } from 'recharts';
 import {
   Gauge, ShieldCheck, ShieldAlert, Activity, FlaskConical, Radar, ChevronRight,
+  Lock, ArrowLeftRight, RefreshCw,
 } from 'lucide-react';
 import {
-  listTrust, getTrust, simulateTrust,
+  listTrust, getTrust, simulateTrust, getTrustLock, getTrustDiff,
   type TrustSummary, type TrustScore, type TrustBaseline, type TrustObservation,
+  type TrustVersionDiff, type TrustDrift, type TrustMetricDelta, type TrustLockView,
 } from '../lib/api';
 import { cn } from '../components/ui/utils';
 
@@ -183,6 +185,215 @@ function ObservationChart({ observations }: { observations: TrustObservation[] }
   );
 }
 
+const DRIFT_COLOR: Record<string, string> = {
+  'behaviour-changed': 'var(--critical)',
+  'trust-dropped': 'var(--warning)',
+  added: 'var(--amber)',
+  removed: 'var(--text-muted)',
+};
+
+function DeltaTable({ deltas }: { deltas: TrustMetricDelta[] }) {
+  if (deltas.length === 0) {
+    return (
+      <p className="px-4 pb-4 text-[0.72rem] text-text-muted">
+        No metric drift — behaviour is identical between these releases.
+      </p>
+    );
+  }
+  return (
+    <div className="px-4 pb-4">
+      <table className="w-full text-[0.7rem]">
+        <thead>
+          <tr className="text-left text-text-muted">
+            <th className="pb-1 font-medium">Metric</th>
+            <th className="pb-1 text-right font-medium">From</th>
+            <th className="pb-1 text-right font-medium">To</th>
+            <th className="pb-1 text-right font-medium">Δ</th>
+            <th className="pb-1 pl-2 font-medium">Risk</th>
+          </tr>
+        </thead>
+        <tbody className="tabular-nums text-text-secondary">
+          {deltas.map((d) => (
+            <tr key={d.metric} className="border-t border-border-color/60">
+              <td className="py-1 text-text-primary">{d.label}</td>
+              <td className="py-1 text-right">{d.from.toFixed(2)}</td>
+              <td className="py-1 text-right">{d.to.toFixed(2)}</td>
+              <td className="py-1 text-right">{d.delta > 0 ? '+' : ''}{d.delta.toFixed(2)}</td>
+              <td className="py-1 pl-2 text-right">
+                {d.riskier
+                  ? <span className="font-bold" style={{ color: 'var(--warning)' }}>!</span>
+                  : <span className="text-text-muted">·</span>}
+              </td>
+            </tr>
+          ))}
+        </tbody>
+      </table>
+    </div>
+  );
+}
+
+function DriftRow({ drift }: { drift: TrustDrift }) {
+  const color = DRIFT_COLOR[drift.kind] ?? 'var(--text-muted)';
+  return (
+    <li className="rounded-lg border border-border-color/70 p-2.5">
+      <div className="flex items-center justify-between gap-2">
+        <div className="flex items-center gap-2">
+          <span
+            className="rounded px-1.5 py-[0.05rem] text-[0.6rem] font-semibold"
+            style={{ color, background: `color-mix(in srgb, ${color} 14%, transparent)` }}
+          >
+            {drift.kind}
+          </span>
+          <span className="text-[0.75rem] font-medium text-text-primary">
+            {drift.ecosystem}:{drift.package}
+          </span>
+        </div>
+        {(drift.from_score !== undefined || drift.to_score !== undefined) && (
+          <span className="text-[0.68rem] tabular-nums text-text-secondary">
+            {drift.from_version ?? ''} {drift.from_score !== undefined ? `(${drift.from_score})` : ''}
+            {drift.to_version || drift.from_version ? ' → ' : ''}
+            {drift.to_version ?? ''} {drift.to_score !== undefined ? `(${drift.to_score})` : ''}
+          </span>
+        )}
+      </div>
+      {drift.message && <p className="mt-1 text-[0.7rem] text-text-muted">{drift.message}</p>}
+      {drift.metric_deltas && drift.metric_deltas.length > 0 && (
+        <div className="mt-2">
+          <DeltaTable deltas={drift.metric_deltas} />
+        </div>
+      )}
+    </li>
+  );
+}
+
+function LockPanel() {
+  const lock = useQuery({ queryKey: ['trust-lock'], queryFn: getTrustLock, refetchInterval: 60_000 });
+
+  return (
+    <Card>
+      <div className="flex items-center justify-between gap-2 px-4 pt-3 pb-2">
+        <div className="flex items-center gap-2">
+          <Lock size={14} className="text-text-muted" />
+          <span className="text-[0.78rem] font-semibold text-text-primary">Behavioural lockfile</span>
+        </div>
+        <button
+          onClick={() => lock.refetch()}
+          title="Re-verify against the lockfile"
+          className="flex items-center gap-1 text-[0.68rem] text-text-muted hover:text-text-primary"
+        >
+          <RefreshCw size={11} /> re-check
+        </button>
+      </div>
+
+      {lock.isLoading && <p className="px-4 pb-4 text-[0.72rem] text-text-muted">Reading ledger…</p>}
+      {lock.isError && (
+        <p className="px-4 pb-4 text-[0.72rem]" style={{ color: 'var(--critical)' }}>
+          {(lock.error as Error).message}
+        </p>
+      )}
+      {lock.data && <LockPanelBody data={lock.data} />}
+    </Card>
+  );
+}
+
+function LockPanelBody({ data }: { data: TrustLockView }) {
+  const report = data.report;
+  if (!data.present) {
+    return (
+      <div className="px-4 pb-4">
+        <p className="text-[0.72rem] leading-relaxed text-text-secondary">
+          No <code className="rounded bg-surface-muted px-1 py-[0.05rem]">chainwarden.lock</code> in the
+          server directory yet — the ledger currently holds{' '}
+          <span className="font-semibold text-text-primary">{data.tracked}</span> package(s).
+        </p>
+        <pre className="mt-2 overflow-x-auto rounded-lg bg-surface-muted p-2.5 text-[0.68rem] leading-relaxed">
+{`# freezes current behaviour into ./chainwarden.lock
+cwctl trust lock`}
+        </pre>
+      </div>
+    );
+  }
+
+  const ok = report?.ok ?? false;
+  const summaryColor = ok ? 'var(--success)' : 'var(--critical)';
+  return (
+    <div className="px-4 pb-4">
+      <div className="flex flex-wrap items-center gap-3 text-[0.72rem]">
+        <span
+          className="rounded-full px-2 py-[0.1rem] text-[0.62rem] font-semibold tracking-wide"
+          style={{ color: summaryColor, background: `color-mix(in srgb, ${summaryColor} 14%, transparent)` }}
+        >
+          {ok ? 'VERIFIED' : 'DRIFTED'}
+        </span>
+        <span className="tabular-nums text-text-secondary">checked {report?.checked ?? 0}</span>
+        <span className="tabular-nums text-text-secondary">matched {report?.matched ?? 0}</span>
+        <span className="tabular-nums text-text-secondary">drifts {report?.drifts.length ?? 0}</span>
+        <span className="text-text-muted">{data.lockfile}</span>
+        <span className="text-text-muted">{data.lock?.generated ? `generated ${new Date(data.lock!.generated!).toLocaleString()}` : ''}</span>
+      </div>
+
+      {ok && (
+        <p className="mt-3 text-[0.72rem] text-text-secondary">
+          Every tracked package still matches the behavioural fingerprint locked at{' '}
+          {data.lock?.generated ? new Date(data.lock!.generated!).toLocaleString() : 'generation'} time.
+        </p>
+      )}
+
+      {!ok && report?.drifts.length ? (
+        <ul className="mt-3 space-y-2">
+          {report.drifts.map((drift, i) => (
+            <DriftRow key={`${drift.kind}-${drift.ecosystem}:${drift.package}-${i}`} drift={drift} />
+          ))}
+        </ul>
+      ) : null}
+    </div>
+  );
+}
+
+function ReleaseDelta({ ecosystem, pkg }: { ecosystem: string; pkg: string }) {
+  const diff = useQuery({
+    queryKey: ['trust-diff', ecosystem, pkg],
+    queryFn: () => getTrustDiff(ecosystem, pkg),
+    enabled: !!ecosystem && !!pkg,
+  });
+
+  return (
+    <Card>
+      <div className="flex items-center gap-2 px-4 pt-3 pb-2">
+        <ArrowLeftRight size={14} className="text-text-muted" />
+        <span className="text-[0.78rem] font-semibold text-text-primary">
+          Release delta — previous → current
+        </span>
+      </div>
+
+      {diff.isLoading && <p className="px-4 pb-4 text-[0.72rem] text-text-muted">Comparing releases…</p>}
+      {diff.isError && (
+        <p className="px-4 pb-4 text-[0.72rem] text-text-muted">
+          {(diff.error as Error).message}
+        </p>
+      )}
+      {diff.data && <ReleaseDeltaBody data={diff.data} />}
+    </Card>
+  );
+}
+
+function ReleaseDeltaBody({ data }: { data: TrustVersionDiff }) {
+  return (
+    <div className="px-4 pb-3">
+      <p className="text-[0.72rem] text-text-secondary">
+        <span className="tabular-nums">{data.from_version}</span> →{' '}
+        <span className="tabular-nums">{data.to_version}</span>
+        <span className="ml-2 tabular-nums">
+          {data.from_score} ({data.from_state.toLowerCase()}) → {data.to_score} ({data.to_state.toLowerCase()})
+        </span>
+      </p>
+      <div className="mt-2">
+        <DeltaTable deltas={data.metric_deltas} />
+      </div>
+    </div>
+  );
+}
+
 export function TrustPage() {
   const [scenario, setScenario] = useState<string>('hijack');
   const [selected, setSelected] = useState<TrustSummary | null>(null);
@@ -219,11 +430,14 @@ export function TrustPage() {
       </header>
 
       <div className="grid grid-cols-2 gap-3 lg:grid-cols-4">
-        <KPITile label="Packages tracked" value={tracked.data?.tracked ?? 0} icon={Activity} color="var(--primary-blue)" />
-        <KPITile label="Average trust" value={tracked.data?.average_score ?? 100} icon={Gauge} color="var(--cyan)" />
+        <KPITile label="Packages tracked" value={tracked.data?.tracked ?? 0} icon={Activity} color="var(--primary)" />
+        <KPITile label="Average trust" value={tracked.data?.average_score ?? 100} icon={Gauge} color="var(--teal)" />
         <KPITile label="Amber" value={states.AMBER ?? 0} icon={ShieldAlert} color="var(--warning)" />
         <KPITile label="Red" value={states.RED ?? 0} icon={ShieldAlert} color="var(--critical)" />
       </div>
+
+      {/* Behavioural lockfile: verified vs drifted, with per-drift metric deltas */}
+      <LockPanel />
 
       <div className="grid gap-4 lg:grid-cols-2">
         {/* ── Simulation ── */}
@@ -383,6 +597,9 @@ cwctl trust list`}
           )}
         </Card>
       )}
+
+      {/* Release delta for the selected package (previous vs latest) */}
+      {selected && <ReleaseDelta ecosystem={selected.ecosystem} pkg={selected.package} />}
     </div>
   );
 }

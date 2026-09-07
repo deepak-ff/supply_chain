@@ -160,8 +160,13 @@ func Run(cfg *Config) error {
 		v1.POST("/intelligence/test", h.TestSignature)
 		v1.GET("/audit/stats", h.AuditStats)
 		v1.POST("/audit/trigger", h.TriggerAudit)
+		// Trust routes share the /trust tree, so the wildcard segment must
+		// live under a literal (gin panics when a wildcard and a literal —
+		// e.g. /trust/lock — share a path level).
 		v1.GET("/trust", h.ListTrust)
-		v1.GET("/trust/:ecosystem/:name", h.GetTrust)
+		v1.GET("/trust/lock", h.TrustLock)
+		v1.GET("/trust/package/:ecosystem/:name", h.GetTrust)
+		v1.GET("/trust/diff/:ecosystem/:name", h.TrustDiff)
 		v1.POST("/trust/observe", h.RecordTrustObservation)
 		v1.POST("/trust/simulate", h.SimulateTrust)
 		v1.POST("/webhooks/test", h.WebhookTest)

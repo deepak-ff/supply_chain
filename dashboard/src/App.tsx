@@ -3,6 +3,7 @@ import React from 'react';
 import { QueryClient, QueryClientProvider, useQuery } from '@tanstack/react-query';
 import { useUIStore } from './store/ui';
 import { getAuthStatus, logout } from './lib/api';
+import { migrateStorageKey } from './lib/utils';
 import { ForcePasswordChange } from './components/ForcePasswordChange';
 
 class ErrorBoundary extends React.Component<
@@ -139,7 +140,12 @@ function AppShell({ path, setPath }: { path: string; setPath: (p: string) => voi
   });
 
   const [onboarded, setOnboarded] = useState(
-    () => localStorage.getItem('fg_onboarded') === 'true'
+    () => {
+      // One-time migration: read the pre-rebrand fg_onboarded flag, copy it
+      // to cw_onboarded and drop the old key.
+      const legacy = migrateStorageKey('fg_onboarded', 'cw_onboarded');
+      return (legacy ?? localStorage.getItem('cw_onboarded')) === 'true';
+    }
   );
 
   if (path === '/' || path === '/welcome') {
@@ -210,7 +216,7 @@ function AppShell({ path, setPath }: { path: string; setPath: (p: string) => voi
       <Suspense fallback={<RouteFallback />}>
         <OnboardingPage
           onComplete={() => {
-            localStorage.setItem('fg_onboarded', 'true');
+            localStorage.setItem('cw_onboarded', 'true');
             setOnboarded(true);
           }}
         />

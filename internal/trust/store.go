@@ -8,6 +8,7 @@ import (
 	"path/filepath"
 	"sort"
 	"strings"
+	"sync"
 	"time"
 )
 
@@ -26,7 +27,8 @@ type Ledger struct {
 // Store persists per-package trust ledgers as JSON files under a root
 // directory (by default ~/.chainwarden/trust).
 type Store struct {
-	root string
+	root    string
+	indexMu sync.Mutex // serialises access to the .index.json summary cache
 }
 
 // DefaultDir returns the default ledger directory, honouring CW_TRUST_DIR.
@@ -129,6 +131,7 @@ func (s *Store) Save(l Ledger) error {
 	if err := os.Rename(tmp, p); err != nil {
 		return fmt.Errorf("commit trust ledger: %w", err)
 	}
+	s.invalidate(l.Ecosystem, l.Package)
 	return nil
 }
 
@@ -206,59 +209,12 @@ type Summary struct {
 	Summary      string    `json:"summary"`
 }
 
-// List returns a summary for every tracked package, worst trust score first.
-func (s *Store) List() ([]Summary, error) {
-	var out []Summary
-	err := filepath.WalkDir(s.root, func(path string, d os.DirEntry, err error) error {
-		if err != nil {
-			return err
-		}
-		if d.IsDir() || !strings.HasSuffix(path, ".json") {
-			return nil
-		}
-		data, err := os.ReadFile(path)
-		if err != nil {
-			return nil // skip unreadable ledgers rather than failing the listing
-		}
-		var l Ledger
-		if err := json.Unmarshal(data, &l); err != nil || len(l.Observations) == 0 {
-			return nil
-		}
-		sort.SliceStable(l.Observations, func(i, j int) bool {
-			return l.Observations[i].ObservedAt.Before(l.Observations[j].ObservedAt)
-		})
-		latest := l.Observations[len(l.Observations)-1]
-		score := Evaluate(BuildBaseline(l.Observations[:len(l.Observations)-1]), latest)
-		out = append(out, Summary{
-			Ecosystem:    l.Ecosystem,
-			Package:      l.Package,
-			Version:      latest.Version,
-			Score:        score.Score,
-			State:        score.State,
-			Samples:      len(l.Observations),
-			Deviations:   len(score.Deviations),
-			LastObserved: latest.ObservedAt,
-			Summary:      score.Summary,
-		})
-		return nil
-	})
-	if err != nil && !errors.Is(err, os.ErrNotExist) {
-		return nil, err
-	}
-	sort.SliceStable(out, func(i, j int) bool {
-		if out[i].Score != out[j].Score {
-			return out[i].Score < out[j].Score
-		}
-		return out[i].Package < out[j].Package
-	})
-	return out, nil
-}
-
 // Forget deletes a package ledger.
 func (s *Store) Forget(ecosystem, name string) error {
 	err := os.Remove(s.path(ecosystem, name))
 	if err != nil && !errors.Is(err, os.ErrNotExist) {
 		return err
 	}
+	s.invalidate(ecosystem, name)
 	return nil
 }

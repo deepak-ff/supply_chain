@@ -21,6 +21,10 @@ export default tseslint.config(
       ...reactHooks.configs.recommended.rules,
       'react-refresh/only-export-components': ['warn', { allowConstantExport: true }],
       '@typescript-eslint/no-explicit-any': 'error',
+      // The dashboard guards all sessionStorage access in try/catch; storage
+      // can throw in private/restricted contexts, and the swallow is
+      // intentional. Prefer commenting the block over an eslint-disable.
+      'no-empty': ['error', { allowEmptyCatch: true }],
     },
   },
 )

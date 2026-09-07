@@ -11,10 +11,70 @@ import (
 )
 
 // sessionCookieName is the name of the dashboard session cookie.
-const sessionCookieName = "fg_session"
+const sessionCookieName = "cw_session"
+
+// legacySessionCookieName is the pre-rebrand cookie name. It is still READ so
+// that an upgrade does not log anyone out, and cleared once a new cookie is
+// issued or on logout.
+const legacySessionCookieName = "fg_session"
 
 // sessionTTL is how long an issued session token is valid for.
 const sessionTTL = 24 * time.Hour
+
+// sessionToken returns the session token from either the current cw_session
+// cookie or, for backward compatibility during the rebrand, the legacy
+// fg_session cookie.
+func (h *Handler) sessionToken(c *gin.Context) (string, error) {
+	if tok, err := c.Cookie(sessionCookieName); err == nil {
+		return tok, nil
+	}
+	return c.Cookie(legacySessionCookieName)
+}
+
+// writeSessionCookie issues the current cw_session cookie.
+func (h *Handler) writeSessionCookie(c *gin.Context, value string, maxAge int) {
+	http.SetCookie(c.Writer, &http.Cookie{
+		Name:     sessionCookieName,
+		Value:    value,
+		Path:     "/",
+		MaxAge:   maxAge,
+		Secure:   h.cfg.GetCookieSecure(),
+		HttpOnly: true,
+		SameSite: http.SameSiteStrictMode,
+	})
+}
+
+// clearSessionCookies expires both the current cw_session cookie and the
+// legacy fg_session cookie, so an upgrade never leaves stale credentials in
+// the browser.
+func (h *Handler) clearSessionCookies(c *gin.Context) {
+	for _, name := range []string{sessionCookieName, legacySessionCookieName} {
+		http.SetCookie(c.Writer, &http.Cookie{
+			Name:     name,
+			Value:    "",
+			Path:     "/",
+			MaxAge:   -1,
+			Secure:   h.cfg.GetCookieSecure(),
+			HttpOnly: true,
+			SameSite: http.SameSiteStrictMode,
+		})
+	}
+}
+
+// clearLegacySessionCookie expires only the old fg_session cookie. Used right
+// after issuing a fresh cw_session cookie so an upgraded browser sheds the
+// legacy credential without invalidating the new session.
+func (h *Handler) clearLegacySessionCookie(c *gin.Context) {
+	http.SetCookie(c.Writer, &http.Cookie{
+		Name:     legacySessionCookieName,
+		Value:    "",
+		Path:     "/",
+		MaxAge:   -1,
+		Secure:   h.cfg.GetCookieSecure(),
+		HttpOnly: true,
+		SameSite: http.SameSiteStrictMode,
+	})
+}
 
 // Login authenticates the bootstrapped dashboard admin and, on success,
 // sets a signed session cookie.
@@ -52,15 +112,8 @@ func (h *Handler) Login(c *gin.Context) {
 		return
 	}
 
-	http.SetCookie(c.Writer, &http.Cookie{
-		Name:     sessionCookieName,
-		Value:    token,
-		Path:     "/",
-		MaxAge:   int(sessionTTL.Seconds()),
-		Secure:   h.cfg.GetCookieSecure(),
-		HttpOnly: true,
-		SameSite: http.SameSiteStrictMode,
-	})
+	h.writeSessionCookie(c, token, int(sessionTTL.Seconds()))
+	h.clearLegacySessionCookie(c)
 	resp := gin.H{"ok": true}
 	if admin.PasswordMustChange {
 		resp["password_must_change"] = true
@@ -71,15 +124,7 @@ func (h *Handler) Login(c *gin.Context) {
 // Logout clears the dashboard session cookie.
 // POST /api/v1/auth/logout
 func (h *Handler) Logout(c *gin.Context) {
-	http.SetCookie(c.Writer, &http.Cookie{
-		Name:     sessionCookieName,
-		Value:    "",
-		Path:     "/",
-		MaxAge:   -1,
-		Secure:   h.cfg.GetCookieSecure(),
-		HttpOnly: true,
-		SameSite: http.SameSiteStrictMode,
-	})
+	h.clearSessionCookies(c)
 	c.JSON(http.StatusOK, gin.H{"ok": true})
 }
 
@@ -92,7 +137,7 @@ func (h *Handler) ChangePassword(c *gin.Context) {
 		return
 	}
 
-	tok, err := c.Cookie(sessionCookieName)
+	tok, err := h.sessionToken(c)
 	if err != nil {
 		c.JSON(http.StatusUnauthorized, gin.H{"error": "not authenticated"})
 		return
@@ -122,15 +167,8 @@ func (h *Handler) ChangePassword(c *gin.Context) {
 	if err != nil {
 		h.log.Error("failed to re-issue session token after password change", "error", err)
 	} else {
-		http.SetCookie(c.Writer, &http.Cookie{
-			Name:     sessionCookieName,
-			Value:    newToken,
-			Path:     "/",
-			MaxAge:   int(sessionTTL.Seconds()),
-			Secure:   h.cfg.GetCookieSecure(),
-			HttpOnly: true,
-			SameSite: http.SameSiteStrictMode,
-		})
+		h.writeSessionCookie(c, newToken, int(sessionTTL.Seconds()))
+		h.clearLegacySessionCookie(c)
 	}
 
 	h.log.Info("admin password changed")
@@ -146,7 +184,7 @@ func (h *Handler) AuthMe(c *gin.Context) {
 		return
 	}
 
-	tok, err := c.Cookie(sessionCookieName)
+	tok, err := h.sessionToken(c)
 	if err != nil {
 		c.JSON(http.StatusOK, gin.H{"auth_enabled": true, "authenticated": false})
 		return
