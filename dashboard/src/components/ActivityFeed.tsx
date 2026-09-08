@@ -2,14 +2,15 @@ import { useQuery } from '@tanstack/react-query'
 import { getDashboardActivity } from '../lib/api'
 import type { ActivityEvent } from '../types/api'
 import { Skeleton } from './ui/skeleton'
+import { cn } from './ui/utils'
 
-function severityDot(severity: string) {
+function severityTone(severity: string): string {
   switch (severity) {
-    case 'CRITICAL': return '#FF3D3D'
-    case 'HIGH':     return '#FF8C00'
-    case 'MEDIUM':   return '#FFAB40'
-    case 'LOW':      return '#2FD4C2'
-    default:         return '#6B7280'
+    case 'CRITICAL': return 'bg-critical shadow-[0_0_8px_var(--critical)]'
+    case 'HIGH':     return 'bg-warning shadow-[0_0_8px_var(--warning)]'
+    case 'MEDIUM':   return 'bg-amber shadow-[0_0_8px_var(--amber)]'
+    case 'LOW':      return 'bg-neon shadow-[0_0_8px_var(--neon)]'
+    default:         return 'bg-text-muted'
   }
 }
 
@@ -38,62 +39,38 @@ export function ActivityFeed({ limit = 20, className }: Props) {
 
   return (
     <div
-      className={className}
-      style={{
-        background: 'var(--bg-surface)',
-        border: '1px solid rgba(255,255,255,0.07)',
-        borderRadius: '0.5rem',
-        padding: '1rem',
-        display: 'flex',
-        flexDirection: 'column',
-        gap: '0.25rem',
-        overflowY: 'auto',
-        maxHeight: '320px',
-      }}
+      className={cn('flex max-h-[320px] flex-col gap-1 overflow-y-auto rounded border border-border-color bg-bg-base p-3', className)}
     >
-      <p className="text-xs font-semibold mb-2" style={{ color: 'var(--color-muted)', textTransform: 'uppercase', letterSpacing: '0.08em' }}>
-        Live Activity
+      <p className="m-0 mb-1 flex items-center gap-2 font-mono text-[0.6rem] font-bold uppercase tracking-[0.2em] text-neon">
+        <span aria-hidden="true" className="sonar h-1.5 w-1.5 rounded-full bg-neon text-neon" />
+        live wire
       </p>
 
       {isLoading && (
-        <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
+        <div className="flex flex-col gap-2">
           {[...Array(5)].map((_, i) => <Skeleton key={i} className="h-4 w-full" />)}
         </div>
       )}
 
       {!isLoading && events.length === 0 && (
-        <p className="text-xs" style={{ color: 'var(--color-muted)', padding: '1rem 0' }}>
-          No activity yet — run a scan to see events here.
+        <p className="m-0 py-4 text-center font-mono text-[0.7rem] text-text-muted">
+          {'// wire is quiet — run a probe to see signals here.'}
         </p>
       )}
 
-      {events.map(event => (
+      {events.map((event) => (
         <div
           key={event.id}
-          style={{
-            display: 'flex',
-            alignItems: 'flex-start',
-            gap: '0.5rem',
-            padding: '0.35rem 0',
-            borderBottom: '1px solid rgba(255,255,255,0.04)',
-          }}
+          className="flex items-start gap-2 border-b border-[color-mix(in_srgb,var(--border-color)_50%,transparent)] py-1.5 last:border-0"
         >
           <span
-            style={{
-              width: 7,
-              height: 7,
-              borderRadius: '50%',
-              background: severityDot(event.severity),
-              flexShrink: 0,
-              marginTop: 5,
-            }}
+            aria-hidden="true"
+            className={cn('mt-1 h-[7px] w-[7px] shrink-0 rounded-full', severityTone(event.severity))}
           />
-          <div className="flex-1 min-w-0">
-            <p className="text-xs" style={{ color: 'var(--fg)', lineHeight: 1.4, wordBreak: 'break-word' }}>
-              {event.message}
-            </p>
-          </div>
-          <span className="text-xs" style={{ color: 'var(--color-muted)', flexShrink: 0, marginLeft: '0.25rem' }}>
+          <p className="m-0 min-w-0 flex-1 break-words text-[0.72rem] leading-snug text-text-primary">
+            {event.message}
+          </p>
+          <span className="shrink-0 font-mono text-[0.62rem] text-text-muted">
             {relativeTime(event.occurred_at)}
           </span>
         </div>

@@ -1,7 +1,10 @@
 import { useMutation } from '@tanstack/react-query'
-import { Puzzle, ShieldCheck, GitMerge, Webhook, CheckCircle2, Loader2, XCircle } from 'lucide-react'
+import { Puzzle, ShieldCheck, GitMerge, Webhook, CheckCircle2, Loader2, XCircle, Satellite } from 'lucide-react'
 import { testWebhook } from '../lib/api'
 import { useUIStore } from '../store/ui'
+import { Card, CardBody } from '../components/ui/card'
+import { CyberKicker } from '../components/cyber/CyberViz'
+import { cn } from '../components/ui/utils'
 
 type IntegrationStatus = 'available' | 'optional'
 
@@ -46,7 +49,7 @@ const CICD: IntegrationCard[] = [
   {
     icon: GitMerge,
     name: 'GitHub Actions',
-    description: 'Run cwctl scan in CI, emit SARIF, and upload findings to the GitHub Security tab. See the CI/CD page for the exact workflow snippet.',
+    description: 'Run cwctl scan in CI, emit SARIF, and upload findings to the GitHub Security tab. See Pipeline Sentry for the exact workflow snippet.',
     status: 'available',
     statusLabel: 'Available',
   },
@@ -54,24 +57,27 @@ const CICD: IntegrationCard[] = [
 
 function IntegrationTile({ card }: { card: IntegrationCard }) {
   return (
-    <div className="rounded-xl border border-border-color bg-surface p-4 shadow-sm flex flex-col gap-3">
-      <div className="flex items-start justify-between">
-        <div className="flex items-center gap-2.5">
-          <card.icon size={18} className="text-primary-blue" />
-          <span className="text-sm font-semibold text-text-primary">{card.name}</span>
+    <Card className="cyber-lift">
+      <CardBody className="flex flex-col gap-3">
+        <div className="flex items-start justify-between gap-2">
+          <div className="flex items-center gap-2.5">
+            <card.icon size={18} className="shrink-0 text-neon" />
+            <span className="text-[0.85rem] font-bold text-text-primary">{card.name}</span>
+          </div>
+          <span
+            className={cn(
+              'shrink-0 rounded-full border px-2 py-0.5 font-mono text-[0.62rem] font-bold uppercase tracking-wider',
+              card.status === 'available'
+                ? 'border-[color-mix(in_srgb,var(--neon)_40%,transparent)] bg-[color-mix(in_srgb,var(--neon)_10%,transparent)] text-neon'
+                : 'border-border-color bg-bg-base text-text-muted',
+            )}
+          >
+            {card.statusLabel}
+          </span>
         </div>
-        <span
-          className="text-[0.65rem] font-medium px-2 py-0.5 rounded-full shrink-0"
-          style={{
-            background: card.status === 'available' ? 'var(--blue-light)' : 'var(--surface-muted)',
-            color: card.status === 'available' ? 'var(--primary-blue)' : 'var(--text-secondary)',
-          }}
-        >
-          {card.statusLabel}
-        </span>
-      </div>
-      <p className="text-xs text-text-secondary leading-relaxed">{card.description}</p>
-    </div>
+        <p className="m-0 text-[0.76rem] leading-relaxed text-text-secondary">{card.description}</p>
+      </CardBody>
+    </Card>
   )
 }
 
@@ -80,96 +86,105 @@ function NotificationsCard() {
   const test = useMutation({ mutationFn: testWebhook })
 
   return (
-    <div className="rounded-xl border border-border-color bg-surface p-4 shadow-sm flex flex-col gap-3">
-      <div className="flex items-start justify-between">
-        <div className="flex items-center gap-2.5">
-          <Webhook size={18} className="text-primary-blue" />
-          <span className="text-sm font-semibold text-text-primary">Slack / Discord / Generic webhook</span>
+    <Card className="cyber-lift sm:col-span-2">
+      <CardBody className="flex flex-col gap-3">
+        <div className="flex items-start justify-between gap-2">
+          <div className="flex items-center gap-2.5">
+            <Webhook size={18} className="shrink-0 text-magenta" />
+            <span className="text-[0.85rem] font-bold text-text-primary">Slack / Discord / Generic webhook</span>
+          </div>
+          <span className="shrink-0 rounded-full border border-border-color bg-bg-base px-2 py-0.5 font-mono text-[0.62rem] font-bold uppercase tracking-wider text-text-muted">
+            Optional — armed locally
+          </span>
         </div>
-        <span
-          className="text-[0.65rem] font-medium px-2 py-0.5 rounded-full shrink-0"
-          style={{ background: 'var(--surface-muted)', color: 'var(--text-secondary)' }}
-        >
-          Optional — configure locally
-        </span>
-      </div>
-      <p className="text-xs text-text-secondary leading-relaxed">
-        Push security alerts to a webhook URL you configure via <code className="text-[0.7rem]">cwctl config set notify.slack_webhook_url=&lt;url&gt;</code>
-        {' '}(or the Discord / generic equivalents). This is a configured URL, not an OAuth-style connection —
-        there is nothing to "connect" here beyond setting the URL.
-      </p>
-      <div className="flex items-center gap-2">
-        <button
-          type="button"
-          onClick={() => test.mutate()}
-          disabled={test.isPending}
-          className="text-xs font-medium rounded-md border border-border-color px-3 py-1.5 text-text-primary hover:bg-surface-muted disabled:opacity-50 flex items-center gap-1.5" >
-          {test.isPending && <Loader2 size={12} className="animate-spin" />}
-          Test webhook endpoint
-        </button>
-        <button
-          type="button"
-          onClick={() => navigate('/webhooks')}
-          className="text-xs text-primary-blue hover:underline" >
-          Full webhook settings →
-        </button>
-      </div>
-      {test.isSuccess && test.data.status === 'ok' && (
-        <p className="text-xs text-success flex items-center gap-1.5">
-          <CheckCircle2 size={12} /> {test.data.message}
+        <p className="m-0 text-[0.76rem] leading-relaxed text-text-secondary">
+          Push red alerts to a tripwire URL you arm via <code className="font-mono text-[0.7rem] text-neon">cwctl config set notify.slack_webhook_url=&lt;url&gt;</code>
+          {' '}(or the Discord / generic equivalents). This is an armed URL, not an OAuth-style link —
+          there is nothing to "connect" beyond setting it.
         </p>
-      )}
-      {test.isSuccess && test.data.status === 'not_configured' && (
-        <p className="text-xs text-text-secondary flex items-center gap-1.5">
-          <Webhook size={12} /> {test.data.message}
-        </p>
-      )}
-      {test.isSuccess && test.data.status === 'failed' && (
-        <div className="text-xs text-critical flex flex-col gap-1">
-          <span className="flex items-center gap-1.5"><XCircle size={12} /> Delivery failed:</span>
-          {test.data.errors?.map((e, i) => <span key={i} className="ml-4">{e}</span>)}
+        <div className="flex flex-wrap items-center gap-2">
+          <button
+            type="button"
+            onClick={() => test.mutate()}
+            disabled={test.isPending}
+            className="wd-hover flex items-center gap-1.5 rounded border border-neon bg-[color-mix(in_srgb,var(--neon)_10%,transparent)] px-3 py-1.5 font-mono text-[0.7rem] font-bold uppercase tracking-widest text-neon hover:shadow-glow disabled:cursor-not-allowed disabled:opacity-50"
+          >
+            {test.isPending && <Loader2 size={12} className="animate-spin" />}
+            Test tripwire
+          </button>
+          <button
+            type="button"
+            onClick={() => navigate('/webhooks')}
+            className="wd-hover border-none bg-transparent font-mono text-[0.72rem] font-bold text-magenta hover:underline"
+          >
+            Full tripwire rigging →
+          </button>
         </div>
-      )}
-      {test.isError && (
-        <p className="text-xs text-critical flex items-center gap-1.5">
-          <XCircle size={12} /> {(test.error as Error).message}
-        </p>
-      )}
-    </div>
+        {test.isSuccess && test.data.status === 'ok' && (
+          <p className="m-0 flex items-center gap-1.5 font-mono text-[0.74rem] text-success">
+            <CheckCircle2 size={12} /> {test.data.message}
+          </p>
+        )}
+        {test.isSuccess && test.data.status === 'not_configured' && (
+          <p className="m-0 flex items-center gap-1.5 font-mono text-[0.74rem] text-text-secondary">
+            <Webhook size={12} /> {test.data.message}
+          </p>
+        )}
+        {test.isSuccess && test.data.status === 'failed' && (
+          <div className="flex flex-col gap-1 rounded border border-[color-mix(in_srgb,var(--critical)_30%,transparent)] bg-[color-mix(in_srgb,var(--critical)_10%,transparent)] px-3 py-2 font-mono text-[0.74rem] text-critical">
+            <span className="flex items-center gap-1.5 font-bold"><XCircle size={12} /> Delivery failed:</span>
+            {test.data.errors?.map((e, i) => <span key={i} className="ml-4">{e}</span>)}
+          </div>
+        )}
+        {test.isError && (
+          <p className="m-0 flex items-center gap-1.5 font-mono text-[0.74rem] text-critical">
+            <XCircle size={12} /> {(test.error as Error).message}
+          </p>
+        )}
+      </CardBody>
+    </Card>
   )
 }
 
 export function IntegrationsPage() {
   return (
     <div className="flex flex-col gap-5">
-      <div className="flex items-center gap-3">
-        <Puzzle size={20} className="text-primary-blue" />
-        <div>
-          <h1 className="text-lg font-bold text-text-primary">Integrations</h1>
-          <p className="mt-0.5 text-xs text-text-secondary">
-            Real integrations only — CLI tool auto-detection and locally-configured webhooks, not
-            OAuth-style connected apps.
-          </p>
+      <div>
+        <CyberKicker index="U-01" label="uplinks // mesh links" />
+        <div className="flex items-center gap-2.5">
+          <Satellite size={20} className="text-magenta drop-shadow-[0_0_8px_var(--magenta)]" aria-hidden="true" />
+          <div>
+            <h1 className="m-0 text-[1.15rem] font-bold tracking-tight text-text-primary">Mesh Links</h1>
+            <p className="m-0 mt-0.5 text-[0.78rem] text-text-secondary">
+              Real links only — engine auto-detection and locally-armed tripwires. No fake OAuth theatre.
+            </p>
+          </div>
         </div>
       </div>
 
-      <div>
-        <h2 className="text-xs font-semibold uppercase tracking-wide text-text-muted mb-2">Scan engines</h2>
-        <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+      <div className="flex flex-col gap-3">
+        <h2 className="m-0 flex items-center gap-2 font-mono text-[0.72rem] font-bold uppercase tracking-[0.18em] text-text-muted">
+          <Puzzle size={13} className="text-neon" /> Sensor engines
+        </h2>
+        <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
           {SCAN_ENGINES.map(c => <IntegrationTile key={c.name} card={c} />)}
         </div>
       </div>
 
-      <div>
-        <h2 className="text-xs font-semibold uppercase tracking-wide text-text-muted mb-2">CI/CD</h2>
-        <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+      <div className="flex flex-col gap-3">
+        <h2 className="m-0 flex items-center gap-2 font-mono text-[0.72rem] font-bold uppercase tracking-[0.18em] text-text-muted">
+          <GitMerge size={13} className="text-neon" /> Pipeline mesh
+        </h2>
+        <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
           {CICD.map(c => <IntegrationTile key={c.name} card={c} />)}
         </div>
       </div>
 
-      <div>
-        <h2 className="text-xs font-semibold uppercase tracking-wide text-text-muted mb-2">Notifications</h2>
-        <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+      <div className="flex flex-col gap-3">
+        <h2 className="m-0 flex items-center gap-2 font-mono text-[0.72rem] font-bold uppercase tracking-[0.18em] text-text-muted">
+          <Webhook size={13} className="text-neon" /> Alarm mesh
+        </h2>
+        <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
           <NotificationsCard />
         </div>
       </div>

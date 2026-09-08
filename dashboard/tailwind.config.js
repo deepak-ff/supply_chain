@@ -9,17 +9,11 @@ export default {
   theme: {
     extend: {
       colors: {
-        // Legacy dark-theme aliases — now point at the new CSS vars so any
-        // remaining `bg-safe`/`bg-critical` utility usages stay coherent.
         safe: 'var(--success)',
         warn: 'var(--warning)',
         critical: 'var(--critical)',
         surface: 'var(--surface)',
         elevated: 'var(--surface-muted)',
-        // New semantic tokens for the "Technical Security OS" design system —
-        // use these Tailwind utilities (bg-primary-blue, text-text-secondary,
-        // border-border-color, etc.) in new components going forward instead
-        // of inline style={{}} objects.
         'bg-base': 'var(--bg-base)',
         'surface-muted': 'var(--surface-muted)',
         'border-color': 'var(--border-color)',
@@ -31,11 +25,6 @@ export default {
         cyan: 'var(--cyan)',
         success: 'var(--success)',
         warning: 'var(--warning)',
-        // Component-layer tokens (see src/index.css). Prefer these over
-        // inline style={{}} objects — they are dark-mode aware by construction.
-        // NOTE: `primary` is intentionally not redefined here; the shadcn
-        // `primary` entry below already resolves to hsl(var(--primary)) = the
-        // Warden violet in both themes.
         amber: 'var(--amber)',
         'accent-soft': 'var(--accent-soft)',
         teal: 'var(--teal)',
@@ -45,14 +34,23 @@ export default {
         'chart-1': 'var(--chart-1)',
         'chart-2': 'var(--chart-2)',
         'chart-3': 'var(--chart-3)',
-        // shadcn/ui semantic colors (reference CSS variables)
+        // ── NEON SENTRY cyber tokens ──
+        neon: 'var(--neon)',
+        magenta: 'var(--magenta)',
+        lime: 'var(--lime)',
+        void: 'var(--bg-base)',
         border: 'hsl(var(--border))',
         input: 'hsl(var(--input))',
         ring: 'hsl(var(--ring))',
         background: 'hsl(var(--background))',
         foreground: 'hsl(var(--foreground))',
+        // NOTE: `primary` reads the hex `--primary` token directly (not an
+        // `hsl(var(--…))` triplet) so plain-CSS `var(--primary)` uses and
+        // Tailwind utilities resolve to the same value. Opacity modifiers
+        // (e.g. `bg-primary/10`) do NOT work on var() colors in Tailwind v3
+        // — use `bg-[color-mix(in_srgb,var(--primary)_10%,transparent)]`.
         primary: {
-          DEFAULT: 'hsl(var(--primary))',
+          DEFAULT: 'var(--primary)',
           foreground: 'hsl(var(--primary-foreground))',
         },
         secondary: {
@@ -77,20 +75,18 @@ export default {
         },
       },
       boxShadow: {
-        // The one and only card shadow — themed per mode in index.css.
         card: 'var(--shadow-card)',
+        glow: 'var(--shadow-glow)',
       },
       borderRadius: {
-        // VIGIL "panel" corners — one soft 6px radius everywhere.
         DEFAULT: 'var(--radius)',
         lg: 'var(--radius)',
         md: 'var(--radius)',
         sm: 'calc(var(--radius) - 2px)',
       },
       fontFamily: {
-        // Local system stacks — no webfont CDN dependency (offline / airgap).
         sans: ['ui-sans-serif', 'system-ui', '-apple-system', 'Segoe UI', 'Roboto', 'Helvetica Neue', 'Arial', 'sans-serif'],
-        mono: ['ui-monospace', 'SF Mono', 'JetBrains Mono', 'Cascadia Mono', 'Roboto Mono', 'Menlo', 'Consolas', 'Liberation Mono', 'monospace'],
+        mono: ['JetBrains Mono', 'ui-monospace', 'SF Mono', 'Cascadia Mono', 'Roboto Mono', 'Menlo', 'Consolas', 'Liberation Mono', 'monospace'],
       },
     },
   },

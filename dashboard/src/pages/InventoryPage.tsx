@@ -1,8 +1,13 @@
 import { useState } from 'react'
 import { useQuery } from '@tanstack/react-query'
-import { Package, Search } from 'lucide-react'
+import { Package, Search, Boxes, ChevronLeft, ChevronRight } from 'lucide-react'
 import { listPackages, getDashboardStats } from '../lib/api'
 import { Skeleton } from '../components/ui/skeleton'
+import { Card, CardHeader, CardBody } from '../components/ui/card'
+import { StatTile } from '../components/ui/stat-tile'
+import { EmptyState } from '../components/EmptyState'
+import { CyberKicker } from '../components/cyber/CyberViz'
+import { cn } from '../components/ui/utils'
 
 const ECOSYSTEMS = ['npm', 'pypi', 'go', 'rubygems', 'crates', 'maven', 'huggingface', 'mcp']
 
@@ -29,119 +34,105 @@ export default function InventoryPage() {
   return (
     <div className="flex flex-col gap-5">
       <div>
-        <h1 className="text-lg font-bold font-mono text-text-primary">Software Inventory</h1>
-        <p className="text-xs mt-0.5 text-text-secondary">
-          All known packages and dependencies across your scanned projects
-        </p>
+        <CyberKicker index="A-02" label="arsenal // supply vault" />
+        <div className="flex items-center gap-2.5">
+          <Boxes size={20} className="text-neon drop-shadow-[0_0_8px_var(--neon)]" aria-hidden="true" />
+          <div>
+            <h1 className="m-0 text-[1.15rem] font-bold tracking-tight text-text-primary">Supply Vault</h1>
+            <p className="m-0 mt-0.5 text-[0.78rem] text-text-secondary">
+              Every package and dependency ever swept from your projects — sealed in one vault.
+            </p>
+          </div>
+        </div>
       </div>
 
       {/* Summary cards */}
-      <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
-        {[
-          { label: 'Total Packages', value: stats.data?.total_packages, color: 'var(--color-safe)' },
-          { label: 'Total Versions', value: stats.data?.total_versions, color: '#60A5FA' },
-          { label: 'Total Findings', value: stats.data?.total_findings, color: 'var(--color-warn)' },
-          { label: 'Ecosystems', value: stats.data?.ecosystems_covered?.length, color: 'var(--fg)' },
-        ].map(card => (
-          <div key={card.label} style={{
-            background: 'var(--bg-surface)',
-            border: '1px solid rgba(255,255,255,0.07)',
-            borderRadius: '0.5rem',
-            padding: '0.875rem 1rem',
-          }}>
-            <p className="text-xs text-text-secondary">{card.label}</p>
-            {stats.isLoading
-              ? <Skeleton className="h-7 w-12 mt-1" />
-              : <p className="text-2xl font-bold font-mono mt-0.5" style={{ color: card.color }}>{card.value ?? '—'}</p>
-            }
-          </div>
-        ))}
+      <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
+        <StatTile label="Packages sealed" value={stats.data?.total_packages ?? '—'} icon={Package} accent="success" loading={stats.isLoading} className="cyber-lift" />
+        <StatTile label="Versions" value={stats.data?.total_versions ?? '—'} icon={Package} loading={stats.isLoading} className="cyber-lift" />
+        <StatTile label="Findings" value={stats.data?.total_findings ?? '—'} icon={Package} accent="warning" loading={stats.isLoading} className="cyber-lift" />
+        <StatTile label="Ecosystems" value={stats.data?.ecosystems_covered?.length ?? '—'} icon={Package} accent="teal" loading={stats.isLoading} className="cyber-lift" />
       </div>
 
       {/* Ecosystem breakdown */}
-      <div style={{ background: 'var(--bg-surface)', border: '1px solid rgba(255,255,255,0.07)', borderRadius: '0.5rem', padding: '1rem' }}>
-        <p className="text-xs font-semibold mb-2" style={{ color: 'var(--color-muted)', textTransform: 'uppercase', letterSpacing: '0.08em' }}>
-          Ecosystem Coverage
-        </p>
-        <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.5rem' }}>
+      <Card className="cyber-lift">
+        <CardHeader title="Ecosystem cordon" description="Tap an ecosystem to isolate its stock" />
+        <CardBody className="flex flex-wrap gap-2">
           {(stats.data?.ecosystems_covered ?? ECOSYSTEMS).map(e => (
             <button
               key={e}
+              type="button"
               onClick={() => setEco(prev => prev === e ? '' : e)}
-              className="text-xs font-mono px-2.5 py-1 rounded"
-              style={{
-                background: eco === e ? 'rgba(0,255,135,0.12)' : 'var(--bg-elevated)',
-                color: eco === e ? 'var(--color-safe)' : 'var(--fg)',
-                border: eco === e ? '1px solid rgba(0,255,135,0.3)' : '1px solid rgba(255,255,255,0.07)',
-                cursor: 'pointer',
-              }}
+              aria-pressed={eco === e}
+              className={cn(
+                'wd-hover rounded border px-2.5 py-1 font-mono text-[0.72rem] font-bold',
+                eco === e
+                  ? 'border-neon bg-[color-mix(in_srgb,var(--neon)_12%,transparent)] text-neon shadow-glow'
+                  : 'border-border-color bg-bg-base text-text-secondary hover:border-neon hover:text-neon',
+              )}
             >
               {e}
             </button>
           ))}
-        </div>
-      </div>
+        </CardBody>
+      </Card>
 
       {/* Package table */}
-      <div style={{ background: 'var(--bg-surface)', border: '1px solid rgba(255,255,255,0.07)', borderRadius: '0.5rem', overflow: 'hidden' }}>
-        <div style={{ padding: '0.75rem 1rem', borderBottom: '1px solid rgba(255,255,255,0.07)', display: 'flex', gap: '0.75rem', alignItems: 'center' }}>
-          <Package className="text-text-secondary" size={14} />
-          <span className="text-xs font-semibold text-text-primary">{total} packages</span>
-          <div style={{ marginLeft: 'auto', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-            <div style={{ position: 'relative' }}>
-              <Search size={12} style={{ position: 'absolute', left: 8, top: '50%', transform: 'translateY(-50%)', color: 'var(--color-muted)' }} />
+      <Card className="cyber-lift overflow-hidden">
+        <CardHeader
+          icon={Package}
+          title={`${total} sealed package${total === 1 ? '' : 's'}`}
+          description={eco ? `Cordoned to ${eco}` : 'All ecosystems'}
+          action={
+            <div className="relative">
+              <Search size={12} className="absolute left-2.5 top-1/2 -translate-y-1/2 text-text-muted" />
               <input
                 type="text"
-                placeholder="Search packages..."
+                placeholder="Search the vault…"
+                aria-label="Search packages"
                 value={search}
                 onChange={e => setSearch(e.target.value)}
-                className="text-xs rounded pl-6 pr-2 py-1"
-                style={{ background: 'var(--bg-elevated)', color: 'var(--fg)', border: '1px solid rgba(255,255,255,0.1)', width: 180, outline: 'none' }}
+                className="w-[190px] rounded border border-border-color bg-bg-base py-1.5 pl-7 pr-2 text-xs text-text-primary"
               />
             </div>
-          </div>
-        </div>
+          }
+        />
 
         {packages.isLoading ? (
-          <div style={{ padding: '1rem', display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
+          <CardBody className="flex flex-col gap-2">
             {[...Array(8)].map((_, i) => <Skeleton key={i} className="h-8 w-full" />)}
-          </div>
+          </CardBody>
         ) : filtered.length === 0 ? (
-          <div style={{ padding: '3rem', textAlign: 'center' }}>
-            <p className="text-sm text-text-primary">No packages found</p>
-            <p className="text-xs mt-1 text-text-secondary">Scan a project to populate your inventory:</p>
-            <code className="text-xs px-3 py-1.5 rounded font-mono mt-2 inline-block"
-              style={{ background: 'rgba(255,255,255,0.06)', color: 'var(--color-safe)' }}>
-              cwctl scan .
-            </code>
-          </div>
+          <CardBody>
+            <EmptyState
+              icon={Boxes}
+              title="Vault is empty"
+              description="Sweep a project and its stock will be sealed in here."
+              command="cwctl scan ."
+            />
+          </CardBody>
         ) : (
           <>
-            <div style={{ overflowX: 'auto' }}>
-              <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '0.8125rem' }}>
+            <div className="overflow-x-auto">
+              <table className="w-full text-[0.8rem]" style={{ borderCollapse: 'collapse' }}>
                 <thead>
-                  <tr style={{ borderBottom: '1px solid rgba(255,255,255,0.07)' }}>
+                  <tr className="border-b border-border-color bg-bg-base">
                     {['Package', 'Ecosystem', 'Versions'].map(h => (
-                      <th key={h} style={{ padding: '0.5rem 0.75rem', textAlign: 'left', color: 'var(--color-muted)', fontWeight: 500, fontSize: '0.75rem' }}>{h}</th>
+                      <th key={h} className="px-3.5 py-2.5 text-left font-mono text-[0.64rem] font-bold uppercase tracking-[0.14em] text-text-muted">{h}</th>
                     ))}
                   </tr>
                 </thead>
                 <tbody>
                   {filtered.map(pkg => (
-                    <tr className="border-b border-border-color/60" key={`${pkg.ecosystem}/${pkg.name}`}>
-                      <td style={{ padding: '0.55rem 0.75rem' }}>
-                        <span className="font-mono text-sm text-text-primary">{pkg.name}</span>
-                      </td>
-                      <td style={{ padding: '0.55rem 0.75rem' }}>
-                        <span className="text-xs font-mono px-1.5 py-0.5 rounded"
-                          style={{ background: 'rgba(255,255,255,0.06)', color: 'var(--color-muted)' }}>
+                    <tr key={`${pkg.ecosystem}/${pkg.name}`} className="border-b border-border-color last:border-b-0">
+                      <td className="px-3.5 py-2.5 font-mono text-[0.8rem] font-bold text-neon">{pkg.name}</td>
+                      <td className="px-3.5 py-2.5">
+                        <span className="rounded border border-border-color bg-bg-base px-1.5 py-0.5 font-mono text-[0.68rem] text-text-secondary">
                           {pkg.ecosystem}
                         </span>
                       </td>
-                      <td style={{ padding: '0.55rem 0.75rem' }}>
-                        <span className="text-xs text-text-secondary">
-                          {pkg.versions?.length ?? 1} version{(pkg.versions?.length ?? 1) !== 1 ? 's' : ''}
-                        </span>
+                      <td className="px-3.5 py-2.5 text-[0.76rem] tabular-nums text-text-secondary">
+                        {pkg.versions?.length ?? 1} version{(pkg.versions?.length ?? 1) !== 1 ? 's' : ''}
                       </td>
                     </tr>
                   ))}
@@ -149,29 +140,29 @@ export default function InventoryPage() {
               </table>
             </div>
             {totalPages > 1 && (
-              <div style={{ padding: '0.75rem 1rem', borderTop: '1px solid rgba(255,255,255,0.07)', display: 'flex', gap: '0.5rem', justifyContent: 'flex-end', alignItems: 'center' }}>
+              <div className="flex items-center justify-end gap-2 border-t border-border-color bg-surface px-4 py-2.5">
                 <button
+                  type="button"
                   onClick={() => setPage(p => Math.max(1, p - 1))}
                   disabled={page === 1}
-                  className="text-xs px-2.5 py-1 rounded"
-                  style={{ background: 'var(--bg-elevated)', color: page === 1 ? 'var(--color-muted)' : 'var(--fg)', border: '1px solid rgba(255,255,255,0.1)', cursor: page === 1 ? 'default' : 'pointer' }}
+                  className="wd-hover flex items-center gap-1 rounded border border-border-color bg-transparent px-2.5 py-1 font-mono text-[0.7rem] font-bold uppercase tracking-wider text-text-secondary hover:border-neon hover:text-neon disabled:cursor-default disabled:opacity-40 disabled:hover:border-border-color disabled:hover:text-text-secondary"
                 >
-                  ← Prev
+                  <ChevronLeft size={12} /> Prev
                 </button>
-                <span className="text-xs text-text-secondary">{page} / {totalPages}</span>
+                <span className="font-mono text-[0.7rem] tabular-nums text-text-muted">{page} / {totalPages}</span>
                 <button
+                  type="button"
                   onClick={() => setPage(p => Math.min(totalPages, p + 1))}
                   disabled={page === totalPages}
-                  className="text-xs px-2.5 py-1 rounded"
-                  style={{ background: 'var(--bg-elevated)', color: page === totalPages ? 'var(--color-muted)' : 'var(--fg)', border: '1px solid rgba(255,255,255,0.1)', cursor: page === totalPages ? 'default' : 'pointer' }}
+                  className="wd-hover flex items-center gap-1 rounded border border-border-color bg-transparent px-2.5 py-1 font-mono text-[0.7rem] font-bold uppercase tracking-wider text-text-secondary hover:border-neon hover:text-neon disabled:cursor-default disabled:opacity-40 disabled:hover:border-border-color disabled:hover:text-text-secondary"
                 >
-                  Next →
+                  Next <ChevronRight size={12} />
                 </button>
               </div>
             )}
           </>
         )}
-      </div>
+      </Card>
     </div>
   )
 }

@@ -4,76 +4,30 @@ import {
   LineChart, Line, BarChart, Bar, XAxis, YAxis, CartesianGrid,
   Tooltip as RechartsTooltip, ResponsiveContainer, Legend,
 } from 'recharts';
-import { axisProps, gridProps, tooltipProps } from '../lib/chartTheme';
-import { GitBranch, TrendingUp, Minus, ArrowUpRight, ArrowDownRight, AlertTriangle, Shield } from 'lucide-react';
+import { axisProps, gridProps, legendProps, tooltipProps } from '../lib/chartTheme';
+import { GitBranch, TrendingUp, AlertTriangle, Shield, Radar } from 'lucide-react';
 import { getDashboardTimeline, getActiveRisks, padTimeline } from '../lib/api';
+import { Card, CardHeader, CardBody } from '../components/ui/card';
+import { StatTile, type StatTileAccent } from '../components/ui/stat-tile';
+import { ExposureBars, CyberKicker } from '../components/cyber/CyberViz';
+import { EmptyState } from '../components/EmptyState';
 import { cn } from '../components/ui/utils';
 
 const SEV = {
-  critical: { color: 'var(--critical)', hex: '#DC2626', label: 'Critical' },
-  high:     { color: '#EA580C',         hex: '#EA580C', label: 'High' },
-  medium:   { color: 'var(--warning)',  hex: '#D97706', label: 'Medium' },
-  low:      { color: 'var(--cyan)',     hex: '#06B6D4', label: 'Low' },
+  critical: { hex: '#FF4D5E', label: 'Critical' },
+  high:     { hex: '#FF8A3D', label: 'High' },
+  medium:   { hex: '#FFB224', label: 'Medium' },
+  low:      { hex: '#00E5FF', label: 'Low' },
 } as const;
 
-function Card({ children, className }: { children: React.ReactNode; className?: string }) {
-  return (
-    <div className={cn('rounded-xl border border-border-color bg-surface shadow-sm', className)}>
-      {children}
-    </div>
-  );
-}
+type GradeTone = 'critical' | 'warning' | 'amber' | 'teal' | 'neon';
+const GRADE_TONE: Record<string, GradeTone> = {
+  F: 'critical', D: 'warning', C: 'amber', B: 'teal', A: 'neon',
+};
 
-function PanelHeader({ title, badge, action }: { title: string; badge?: React.ReactNode; action?: React.ReactNode }) {
-  return (
-    <div className="flex items-center justify-between px-4 pt-3 pb-2">
-      <div className="flex items-center gap-2">
-        <span className="text-[0.78rem] font-semibold text-text-primary">{title}</span>
-        {badge}
-      </div>
-      {action}
-    </div>
-  );
-}
-
-function DeltaBadge({ value, inverted }: { value: number; inverted?: boolean }) {
-  const isUp = value > 0;
-  const isFlat = value === 0;
-  const Icon = isFlat ? Minus : isUp ? ArrowUpRight : ArrowDownRight;
-  const good = inverted ? isUp : !isUp;
-  const color = isFlat ? 'var(--text-muted)' : good ? 'var(--success)' : 'var(--critical)';
-  return (
-    <span className="flex items-center gap-0.5 text-[0.68rem] font-medium" style={{ color }}>
-      <Icon size={12} />
-      {!isFlat && <>{value > 0 ? '+' : ''}{value}</>}
-    </span>
-  );
-}
-
-function KPITile({
-  label, value, delta, icon: Icon, color, accentColor, className,
-}: {
-  label: string; value: number | string; delta?: number;
-  icon: typeof TrendingUp; color: string; accentColor?: string;
-  className?: string;
-}) {
-  return (
-    <Card className={cn('relative overflow-hidden', className)}>
-      {accentColor && (
-        <div className="absolute left-0 top-2.5 bottom-2.5 w-[3px] rounded-r-sm" style={{ background: accentColor }} />
-      )}
-      <div className={cn('p-4', accentColor && 'pl-5')}>
-        <div className="flex items-center gap-1.5 mb-1.5">
-          <Icon size={13} className="text-text-muted" />
-          <span className="text-[0.68rem] text-text-secondary">{label}</span>
-        </div>
-        <div className="flex items-baseline gap-2">
-          <span className="text-[1.6rem] font-bold tabular-nums leading-none" style={{ color }}>{value}</span>
-          {delta !== undefined && <DeltaBadge value={delta} inverted />}
-        </div>
-      </div>
-    </Card>
-  );
+function fmtDelta(v: number): { value: string; direction: 'up' | 'down' | 'flat' } {
+  if (v === 0) return { value: '0', direction: 'flat' };
+  return { value: `${v > 0 ? '+' : ''}${v}`, direction: v > 0 ? 'up' : 'down' };
 }
 
 function relativeTime(dateStr: string): string {
@@ -85,6 +39,13 @@ function relativeTime(dateStr: string): string {
   if (h < 24) return `${h}h ago`;
   return `${Math.floor(h / 24)}d ago`;
 }
+
+const SEV_CHIP: Record<string, string> = {
+  CRITICAL: 'border-[color-mix(in_srgb,var(--critical)_40%,transparent)] bg-[color-mix(in_srgb,var(--critical)_12%,transparent)] text-critical',
+  HIGH: 'border-[color-mix(in_srgb,var(--warning)_40%,transparent)] bg-[color-mix(in_srgb,var(--warning)_12%,transparent)] text-warning',
+  MEDIUM: 'border-[color-mix(in_srgb,var(--amber)_40%,transparent)] bg-[color-mix(in_srgb,var(--amber)_12%,transparent)] text-amber',
+  LOW: 'border-[color-mix(in_srgb,var(--neon)_40%,transparent)] bg-[color-mix(in_srgb,var(--neon)_12%,transparent)] text-neon',
+};
 
 export function DependencyDriftPage() {
   const timeline30 = useQuery({
@@ -128,6 +89,7 @@ export function DependencyDriftPage() {
     }
     return ['F', 'D', 'C', 'B', 'A'].map(g => ({ grade: g, count: grades[g] ?? 0 })).filter(g => g.count > 0);
   }, [allRisks]);
+  const gradeMax = riskByGrade[0]?.count ?? 1;
 
   const recentChanges = useMemo(() => {
     return [...allRisks]
@@ -149,196 +111,180 @@ export function DependencyDriftPage() {
 
   const totalFindings = sevBreakdown.critical + sevBreakdown.high + sevBreakdown.medium + sevBreakdown.low;
 
+  const kpis: Array<{ label: string; value: number; delta?: { value: string; direction: 'up' | 'down' | 'flat' }; icon: typeof TrendingUp; accent: StatTileAccent }> = [
+    { label: 'Live findings', value: totalFindings, delta: fmtDelta(summary.totalDelta), icon: AlertTriangle, accent: 'neutral' },
+    { label: 'Critical', value: sevBreakdown.critical, delta: fmtDelta(summary.critDelta), icon: AlertTriangle, accent: 'critical' },
+    { label: 'High', value: sevBreakdown.high, delta: fmtDelta(summary.highDelta), icon: AlertTriangle, accent: 'warning' },
+    { label: 'Packages at risk', value: allRisks.length, icon: Shield, accent: 'amber' },
+  ];
+
   return (
-    <div className="flex flex-col">
-      <div className="flex flex-col gap-4">
-        {/* Header */}
-        <div>
-          <h1 className="text-[1.1rem] font-bold text-text-primary">Dependency Drift</h1>
-          <p className="text-[0.75rem] text-text-secondary mt-0.5">
-            Track changes in your dependency graph and vulnerability posture over time.
-          </p>
-        </div>
+    <div className="flex flex-col gap-5">
+      {/* Header */}
+      <div>
+        <CyberKicker index="O-03" label="overwatch // drift radar" />
+        <h1 className="m-0 flex items-center gap-2 text-[1.15rem] font-bold tracking-tight text-text-primary">
+          <Radar size={18} className="text-neon" aria-hidden="true" /> Drift Radar
+        </h1>
+        <p className="m-0 mt-1 text-[0.78rem] text-text-secondary">
+          How your supply grid is shifting — posture drift, grade migration and fresh movement, week over week.
+        </p>
+      </div>
 
-        {/* KPI strip */}
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-2.5">
-          <KPITile
-            className="fg-entrance"
-            label="Total findings"
-            value={totalFindings}
-            delta={summary.totalDelta}
-            icon={AlertTriangle}
-            color="var(--text-primary)" />
-          <KPITile
-            className="fg-entrance fg-entrance-delay-1"
-            label="Critical"
-            value={sevBreakdown.critical}
-            delta={summary.critDelta}
-            icon={AlertTriangle}
-            color="var(--critical)"
-            accentColor="var(--critical)" />
-          <KPITile
-            className="fg-entrance fg-entrance-delay-2"
-            label="High"
-            value={sevBreakdown.high}
-            delta={summary.highDelta}
-            icon={AlertTriangle}
-            color="#EA580C"
-            accentColor="#EA580C" />
-          <KPITile
-            className="fg-entrance fg-entrance-delay-3"
-            label="Packages at risk"
-            value={allRisks.length}
-            icon={Shield}
-            color="var(--warning)"
-            accentColor="var(--warning)" />
-        </div>
-
-        {/* Main chart — stacked area 30d */}
-        <Card>
-          <PanelHeader
-            title="Vulnerability trend"
-            badge={<span className="text-[0.6rem] text-text-muted font-medium uppercase tracking-wide">30 days</span>}
+      {/* KPI strip */}
+      <div className="grid grid-cols-2 gap-5 md:grid-cols-4">
+        {kpis.map((k, i) => (
+          <StatTile
+            key={k.label}
+            label={k.label}
+            value={k.value}
+            delta={k.delta}
+            icon={k.icon}
+            accent={k.accent}
+            loading={timeline30.isLoading && pts30.length === 0}
+            className={cn('cyber-lift fg-entrance', i === 1 && 'fg-entrance-delay-1', i === 2 && 'fg-entrance-delay-2', i === 3 && 'fg-entrance-delay-3')}
           />
-          <div className="px-3 pb-3">
-            {pts30.length > 0 ? (
-              <ResponsiveContainer width="100%" height={240}>
-                <LineChart data={pts30} margin={{ top: 8, right: 12, left: -16, bottom: 0 }}>
+        ))}
+      </div>
+
+      {/* Main chart — 30d signal sweep */}
+      <Card className="cyber-lift">
+        <CardHeader
+          title="Signal sweep"
+          description="Finding drift across the last 30 days, by severity"
+          action={
+            <span className="font-mono text-[0.6rem] font-bold uppercase tracking-[0.18em] text-neon">30 days</span>
+          }
+        />
+        <CardBody>
+          {pts30.length > 0 ? (
+            <ResponsiveContainer width="100%" height={240}>
+              <LineChart data={pts30} margin={{ top: 8, right: 12, left: -16, bottom: 0 }}>
+                <CartesianGrid {...gridProps} />
+                <XAxis dataKey="date" {...axisProps}
+                  tickFormatter={(v: string) => v.slice(5)} interval="preserveStartEnd" />
+                <YAxis {...axisProps} />
+                <RechartsTooltip {...tooltipProps} />
+                <Legend {...legendProps} />
+                <Line type="monotone" dataKey="critical" name="Critical" stroke={SEV.critical.hex} strokeWidth={2} dot={false} isAnimationActive animationDuration={200} />
+                <Line type="monotone" dataKey="high" name="High" stroke={SEV.high.hex} strokeWidth={2} dot={false} isAnimationActive animationDuration={200} />
+                <Line type="monotone" dataKey="medium" name="Medium" stroke={SEV.medium.hex} strokeWidth={2} dot={false} isAnimationActive animationDuration={200} />
+                <Line type="monotone" dataKey="low" name="Low" stroke={SEV.low.hex} strokeWidth={2} dot={false} isAnimationActive animationDuration={200} />
+              </LineChart>
+            </ResponsiveContainer>
+          ) : (
+            <EmptyState
+              icon={GitBranch}
+              title="No sweep history yet"
+              description="Run probes on a schedule to populate the drift record."
+              command="cwctl scan ."
+            />
+          )}
+        </CardBody>
+      </Card>
+
+      {/* 7-day stacked bars + grade migration */}
+      <div className="grid grid-cols-1 gap-5 lg:grid-cols-[2fr_1fr]">
+        <Card className="cyber-lift">
+          <CardHeader
+            title="Weekly findings stack"
+            description="Stacked hits per day for the last 7 days"
+            action={
+              <span className="font-mono text-[0.6rem] font-bold uppercase tracking-[0.18em] text-neon">7 days</span>
+            }
+          />
+          <CardBody>
+            {pts7.length > 0 ? (
+              <ResponsiveContainer width="100%" height={200}>
+                <BarChart data={pts7} margin={{ top: 4, right: 8, left: -20, bottom: 0 }}>
                   <CartesianGrid {...gridProps} />
                   <XAxis dataKey="date" {...axisProps}
-                    tickFormatter={(v: string) => v.slice(5)} interval="preserveStartEnd" />
+                    tickFormatter={(v: string) => {
+                      const d = new Date(v);
+                      return d.toLocaleDateString('en-US', { weekday: 'short' });
+                    }} />
                   <YAxis {...axisProps} />
                   <RechartsTooltip {...tooltipProps} />
-                  <Legend iconType="plainline" wrapperStyle={{ fontSize: 10, paddingTop: 4 }} />
-                  <Line type="monotone" dataKey="critical" name="Critical" stroke={SEV.critical.hex} strokeWidth={2} dot={false} isAnimationActive animationDuration={200} />
-                  <Line type="monotone" dataKey="high" name="High" stroke={SEV.high.hex} strokeWidth={2} dot={false} isAnimationActive animationDuration={200} />
-                  <Line type="monotone" dataKey="medium" name="Medium" stroke={SEV.medium.hex} strokeWidth={2} dot={false} isAnimationActive animationDuration={200} />
-                  <Line type="monotone" dataKey="low" name="Low" stroke={SEV.low.hex} strokeWidth={2} dot={false} isAnimationActive animationDuration={200} />
-                </LineChart>
+                  <Bar dataKey="critical" stackId="sev" fill={SEV.critical.hex} name="Critical" />
+                  <Bar dataKey="high" stackId="sev" fill={SEV.high.hex} name="High" />
+                  <Bar dataKey="medium" stackId="sev" fill={SEV.medium.hex} name="Medium" />
+                  <Bar dataKey="low" stackId="sev" fill={SEV.low.hex} name="Low" radius={[2, 2, 0, 0]} />
+                </BarChart>
               </ResponsiveContainer>
             ) : (
-              <div className="h-56 flex flex-col items-center justify-center gap-2">
-                <GitBranch size={24} className="text-text-muted opacity-40" />
-                <p className="text-[0.78rem] text-text-secondary">No timeline data yet — run scans to populate history.</p>
-              </div>
+              <EmptyState
+                icon={GitBranch}
+                title="No weekly data yet"
+                description="Seven days of probes will fill this stack."
+              />
             )}
-          </div>
+          </CardBody>
         </Card>
 
-        {/* 7-day bar chart + risk grade distribution + recent changes */}
-        <div className="grid grid-cols-1 lg:grid-cols-[2fr_1fr] gap-3.5">
-          {/* Weekly severity bar chart */}
-          <Card>
-            <PanelHeader
-              title="Weekly severity breakdown"
-              badge={<span className="text-[0.6rem] text-text-muted font-medium uppercase tracking-wide">7 days</span>}
-            />
-            <div className="px-3 pb-3">
-              {pts7.length > 0 ? (
-                <ResponsiveContainer width="100%" height={200}>
-                  <BarChart data={pts7} margin={{ top: 4, right: 8, left: -20, bottom: 0 }}>
-                    <CartesianGrid {...gridProps} />
-                    <XAxis dataKey="date" {...axisProps}
-                      tickFormatter={(v: string) => {
-                        const d = new Date(v);
-                        return d.toLocaleDateString('en-US', { weekday: 'short' });
-                      }} />
-                    <YAxis {...axisProps} />
-                    <RechartsTooltip {...tooltipProps} />
-                    <Bar dataKey="critical" stackId="sev" fill={SEV.critical.hex} name="Critical" />
-                    <Bar dataKey="high" stackId="sev" fill={SEV.high.hex} name="High" />
-                    <Bar dataKey="medium" stackId="sev" fill={SEV.medium.hex} name="Medium" />
-                    <Bar dataKey="low" stackId="sev" fill={SEV.low.hex} name="Low" radius={[2, 2, 0, 0]} />
-                  </BarChart>
-                </ResponsiveContainer>
-              ) : (
-                <div className="h-48 flex items-center justify-center">
-                  <p className="text-[0.78rem] text-text-secondary">No weekly data yet.</p>
-                </div>
-              )}
-            </div>
-          </Card>
-
-          {/* Risk grade distribution */}
-          <Card>
-            <PanelHeader title="Risk grade distribution" />
-            <div className="px-4 pb-3">
-              {riskByGrade.length > 0 ? (
-                <div className="flex flex-col gap-2">
-                  {riskByGrade.map(g => {
-                    const maxCount = riskByGrade[0]?.count ?? 1;
-                    const gradeColors: Record<string, string> = {
-                      'A': 'var(--success)', 'B': '#22C55E', 'C': 'var(--warning)',
-                      'D': '#EA580C', 'F': 'var(--critical)',
-                    };
-                    const color = gradeColors[g.grade] ?? 'var(--text-muted)';
-                    return (
-                      <div key={g.grade}>
-                        <div className="flex items-center justify-between mb-1">
-                          <div className="flex items-center gap-2">
-                            <span className="w-6 text-[0.72rem] font-bold text-center" style={{ color }}>
-                              {g.grade}
-                            </span>
-                            <span className="text-[0.68rem] text-text-secondary">{g.count} package{g.count !== 1 ? 's' : ''}</span>
-                          </div>
-                        </div>
-                        <div className="h-1.5 rounded-full overflow-hidden bg-surface-muted">
-                          <div className="h-full rounded-full"
-                            style={{ width: `${(g.count / maxCount) * 100}%`, background: color }} />
-                        </div>
-                      </div>
-                    );
-                  })}
-                </div>
-              ) : (
-                <p className="text-[0.72rem] text-text-secondary py-3 text-center">No risk data.</p>
-              )}
-            </div>
-          </Card>
-        </div>
-
-        {/* Recent package changes */}
-        <Card>
-          <PanelHeader title="Recent package changes" />
-          <div className="px-4 pb-3">
-            {recentChanges.length === 0 ? (
-              <p className="text-[0.72rem] text-text-secondary py-4 text-center">No package changes detected yet.</p>
+        <Card className="cyber-lift">
+          <CardHeader title="Grade migration" description="Where the fleet sits, F → A" />
+          <CardBody>
+            {riskByGrade.length > 0 ? (
+              <ExposureBars
+                rows={riskByGrade.map(g => ({
+                  label: `Grade ${g.grade} · ${g.count} pkg${g.count !== 1 ? 's' : ''}`,
+                  value: g.count,
+                  max: gradeMax,
+                  tone: GRADE_TONE[g.grade] ?? 'neon',
+                }))}
+              />
             ) : (
-              <div className="flex flex-col">
-                {recentChanges.map((r, i) => (
-                  <div key={`${r.package_name}-${r.version}-${i}`}
-                    className={cn('flex items-center gap-3 py-2.5', i < recentChanges.length - 1 && 'border-b border-border-color')}>
-                    <span className="text-[0.58rem] font-semibold uppercase tracking-wide px-1.5 py-0.5 rounded w-12 text-center shrink-0"
-                      style={{
-                        background: `color-mix(in srgb, ${r.top_severity === 'CRITICAL' ? 'var(--critical)' : r.top_severity === 'HIGH' ? '#EA580C' : r.top_severity === 'MEDIUM' ? 'var(--warning)' : 'var(--cyan)'} 12%, transparent)`,
-                        color: r.top_severity === 'CRITICAL' ? 'var(--critical)' : r.top_severity === 'HIGH' ? '#EA580C' : r.top_severity === 'MEDIUM' ? 'var(--warning)' : 'var(--cyan)',
-                      }}>
-                      {r.top_severity === 'CRITICAL' ? 'crit' : r.top_severity?.toLowerCase().slice(0, 4) ?? '—'}
-                    </span>
-                    <div className="flex-1 min-w-0">
-                      <span className="text-[0.75rem] font-mono text-text-primary">{r.package_name}</span>
-                      <span className="text-[0.65rem] text-text-muted ml-1.5">@{r.version}</span>
-                    </div>
-                    <span className="text-[0.62rem] px-1.5 py-0.5 rounded shrink-0"
-                      style={{ background: 'var(--surface-muted)', color: 'var(--text-muted)' }}>
-                      {r.ecosystem.toLowerCase()}
-                    </span>
-                    <span className="text-[0.62rem] text-text-muted font-mono shrink-0">
-                      Grade {r.risk_grade}
-                    </span>
-                    <span className="text-[0.68rem] text-text-secondary font-mono w-8 text-right shrink-0">
-                      {r.finding_count}
-                    </span>
-                    <span className="text-[0.6rem] text-text-muted w-14 text-right shrink-0">
-                      {relativeTime(r.first_seen)}
-                    </span>
-                  </div>
-                ))}
-              </div>
+              <p className="m-0 py-3 text-center font-mono text-[0.72rem] text-text-muted">// no grade data</p>
             )}
-          </div>
+          </CardBody>
         </Card>
       </div>
+
+      {/* Fresh movement */}
+      <Card className="cyber-lift">
+        <CardHeader title="Fresh movement" description="Most recently shifted packages first" />
+        <CardBody>
+          {recentChanges.length === 0 ? (
+            <EmptyState
+              icon={Radar}
+              title="Grid is holding still"
+              description="No package movement detected yet — new and shifting packages land here."
+            />
+          ) : (
+            <div className="flex flex-col">
+              {recentChanges.map((r, i) => (
+                <div
+                  key={`${r.package_name}-${r.version}-${i}`}
+                  className={cn('flex items-center gap-3 py-2.5', i < recentChanges.length - 1 && 'border-b border-border-color')}
+                >
+                  <span className={cn(
+                    'w-12 shrink-0 rounded border px-1.5 py-0.5 text-center font-mono text-[0.6rem] font-bold uppercase tracking-wide',
+                    SEV_CHIP[r.top_severity] ?? 'border-border-color bg-surface-muted text-text-muted',
+                  )}>
+                    {r.top_severity === 'CRITICAL' ? 'crit' : r.top_severity?.toLowerCase().slice(0, 4) ?? '—'}
+                  </span>
+                  <div className="min-w-0 flex-1">
+                    <span className="font-mono text-[0.75rem] text-text-primary">{r.package_name}</span>
+                    <span className="ml-1.5 font-mono text-[0.65rem] text-neon">@{r.version}</span>
+                  </div>
+                  <span className="shrink-0 rounded border border-border-color bg-surface-muted px-1.5 py-0.5 font-mono text-[0.6rem] uppercase tracking-wider text-text-muted">
+                    {r.ecosystem.toLowerCase()}
+                  </span>
+                  <span className="shrink-0 font-mono text-[0.62rem] text-text-muted">
+                    Grade <span className="font-bold text-text-primary">{r.risk_grade}</span>
+                  </span>
+                  <span className="w-8 shrink-0 text-right font-mono text-[0.68rem] font-bold tabular-nums text-text-secondary">
+                    {r.finding_count}
+                  </span>
+                  <span className="w-14 shrink-0 text-right font-mono text-[0.6rem] text-text-muted">
+                    {relativeTime(r.first_seen)}
+                  </span>
+                </div>
+              ))}
+            </div>
+          )}
+        </CardBody>
+      </Card>
     </div>
   );
 }

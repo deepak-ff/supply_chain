@@ -1,15 +1,26 @@
 import { useState, useMemo } from 'react';
 import {
   ClipboardList, Search, Trash2, Eye, Download, Filter, ArrowUpDown,
-  ArrowUp, ArrowDown, Shield, AlertTriangle, Info,
+  ArrowUp, ArrowDown, Shield, AlertTriangle, Crosshair,
 } from 'lucide-react';
 import { useSessionStore, type ScanSession } from '../store/sessions';
 import { useWorkspaceStore } from '../store/workspace';
 import { useUIStore } from '../store/ui';
 import { Input } from '../components/ui/input';
+import { Card, CardBody } from '../components/ui/card';
+import { StatTile } from '../components/ui/stat-tile';
+import { EmptyState } from '../components/EmptyState';
+import { CyberKicker } from '../components/cyber/CyberViz';
+import { cn } from '../components/ui/utils';
 
 const SEV_COLORS: Record<string, string> = {
-  CRITICAL: '#DC2626', HIGH: '#EA580C', MEDIUM: '#D97706', LOW: '#06B6D4', INFORMATIONAL: '#6B7280',
+  CRITICAL: '#FF4D5E', HIGH: '#FF8A3D', MEDIUM: '#FFB224', LOW: '#00E5FF', INFORMATIONAL: '#5E6F93',
+};
+
+const TYPE_TONE: Record<string, string> = {
+  registry: 'border-[color-mix(in_srgb,var(--neon)_40%,transparent)] bg-[color-mix(in_srgb,var(--neon)_12%,transparent)] text-neon',
+  upload: 'border-[color-mix(in_srgb,var(--magenta)_40%,transparent)] bg-[color-mix(in_srgb,var(--magenta)_12%,transparent)] text-magenta',
+  remote: 'border-[color-mix(in_srgb,var(--success)_40%,transparent)] bg-[color-mix(in_srgb,var(--success)_12%,transparent)] text-success',
 };
 
 type SortKey = 'date' | 'critical' | 'total' | 'name';
@@ -39,7 +50,7 @@ function SeverityBar({ summary }: { summary: ScanSession['summary'] }) {
 
   if (segments.length === 0) {
     return (
-      <div className="flex items-center gap-1.5 text-xs text-success">
+      <div className="flex items-center gap-1.5 font-mono text-[0.68rem] font-bold uppercase tracking-wider text-success">
         <Shield size={12} /> Clean
       </div>
     );
@@ -48,17 +59,17 @@ function SeverityBar({ summary }: { summary: ScanSession['summary'] }) {
   const total = segments.reduce((s, v) => s + v.count, 0);
 
   return (
-    <div className="flex items-center gap-2 min-w-[140px]">
-      <div className="flex-1 h-2 rounded-full overflow-hidden bg-surface-muted flex">
+    <div className="flex min-w-[140px] items-center gap-2">
+      <div className="flex h-2 flex-1 overflow-hidden rounded-full bg-surface-muted">
         {segments.map(s => (
           <div
             key={s.key}
             className="h-full"
-            style={{ width: `${(s.count / total) * 100}%`, background: s.color }}
+            style={{ width: `${(s.count / total) * 100}%`, background: s.color, boxShadow: `0 0 6px ${s.color}` }}
           />
         ))}
       </div>
-      <span className="text-[0.65rem] text-text-muted font-mono w-6 text-right">{total}</span>
+      <span className="w-6 text-right font-mono text-[0.65rem] tabular-nums text-text-muted">{total}</span>
     </div>
   );
 }
@@ -116,7 +127,7 @@ export default function ScanSessionsPage() {
 
   const SortIcon = ({ k }: { k: SortKey }) => {
     if (sortKey !== k) return <ArrowUpDown size={11} className="text-text-muted" />;
-    return sortDir === 'asc' ? <ArrowUp size={11} /> : <ArrowDown size={11} />;
+    return sortDir === 'asc' ? <ArrowUp size={11} className="text-neon" /> : <ArrowDown size={11} className="text-neon" />;
   };
 
   const stats = useMemo(() => {
@@ -142,90 +153,94 @@ export default function ScanSessionsPage() {
     const url = URL.createObjectURL(blob);
     const a = document.createElement('a');
     a.href = url;
-    a.download = `scan-${session.label.replace(/[^a-zA-Z0-9]/g, '-')}-${session.id}.json`;
+    a.download = `probe-${session.label.replace(/[^a-zA-Z0-9]/g, '-')}-${session.id}.json`;
     a.click();
     URL.revokeObjectURL(url);
   };
 
   return (
-    <div className="flex flex-col">
-      {/* Header */}
-      <div className="flex items-center justify-between mb-6">
-        <div>
-          <div className="flex items-center gap-2.5">
-            <ClipboardList size={20} className="text-primary-blue" />
-            <h1 className="text-xl font-bold text-text-primary m-0">Scan Sessions</h1>
+    <div className="flex flex-col gap-5">
+      <div>
+        <CyberKicker index="R-05" label="recon // sweep logs" />
+        <div className="flex flex-wrap items-center justify-between gap-2">
+          <div>
+            <h1 className="m-0 flex items-center gap-2 text-[1.15rem] font-bold tracking-tight text-text-primary">
+              <ClipboardList size={18} className="text-neon" aria-hidden="true" /> Sweep Logs
+            </h1>
+            <p className="m-0 mt-1 text-[0.78rem] text-text-secondary">
+              Mission <span className="font-mono font-bold text-neon">{active.name}</span>
+              {' '}· {workspaceSessions.length} sweep{workspaceSessions.length !== 1 ? 's' : ''} on record
+            </p>
           </div>
-          <p className="text-sm text-text-secondary mt-1">
-            Workspace: <span className="font-medium text-text-primary">{active.name}</span>
-            {' '}&middot; {workspaceSessions.length} session{workspaceSessions.length !== 1 ? 's' : ''}
-          </p>
+          {workspaceSessions.length > 0 && (
+            <div className="flex items-center gap-2">
+              {confirmClear ? (
+                <div className="flex items-center gap-2 font-mono text-[0.72rem]">
+                  <span className="font-bold text-critical">Purge all logs?</span>
+                  <button
+                    type="button"
+                    onClick={() => { clear(activeId); setConfirmClear(false); }}
+                    className="wd-hover rounded bg-critical px-2.5 py-1 font-bold text-void"
+                  >
+                    Confirm
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setConfirmClear(false)}
+                    className="wd-hover rounded border border-border-color bg-transparent px-2.5 py-1 text-text-secondary hover:border-neon hover:text-neon"
+                  >
+                    Abort
+                  </button>
+                </div>
+              ) : (
+                <button
+                  type="button"
+                  onClick={() => setConfirmClear(true)}
+                  className="wd-hover flex items-center gap-1.5 rounded border border-border-color bg-transparent px-2.5 py-1.5 font-mono text-[0.7rem] font-bold uppercase tracking-widest text-text-secondary hover:border-critical hover:text-critical"
+                >
+                  <Trash2 size={12} /> Purge all
+                </button>
+              )}
+            </div>
+          )}
         </div>
-        {workspaceSessions.length > 0 && (
-          <div className="flex items-center gap-2">
-            {confirmClear ? (
-              <div className="flex items-center gap-2 text-xs">
-                <span className="text-critical">Clear all sessions?</span>
-                <button
-                  onClick={() => { clear(activeId); setConfirmClear(false); }}
-                  className="px-2 py-1 rounded bg-critical text-white text-xs font-medium border-none cursor-pointer [font-family:inherit]" >
-                  Confirm
-                </button>
-                <button
-                  onClick={() => setConfirmClear(false)}
-                  className="px-2 py-1 rounded border border-border-color bg-transparent text-text-secondary text-xs cursor-pointer [font-family:inherit]" >
-                  Cancel
-                </button>
-              </div>
-            ) : (
-              <button
-                onClick={() => setConfirmClear(true)}
-                className="flex items-center gap-1 px-2.5 py-1.5 rounded-md border border-border-color text-[0.72rem] text-text-secondary hover:text-critical hover:border-critical/40 bg-transparent cursor-pointer [font-family:inherit] transition-colors" >
-                <Trash2 size={12} /> Clear All
-              </button>
-            )}
-          </div>
-        )}
       </div>
 
       {/* Stats strip */}
-      <div className="grid grid-cols-2 md:grid-cols-4 gap-3 mb-5">
-        {[
-          { label: 'Total Sessions', value: stats.total, color: 'var(--primary-blue)' },
-          { label: 'Critical Findings', value: stats.critical, color: SEV_COLORS.CRITICAL },
-          { label: 'High Findings', value: stats.high, color: SEV_COLORS.HIGH },
-          { label: 'Clean Scans', value: stats.clean, color: 'var(--success)' },
-        ].map(s => (
-          <div key={s.label} className="rounded-lg border border-border-color bg-surface p-3">
-            <p className="text-[0.65rem] text-text-muted uppercase tracking-wider m-0">{s.label}</p>
-            <p className="text-xl font-bold font-mono m-0 mt-0.5" style={{ color: s.color }}>{s.value}</p>
-          </div>
-        ))}
+      <div className="grid grid-cols-2 gap-5 md:grid-cols-4">
+        <StatTile label="Total sweeps" value={stats.total} icon={ClipboardList} className="cyber-lift" />
+        <StatTile label="Critical" value={stats.critical} icon={AlertTriangle} accent="critical" className="cyber-lift" />
+        <StatTile label="High" value={stats.high} icon={AlertTriangle} accent="warning" className="cyber-lift" />
+        <StatTile label="Clean sweeps" value={stats.clean} icon={Shield} accent="success" className="cyber-lift" />
       </div>
 
       {/* Toolbar */}
-      <div className="flex items-center gap-3 mb-4">
-        <div className="relative flex-1 max-w-sm">
+      <div className="flex flex-wrap items-center gap-3">
+        <div className="relative max-w-sm flex-1">
           <Search size={14} className="absolute left-2.5 top-1/2 -translate-y-1/2 text-text-muted" />
           <Input
             value={search}
             onChange={e => setSearch(e.target.value)}
-            placeholder="Search sessions..."
-            className="pl-8 h-8 text-xs" />
+            placeholder="Search the logs…"
+            aria-label="Search sweep logs"
+            className="h-8 pl-8 text-xs" />
         </div>
         <div className="flex items-center gap-1.5">
           <Filter size={12} className="text-text-muted" />
           {['all', 'registry', 'upload', 'remote'].map(t => (
             <button
               key={t}
+              type="button"
               onClick={() => setTypeFilter(t)}
-              className={`px-2 py-1 rounded text-[0.68rem] border cursor-pointer [font-family:inherit] transition-colors ${
+              aria-pressed={typeFilter === t}
+              className={cn(
+                'wd-hover rounded border px-2.5 py-1 font-mono text-[0.68rem] font-bold uppercase tracking-wider',
                 typeFilter === t
-                  ? 'bg-primary-blue/10 text-primary-blue border-primary-blue/30'
-                  : 'bg-transparent text-text-secondary border-border-color hover:border-text-muted'
-              }`}
+                  ? 'border-neon bg-[color-mix(in_srgb,var(--neon)_12%,transparent)] text-neon shadow-glow'
+                  : 'border-border-color bg-transparent text-text-secondary hover:border-neon hover:text-neon',
+              )}
             >
-              {t === 'all' ? 'All' : t.charAt(0).toUpperCase() + t.slice(1)}
+              {t === 'all' ? 'All' : t}
             </button>
           ))}
         </div>
@@ -233,68 +248,67 @@ export default function ScanSessionsPage() {
 
       {/* Table */}
       {sorted.length === 0 ? (
-        <div className="flex flex-col items-center justify-center py-20 text-text-muted">
-          <Info size={32} className="mb-3 opacity-40" />
-          <p className="text-sm font-medium">No scan sessions yet</p>
-          <p className="text-xs mt-1">
-            Run a scan from the{' '}
-            <button onClick={() => navigate('/scan')} className="text-primary-blue underline bg-transparent border-none cursor-pointer [font-family:inherit] text-xs">
-              Scan Now
-            </button>{' '}
-            page to get started.
-          </p>
-        </div>
+        <Card className="cyber-lift">
+          <CardBody>
+            <EmptyState
+              icon={Crosshair}
+              title="No sweeps on record"
+              description="Run a probe from the Probe page and it will be logged here."
+              command="cwctl scan ."
+              action={{ label: 'Probe now', onClick: () => navigate('/scan') }}
+            />
+          </CardBody>
+        </Card>
       ) : (
-        <div className="rounded-lg border border-border-color overflow-hidden">
+        <Card className="cyber-lift overflow-hidden">
           <table className="w-full text-[0.78rem]" style={{ borderCollapse: 'collapse' }}>
             <thead>
-              <tr className="bg-surface-muted text-text-muted text-[0.68rem] uppercase tracking-wider">
-                <th className="text-left px-3 py-2 font-medium cursor-pointer select-none" onClick={() => toggleSort('name')}>
-                  <span className="flex items-center gap-1">Session <SortIcon k="name" /></span>
+              <tr className="border-b border-border-color bg-bg-base font-mono text-[0.64rem] uppercase tracking-[0.14em] text-text-muted">
+                <th className="cursor-pointer select-none px-3 py-2.5 text-left font-bold" onClick={() => toggleSort('name')}>
+                  <span className="flex items-center gap-1">Sweep <SortIcon k="name" /></span>
                 </th>
-                <th className="text-left px-3 py-2 font-medium">Type</th>
-                <th className="text-left px-3 py-2 font-medium">Ecosystem</th>
-                <th className="text-left px-3 py-2 font-medium">Severity</th>
-                <th className="text-center px-3 py-2 font-medium cursor-pointer select-none" onClick={() => toggleSort('critical')}>
+                <th className="px-3 py-2.5 text-left font-bold">Vector</th>
+                <th className="px-3 py-2.5 text-left font-bold">Ecosystem</th>
+                <th className="px-3 py-2.5 text-left font-bold">Severity</th>
+                <th className="cursor-pointer select-none px-3 py-2.5 text-center font-bold" onClick={() => toggleSort('critical')}>
                   <span className="flex items-center justify-center gap-1">Crit <SortIcon k="critical" /></span>
                 </th>
-                <th className="text-center px-3 py-2 font-medium cursor-pointer select-none" onClick={() => toggleSort('total')}>
+                <th className="cursor-pointer select-none px-3 py-2.5 text-center font-bold" onClick={() => toggleSort('total')}>
                   <span className="flex items-center justify-center gap-1">Total <SortIcon k="total" /></span>
                 </th>
-                <th className="text-right px-3 py-2 font-medium cursor-pointer select-none" onClick={() => toggleSort('date')}>
-                  <span className="flex items-center justify-end gap-1">Scanned <SortIcon k="date" /></span>
+                <th className="cursor-pointer select-none px-3 py-2.5 text-right font-bold" onClick={() => toggleSort('date')}>
+                  <span className="flex items-center justify-end gap-1">Swept <SortIcon k="date" /></span>
                 </th>
-                <th className="px-3 py-2 w-20"></th>
+                <th className="w-24 px-3 py-2.5"></th>
               </tr>
             </thead>
             <tbody>
               {sorted.map(session => (
                 <tr
                   key={session.id}
-                  className="border-t border-border-color hover:bg-surface-muted/50 cursor-pointer transition-colors"
+                  className="wd-hover cursor-pointer border-t border-border-color transition-colors hover:bg-surface-muted"
                   onClick={() => navigate(`/sessions/${session.id}`)}
                 >
                   <td className="px-3 py-2.5">
                     <div className="flex items-center gap-2">
-                      <div className="font-medium text-text-primary truncate max-w-[200px]">{session.label}</div>
+                      <div className="max-w-[200px] truncate font-medium text-text-primary">{session.label}</div>
                       {session.summary.critical > 0 && (
-                        <AlertTriangle size={12} className="text-critical shrink-0" />
+                        <AlertTriangle size={12} className="shrink-0 text-critical drop-shadow-[0_0_6px_var(--critical)]" />
                       )}
                     </div>
                     {session.version && (
-                      <div className="text-[0.65rem] text-text-muted font-mono mt-0.5">v{session.version}</div>
+                      <div className="mt-0.5 font-mono text-[0.65rem] text-neon">v{session.version}</div>
                     )}
                   </td>
                   <td className="px-3 py-2.5">
-                    <span className={`inline-block px-1.5 py-0.5 rounded text-[0.62rem] font-medium uppercase tracking-wide ${
-                      session.scan_type === 'registry' ? 'bg-primary-blue/10 text-primary-blue' :
-                      session.scan_type === 'upload' ? 'bg-[#7C3AED]/10 text-[#7C3AED]' :
-                      'bg-[#059669]/10 text-[#059669]'
-                    }`}>
+                    <span className={cn(
+                      'inline-block rounded border px-1.5 py-0.5 font-mono text-[0.62rem] font-bold uppercase tracking-wide',
+                      TYPE_TONE[session.scan_type] ?? 'border-border-color bg-surface-muted text-text-muted',
+                    )}>
                       {session.scan_type}
                     </span>
                   </td>
-                  <td className="px-3 py-2.5 text-text-secondary font-mono text-[0.72rem]">
+                  <td className="px-3 py-2.5 font-mono text-[0.72rem] text-text-secondary">
                     {session.ecosystem ?? '—'}
                   </td>
                   <td className="px-3 py-2.5">
@@ -302,35 +316,41 @@ export default function ScanSessionsPage() {
                   </td>
                   <td className="px-3 py-2.5 text-center font-mono">
                     {session.summary.critical > 0 ? (
-                      <span className="text-critical font-bold">{session.summary.critical}</span>
+                      <span className="font-bold text-critical">{session.summary.critical}</span>
                     ) : (
                       <span className="text-text-muted">0</span>
                     )}
                   </td>
-                  <td className="px-3 py-2.5 text-center font-mono text-text-secondary">
+                  <td className="px-3 py-2.5 text-center font-mono tabular-nums text-text-secondary">
                     {session.summary.total}
                   </td>
-                  <td className="px-3 py-2.5 text-right text-[0.68rem] text-text-muted">
+                  <td className="px-3 py-2.5 text-right font-mono text-[0.68rem] text-text-muted">
                     {formatDate(session.created_at)}
                   </td>
                   <td className="px-3 py-2.5">
-                    <div className="flex items-center gap-1 justify-end" onClick={e => e.stopPropagation()}>
+                    <div className="flex items-center justify-end gap-1" onClick={e => e.stopPropagation()}>
                       <button
+                        type="button"
                         onClick={() => navigate(`/sessions/${session.id}`)}
-                        className="p-1.5 rounded text-text-muted hover:text-primary-blue bg-transparent cursor-pointer"
-                        title="View details" >
+                        className="wd-hover grid h-7 w-7 place-items-center rounded border border-transparent bg-transparent text-text-muted hover:border-neon hover:text-neon"
+                        title="View sweep detail"
+                      >
                         <Eye size={13} />
                       </button>
                       <button
+                        type="button"
                         onClick={() => exportSession(session)}
-                        className="p-1.5 rounded text-text-muted hover:text-success bg-transparent cursor-pointer"
-                        title="Export JSON" >
+                        className="wd-hover grid h-7 w-7 place-items-center rounded border border-transparent bg-transparent text-text-muted hover:border-success hover:text-success"
+                        title="Extract JSON"
+                      >
                         <Download size={13} />
                       </button>
                       <button
+                        type="button"
                         onClick={() => remove(session.id)}
-                        className="p-1.5 rounded text-text-muted hover:text-critical bg-transparent cursor-pointer"
-                        title="Delete" >
+                        className="wd-hover grid h-7 w-7 place-items-center rounded border border-transparent bg-transparent text-text-muted hover:border-critical hover:text-critical"
+                        title="Delete sweep"
+                      >
                         <Trash2 size={13} />
                       </button>
                     </div>
@@ -339,7 +359,7 @@ export default function ScanSessionsPage() {
               ))}
             </tbody>
           </table>
-        </div>
+        </Card>
       )}
     </div>
   );

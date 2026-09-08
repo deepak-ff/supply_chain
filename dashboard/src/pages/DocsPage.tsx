@@ -7,6 +7,8 @@ import { CopyButton } from '../components/CopyButton';
 import { LoadingState } from '../components/LoadingState';
 import { EmptyState } from '../components/EmptyState';
 import { cn } from '../components/ui/utils';
+import { CyberKicker } from '../components/cyber/CyberViz';
+import { useUIStore } from '../store/ui';
 
 const DOCS = [
   { key: 'DOCS', label: 'Docs', file: 'DOCS.md' },
@@ -130,6 +132,7 @@ function CodeBlock({ className, children }: { className?: string; children?: Rea
 }
 
 export function DocsPage() {
+  const navigate = useUIStore(s => s.navigate);
   const [selected, setSelected] = useState(DOCS[0].key);
   const [content, setContent] = useState('');
   const [loading, setLoading] = useState(true);
@@ -177,9 +180,10 @@ export function DocsPage() {
     <div className="flex flex-col lg:flex-row h-full min-h-0">
       {/* ── Left nav — full-width top bar on mobile/tablet, side column at lg+ ── */}
       <div className="w-full lg:w-56 shrink-0 border-b lg:border-b-0 lg:border-r border-border-color flex flex-col overflow-y-auto p-4 lg:h-full">
-        <div className="flex items-center gap-2 mb-4">
-          <BookOpen size={16} className="text-primary-blue" />
-          <h1 className="text-sm font-bold text-text-primary">Developer Docs</h1>
+        <CyberKicker index="X-03" label="archives // field manual" />
+        <div className="flex items-center gap-2 mb-4 mt-1">
+          <BookOpen size={16} className="text-neon drop-shadow-[0_0_6px_var(--neon)]" />
+          <h1 className="text-sm font-bold tracking-tight text-text-primary">Field Manual</h1>
         </div>
 
         {/* Search this page */}
@@ -192,7 +196,7 @@ export function DocsPage() {
             onKeyDown={handleSearchSubmit}
             placeholder="Search this page…"
             aria-label="Search this page"
-            className="w-full rounded-md border border-border-color bg-surface pl-7 pr-2 py-1.5 text-xs text-text-primary placeholder:text-text-muted focus-visible:ring-2 focus-visible:ring-primary-blue focus-visible:outline-none" />
+            className="w-full rounded-md border border-border-color bg-surface pl-7 pr-2 py-1.5 text-xs text-text-primary placeholder:text-text-muted focus-visible:ring-2 focus-visible:ring-neon focus-visible:outline-none" />
         </div>
         {query.trim() && (
           <p className="text-[0.68rem] text-text-secondary mb-3 -mt-2">
@@ -208,16 +212,23 @@ export function DocsPage() {
               key={doc.key}
               onClick={() => setSelected(doc.key)}
               className={cn(
-                'text-left text-sm px-3 py-2 rounded-md transition-colors focus-visible:ring-2 focus-visible:ring-primary-blue focus-visible:outline-none',
+                'text-left text-sm px-3 py-2 rounded-md transition-colors focus-visible:ring-2 focus-visible:ring-neon focus-visible:outline-none',
                 selected === doc.key
-                  ? 'bg-blue-light text-primary-blue font-medium'
-                  : 'text-text-secondary hover:bg-surface-muted hover:text-text-primary'
+                  ? 'bg-[color-mix(in_srgb,var(--neon)_12%,transparent)] text-neon font-bold shadow-glow'
+                  : 'text-text-secondary hover:bg-surface-muted hover:text-neon'
               )}
             >
               {doc.label}
             </button>
           ))}
         </nav>
+        <button
+          type="button"
+          onClick={() => navigate('/api-reference')}
+          className="wd-hover mt-4 border-none bg-transparent p-0 text-left font-mono text-[0.72rem] font-bold text-neon hover:underline"
+        >
+          REST API reference →
+        </button>
       </div>
 
       {/* ── Center content ──────────────────────────────────────────────── */}
@@ -225,19 +236,19 @@ export function DocsPage() {
         {/* Breadcrumbs */}
         <div className="flex items-center justify-between mb-4">
           <p className="text-xs text-text-secondary">
-            <span>Docs</span>
+            <span>Field Manual</span>
             <span className="mx-1.5 text-text-muted">/</span>
             <span className="text-text-primary font-medium">{DOCS[activeIndex]?.label}</span>
           </p>
           <button
             type="button"
             onClick={() => setTocOpen(v => !v)}
-            className="lg:hidden inline-flex items-center gap-1.5 text-xs text-text-secondary hover:text-text-primary rounded-md px-2 py-1 focus-visible:ring-2 focus-visible:ring-primary-blue focus-visible:outline-none" >
+            className="lg:hidden inline-flex items-center gap-1.5 text-xs text-text-secondary hover:text-text-primary rounded-md px-2 py-1 focus-visible:ring-2 focus-visible:ring-neon focus-visible:outline-none" >
             <List size={13} /> On this page
           </button>
         </div>
 
-        <div className="rounded-xl border border-border-color bg-surface p-6 max-w-3xl">
+        <div className="cyber-panel rounded border border-border-color p-6 max-w-3xl">
           {loading ? (
             <LoadingState variant="text" rows={6} />
           ) : error ? (
@@ -263,14 +274,14 @@ export function DocsPage() {
             {prevDoc ? (
               <button
                 onClick={() => setSelected(prevDoc.key)}
-                className="inline-flex items-center gap-1.5 rounded-md border border-border-color bg-surface px-3 py-2 text-xs font-medium text-text-secondary hover:bg-surface-muted hover:text-text-primary focus-visible:ring-2 focus-visible:ring-primary-blue focus-visible:outline-none" >
+                className="inline-flex items-center gap-1.5 rounded-md border border-border-color bg-surface px-3 py-2 text-xs font-medium text-text-secondary hover:bg-surface-muted hover:text-text-primary focus-visible:ring-2 focus-visible:ring-neon focus-visible:outline-none" >
                 <ChevronLeft size={13} /> {prevDoc.label}
               </button>
             ) : <span />}
             {nextDoc ? (
               <button
                 onClick={() => setSelected(nextDoc.key)}
-                className="inline-flex items-center gap-1.5 rounded-md border border-border-color bg-surface px-3 py-2 text-xs font-medium text-text-secondary hover:bg-surface-muted hover:text-text-primary focus-visible:ring-2 focus-visible:ring-primary-blue focus-visible:outline-none" >
+                className="inline-flex items-center gap-1.5 rounded-md border border-border-color bg-surface px-3 py-2 text-xs font-medium text-text-secondary hover:bg-surface-muted hover:text-text-primary focus-visible:ring-2 focus-visible:ring-neon focus-visible:outline-none" >
                 {nextDoc.label} <ChevronRight size={13} />
               </button>
             ) : <span />}
@@ -297,7 +308,7 @@ export function DocsPage() {
                 <button
                   onClick={() => jumpToHeading(h.id)}
                   className={cn(
-                    'text-left text-xs w-full rounded-md px-2 py-1 text-text-secondary hover:bg-surface-muted hover:text-text-primary focus-visible:ring-2 focus-visible:ring-primary-blue focus-visible:outline-none',
+                    'text-left text-xs w-full rounded-md px-2 py-1 text-text-secondary hover:bg-surface-muted hover:text-text-primary focus-visible:ring-2 focus-visible:ring-neon focus-visible:outline-none',
                     h.level === 3 && 'pl-4'
                   )}
                 >

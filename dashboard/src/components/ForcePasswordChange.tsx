@@ -104,7 +104,7 @@ export function ForcePasswordChange({ onChanged }: ForcePasswordChangeProps) {
           </div>
 
           {mutation.isError && (
-            <div className="flex items-center gap-2 rounded-md border border-critical/20 bg-critical/10 px-3 py-2 text-xs text-critical">
+            <div className="flex items-center gap-2 rounded-md border border-[color-mix(in_srgb,var(--critical)_20%,transparent)] bg-[color-mix(in_srgb,var(--critical)_10%,transparent)] px-3 py-2 text-xs text-critical">
               <AlertCircle size={13} className="shrink-0" />
               {(mutation.error as Error).message}
             </div>
@@ -113,7 +113,7 @@ export function ForcePasswordChange({ onChanged }: ForcePasswordChangeProps) {
           <Button
             type="submit"
             disabled={!canSubmit}
-            className="mt-1 bg-primary-blue font-mono font-bold text-white hover:bg-primary-blue/90" >
+            className="mt-1 bg-primary-blue font-mono font-bold text-white hover:bg-[color-mix(in_srgb,var(--primary-blue)_90%,transparent)]" >
             {mutation.isPending ? (
               <Loader size={14} className="animate-spin" />
             ) : (

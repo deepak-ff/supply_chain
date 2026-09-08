@@ -109,7 +109,7 @@ export function DataTable<T>({
           <Skeleton className="h-3 w-40" />
         </div>
         {Array.from({ length: skeletonRows }).map((_, i) => (
-          <div key={i} className="flex items-center gap-6 border-b border-border-color/60 px-3 py-3">
+          <div key={i} className="flex items-center gap-6 border-b border-[color-mix(in_srgb,var(--border-color)_60%,transparent)] px-3 py-3">
             <Skeleton className="h-3.5 w-1/4" />
             <Skeleton className="h-3.5 w-1/6" />
             <Skeleton className="h-3.5 w-1/6" />
@@ -190,7 +190,7 @@ export function DataTable<T>({
               key={rowKey(row)}
               onClick={onRowClick ? () => onRowClick(row) : undefined}
               className={cn(
-                'wd-hover border-b border-border-color/60 last:border-b-0',
+                'wd-hover border-b border-[color-mix(in_srgb,var(--border-color)_60%,transparent)] last:border-b-0',
                 'hover:bg-[var(--row-hover)]',
                 onRowClick && 'cursor-pointer',
                 rowClassName?.(row),

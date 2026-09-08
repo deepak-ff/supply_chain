@@ -153,40 +153,40 @@ Dashboard scan shows per-engine status: ✓ ran / ✗ skipped (with reason).
 ```bash
 make up                        # start minimal stack: postgres + redis + API on :8080
 make dashboard-dev              # dashboard dev server on :3000, proxies /api/ to :8080
-open http://localhost:3000
+open http://localhost:8080
 ```
 
-**28 routes. All connected to live backend — no mocked pages.**
+**35+ routes. All connected to live backend — no mocked pages.**
 
 | Page | What it does |
 |---|---|
-| Dashboard | SOC-style overview — risk heatmap, activity feed, timeline chart |
-| Scan | **Tab 1**: registry package scan (downloads real artifact, runs all 8 engines) **Tab 2**: drag-drop project archive **Tab 3**: remote host scan over SSH |
-| Inventory | Paginated package list with search + ecosystem filter |
-| Advisory | AI-generated security advisory per package |
-| SBOM | Generate and download CycloneDX / SPDX |
-| Sign / Verify | Sigstore keyless signing + attestation verification |
-| Provenance | SLSA provenance generation + inspection |
-| Monitor | Live SBOM monitoring with reconnect/backoff |
-| Intelligence | Detection signatures list + manual refresh |
-| Signature Authoring | Guided wizard to write + test a new detection signature |
-| Risks | Risk heatmap with letter grades |
-| Policy | Policy rules display |
-| Alerts | Real-time security alerts — severity filter + one-click dismiss |
-| Allowlist | Add/remove trusted packages that bypass policy |
-| Projects | Risk posture by package |
-| Dependency Drift | 30-day vulnerability trend chart |
-| AI Agents | **Live SSE feed** of autonomous patch agent sessions |
-| Webhooks | Configure Slack/Discord alerts + test delivery |
-| Integrations | Scan engine + CI/CD + webhook status overview |
-| CI/CD | GitHub Actions, GitLab, Makefile integration snippets |
-| System Audit | brew / gem / docker / PATH security audit |
-| Attack Surface | Exposed/reachable dependency surface view |
-| Recursive Scan | Multi-package scan with per-package results |
-| Exports | SBOM format guide |
-| AI Security | AI supply chain threat explainer |
+| Command Deck | mission-control overview — risk heatmap, activity feed, timeline chart |
+| Threat Probe | **Tab 1**: registry package scan (downloads real artifact, runs all 8 engines) **Tab 2**: drag-drop project archive **Tab 3**: remote host scan over SSH |
+| Supply Vault | Paginated package list with search + ecosystem filter |
+| Oracle Brief | AI-generated security advisory per package |
+| Manifest Ledger | Generate and download CycloneDX / SPDX |
+| Threat Prints | Sigstore keyless signing + attestation verification |
+| Origin Trail | SLSA provenance generation + inspection |
+| Live Sentinel | Live SBOM monitoring with reconnect/backoff |
+| Signal Intel | Detection signatures list + manual refresh |
+| Print Forge | Guided wizard to write + test a new detection signature |
+| Hot Zones | Risk heatmap with letter grades |
+| Directives | Policy rules display |
+| Red Alerts | Real-time security alerts — severity filter + one-click dismiss |
+| Permit / Deny | Add/remove trusted packages that bypass policy |
+| Missions | Risk posture by package |
+| Drift Radar | 30-day vulnerability trend chart |
+| Fix Operatives | **Live SSE feed** of autonomous patch agent sessions |
+| Tripwires | Configure Slack/Discord alerts + test delivery |
+| Mesh Links | Scan engine + CI/CD + webhook status overview |
+| Pipeline Sentry | GitHub Actions, GitLab, Makefile integration snippets |
+| Host Inspect | brew / gem / docker / PATH security audit |
+| Exposure Map | Exposed/reachable dependency surface view |
+| Deep Trace | Multi-package sweep with per-package results |
+| Intel Extracts | SBOM format guide |
+| Neural Shield | AI supply chain threat explainer |
 | Docs / API Docs | In-app documentation + API reference |
-| Settings | Config management |
+| War-Room Tuning | Config management |
 
 ---
 

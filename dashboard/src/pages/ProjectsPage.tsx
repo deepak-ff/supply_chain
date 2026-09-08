@@ -1,14 +1,17 @@
 import { useQuery } from '@tanstack/react-query';
 import { Skeleton } from '../components/ui/skeleton';
 import { getActiveRisks } from '../lib/api';
-import { FolderOpen } from 'lucide-react';
+import { Rocket, Crosshair } from 'lucide-react';
+import { Card, CardHeader, CardBody } from '../components/ui/card';
+import { EmptyState } from '../components/EmptyState';
+import { CyberKicker } from '../components/cyber/CyberViz';
 
-const GRADE_COLORS: Record<string, string> = {
-  A: 'var(--color-safe)',
-  B: 'var(--color-info)',
-  C: 'var(--color-medium)',
-  D: 'var(--color-warn)',
-  F: 'var(--color-critical)',
+const GRADE_TONE: Record<string, string> = {
+  A: 'text-success drop-shadow-[0_0_6px_var(--success)]',
+  B: 'text-neon drop-shadow-[0_0_6px_var(--neon)]',
+  C: 'text-warning',
+  D: 'text-amber',
+  F: 'text-critical drop-shadow-[0_0_6px_var(--critical)]',
 };
 
 export function ProjectsPage() {
@@ -38,49 +41,66 @@ export function ProjectsPage() {
     .sort(([, a], [, b]) => b.total - a.total);
 
   return (
-    <div className="space-y-5">
-      <div className="flex items-center gap-3">
-        <FolderOpen className="text-primary" size={20} />
-        <div>
-          <h1 className="text-xl font-bold font-mono text-text-primary">Projects</h1>
-          <p className="text-sm mt-0.5 text-text-secondary">
-            Scanned packages and their risk posture.
-          </p>
+    <div className="flex flex-col gap-5">
+      <div>
+        <CyberKicker index="A-01" label="arsenal // missions" />
+        <div className="flex items-center gap-2.5">
+          <Rocket size={20} className="text-neon drop-shadow-[0_0_8px_var(--neon)]" aria-hidden="true" />
+          <div>
+            <h1 className="m-0 text-[1.15rem] font-bold tracking-tight text-text-primary">Missions</h1>
+            <p className="m-0 mt-0.5 text-[0.78rem] text-text-secondary">
+              Every scanned target and its threat posture, ranked by blast size.
+            </p>
+          </div>
         </div>
       </div>
 
-      <div className="rounded-lg overflow-hidden bg-surface border border-border-color">
-        <table style={{ width: '100%', borderCollapse: 'collapse' }}>
-          <thead>
-            <tr className="border-b border-border-color">
-              {['Project', 'Ecosystem', 'Risk Grade', 'Critical', 'Total Findings'].map(h => (
-                <th key={h} style={{ padding: '0.625rem 0.875rem', textAlign: 'left', fontSize: '0.7rem', color: 'var(--color-muted)', fontFamily: 'var(--font-mono)', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.06em' }}>
-                  {h}
-                </th>
-              ))}
-            </tr>
-          </thead>
-          <tbody>
-            {isLoading && (
-              <tr><td colSpan={5} className="p-5"><Skeleton className="h-4 w-full" /></td></tr>
-            )}
-            {!isLoading && projects.length === 0 && (
-              <tr><td colSpan={5} style={{ padding: '2rem', textAlign: 'center', color: 'var(--color-muted)', fontSize: '0.8rem' }}>No projects scanned yet. Run <code className="text-success">cwctl scan .</code></td></tr>
-            )}
-            {projects.map(([name, p], i) => (
-              <tr key={name} style={{ borderBottom: i < projects.length - 1 ? '1px solid rgba(255,255,255,0.04)' : 'none' }}>
-                <td style={{ padding: '0.625rem 0.875rem', fontSize: '0.8rem', fontFamily: 'var(--font-mono)', color: 'var(--fg)' }}>{name}</td>
-                <td style={{ padding: '0.625rem 0.875rem', fontSize: '0.72rem', color: 'var(--color-muted)' }}>{p.ecosystem}</td>
-                <td style={{ padding: '0.625rem 0.875rem' }}>
-                  <span style={{ fontSize: '0.75rem', fontWeight: 700, color: GRADE_COLORS[p.grade] ?? 'var(--fg)', fontFamily: 'var(--font-mono)' }}>{p.grade}</span>
-                </td>
-                <td style={{ padding: '0.625rem 0.875rem', fontSize: '0.8rem', color: p.critical > 0 ? 'var(--color-critical)' : 'var(--color-muted)', fontFamily: 'var(--font-mono)' }}>{p.critical}</td>
-                <td style={{ padding: '0.625rem 0.875rem', fontSize: '0.8rem', color: 'var(--fg)', fontFamily: 'var(--font-mono)' }}>{p.total}</td>
+      <Card className="cyber-lift overflow-hidden">
+        <CardHeader title="Mission roster" description={`${projects.length} target${projects.length === 1 ? '' : 's'} on the board`} />
+        {isLoading ? (
+          <CardBody className="flex flex-col gap-2">
+            <Skeleton className="h-4 w-full" />
+            <Skeleton className="h-4 w-full" />
+            <Skeleton className="h-4 w-2/3" />
+          </CardBody>
+        ) : projects.length === 0 ? (
+          <CardBody>
+            <EmptyState
+              icon={Crosshair}
+              title="No missions on the board"
+              description="Probe a target and its threat posture will line up here."
+              command="cwctl scan ."
+            />
+          </CardBody>
+        ) : (
+          <table className="w-full" style={{ borderCollapse: 'collapse' }}>
+            <thead>
+              <tr className="border-b border-border-color bg-bg-base">
+                {['Mission', 'Ecosystem', 'Risk grade', 'Critical', 'Findings'].map(h => (
+                  <th key={h} className="px-3.5 py-2.5 text-left font-mono text-[0.64rem] font-bold uppercase tracking-[0.14em] text-text-muted">
+                    {h}
+                  </th>
+                ))}
               </tr>
-            ))}
-          </tbody>
-        </table>
-      </div>
+            </thead>
+            <tbody>
+              {projects.map(([name, p], i) => (
+                <tr key={name} className={i < projects.length - 1 ? 'border-b border-border-color' : undefined}>
+                  <td className="px-3.5 py-2.5 font-mono text-[0.8rem] font-bold text-neon">{name}</td>
+                  <td className="px-3.5 py-2.5 text-[0.74rem] text-text-muted">{p.ecosystem}</td>
+                  <td className="px-3.5 py-2.5">
+                    <span className={`font-mono text-[0.85rem] font-bold ${GRADE_TONE[p.grade] ?? 'text-text-primary'}`}>{p.grade}</span>
+                  </td>
+                  <td className={`px-3.5 py-2.5 font-mono text-[0.8rem] tabular-nums ${p.critical > 0 ? 'font-bold text-critical' : 'text-text-muted'}`}>
+                    {p.critical}
+                  </td>
+                  <td className="px-3.5 py-2.5 font-mono text-[0.8rem] tabular-nums text-text-primary">{p.total}</td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        )}
+      </Card>
     </div>
   );
 }

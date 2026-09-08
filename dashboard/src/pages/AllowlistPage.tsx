@@ -3,18 +3,12 @@ import { Skeleton } from '../components/ui/skeleton';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { ListFilter, ShieldCheck, ShieldX, Plus, Trash2 } from 'lucide-react';
 import { listAllowlist, addAllowlist, deleteAllowlist } from '../lib/api';
+import { Card, CardHeader, CardBody } from '../components/ui/card';
+import { EmptyState } from '../components/EmptyState';
+import { CyberKicker } from '../components/cyber/CyberViz';
 
-const inputStyle = {
-  background: 'var(--surface-2, #1e2024)',
-  border: '1px solid rgba(255,255,255,0.1)',
-  borderRadius: '0.375rem',
-  color: 'var(--fg)',
-  fontSize: '0.8rem',
-  padding: '0.4rem 0.625rem',
-  fontFamily: 'var(--font-mono)',
-  outline: 'none',
-  width: '100%',
-} as React.CSSProperties;
+const FIELD = 'w-full rounded border border-border-color bg-bg-base px-3 py-2 font-mono text-[0.8rem] text-text-primary';
+const LABEL = 'mb-1 block font-mono text-[0.62rem] font-bold uppercase tracking-[0.14em] text-text-muted';
 
 export function AllowlistPage() {
   const qc = useQueryClient();
@@ -46,102 +40,108 @@ export function AllowlistPage() {
   const entries = data?.allowlist ?? [];
 
   return (
-    <div className="space-y-6">
-      <div className="flex items-center gap-3">
-        <ListFilter className="text-primary" size={20} />
-        <div>
-          <h1 className="text-xl font-bold font-mono text-text-primary">Allowlist</h1>
-          <p className="text-sm mt-0.5 text-text-secondary">
-            Explicitly trusted packages that bypass policy enforcement.
-          </p>
+    <div className="flex flex-col gap-5">
+      <div>
+        <CyberKicker index="D-02" label="doctrine // permit deny" />
+        <div className="flex items-center gap-2.5">
+          <ListFilter size={20} className="text-neon drop-shadow-[0_0_8px_var(--neon)]" aria-hidden="true" />
+          <div>
+            <h1 className="m-0 text-[1.15rem] font-bold tracking-tight text-text-primary">Permit / Deny</h1>
+            <p className="m-0 mt-0.5 text-[0.78rem] text-text-secondary">
+              Explicitly cleared packages that walk straight past directive enforcement.
+            </p>
+          </div>
         </div>
       </div>
 
       {/* Add form */}
-      <div className="rounded-lg p-4 space-y-3 bg-surface border border-border-color">
-        <p className="text-xs font-mono font-bold text-text-secondary">ADD ENTRY</p>
-        <div className="grid grid-cols-1 sm:grid-cols-[110px_1fr_1fr] gap-2.5">
-          <div>
-            <label style={{ fontSize: '0.68rem', color: 'var(--color-muted)', display: 'block', marginBottom: 3 }}>ECOSYSTEM</label>
-            <input value={eco} onChange={e => setEco(e.target.value)} placeholder="npm" style={inputStyle} />
+      <Card className="cyber-lift">
+        <CardHeader title="Clear a package" description="Stamp a permit with a reason on record" />
+        <CardBody className="flex flex-col gap-3">
+          <div className="grid grid-cols-1 gap-2.5 sm:grid-cols-[110px_1fr_1fr]">
+            <div>
+              <label className={LABEL} htmlFor="permit-eco">Ecosystem</label>
+              <input id="permit-eco" value={eco} onChange={e => setEco(e.target.value)} placeholder="npm_" className={FIELD} />
+            </div>
+            <div>
+              <label className={LABEL} htmlFor="permit-pkg">Package *</label>
+              <input id="permit-pkg" value={pkg} onChange={e => setPkg(e.target.value)} placeholder="lodash_" className={FIELD} />
+            </div>
+            <div>
+              <label className={LABEL} htmlFor="permit-why">Reason</label>
+              <input id="permit-why" value={reason} onChange={e => setReason(e.target.value)} placeholder="internal fork — no CVE impact_" className={FIELD} />
+            </div>
           </div>
+          {formErr && <p className="m-0 font-mono text-[0.72rem] text-critical">{formErr}</p>}
           <div>
-            <label style={{ fontSize: '0.68rem', color: 'var(--color-muted)', display: 'block', marginBottom: 3 }}>PACKAGE *</label>
-            <input value={pkg} onChange={e => setPkg(e.target.value)} placeholder="lodash" style={inputStyle} />
+            <button
+              type="button"
+              onClick={() => { if (!pkg) { setFormErr('Package is required'); return; } add.mutate(); }}
+              disabled={add.isPending}
+              className="wd-hover flex items-center gap-2 rounded border border-success bg-[color-mix(in_srgb,var(--success)_12%,transparent)] px-4 py-2 font-mono text-[0.76rem] font-bold uppercase tracking-widest text-success hover:shadow-glow disabled:cursor-not-allowed disabled:opacity-50"
+            >
+              <Plus size={13} />
+              {add.isPending ? 'Stamping…' : 'Stamp permit'}
+            </button>
           </div>
-          <div>
-            <label style={{ fontSize: '0.68rem', color: 'var(--color-muted)', display: 'block', marginBottom: 3 }}>REASON</label>
-            <input value={reason} onChange={e => setReason(e.target.value)} placeholder="internal fork — no CVE impact" style={inputStyle} />
-          </div>
-        </div>
-        {formErr && <p style={{ fontSize: '0.72rem', color: 'var(--color-critical)' }}>{formErr}</p>}
-        <button
-          onClick={() => { if (!pkg) { setFormErr('Package is required'); return; } add.mutate(); }}
-          disabled={add.isPending}
-          style={{
-            display: 'flex', alignItems: 'center', gap: 6,
-            background: 'rgba(0,255,135,0.12)', border: '1px solid rgba(0,255,135,0.25)',
-            borderRadius: '0.375rem', color: 'var(--color-safe)',
-            fontSize: '0.78rem', fontFamily: 'var(--font-mono)',
-            padding: '0.4rem 0.875rem', cursor: add.isPending ? 'not-allowed' : 'pointer',
-          }}
-        >
-          <Plus size={13} />
-          {add.isPending ? 'Adding…' : 'Add to Allowlist'}
-        </button>
-      </div>
+        </CardBody>
+      </Card>
 
       {/* Allowlist table */}
-      <div className="rounded-lg overflow-hidden bg-surface border border-border-color">
-        <div style={{ padding: '0.5rem 0.875rem', borderBottom: '1px solid rgba(255,255,255,0.06)', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-          <ShieldCheck className="text-success" size={14} />
-          <span style={{ fontSize: '0.72rem', fontFamily: 'var(--font-mono)', fontWeight: 600, color: 'var(--color-safe)' }}>
-            ALLOWLISTED ({entries.length})
-          </span>
-        </div>
+      <Card className="cyber-lift overflow-hidden">
+        <CardHeader
+          icon={ShieldCheck}
+          title={`Cleared (${entries.length})`}
+          description="Packages holding a live permit"
+        />
         {isLoading && (
-          <div className="flex flex-col gap-2 p-5">
+          <CardBody className="flex flex-col gap-2">
             {[...Array(5)].map((_, i) => <Skeleton key={i} className="h-4 w-full" />)}
-          </div>
+          </CardBody>
         )}
         {!isLoading && entries.length === 0 && (
-          <div style={{ padding: '1.5rem', textAlign: 'center', fontSize: '0.8rem', color: 'var(--color-muted)' }}>
-            No entries. Add packages above to bypass policy enforcement.
-          </div>
+          <CardBody>
+            <EmptyState
+              icon={ShieldCheck}
+              title="No permits stamped"
+              description="Clear a package above and it will walk past enforcement from here on."
+              command="cwctl policy allow lodash"
+            />
+          </CardBody>
         )}
         {entries.map((e, i) => (
-          <div key={e.id} style={{
-            display: 'flex', alignItems: 'center', gap: '0.75rem',
-            padding: '0.5rem 0.875rem',
-            borderBottom: i < entries.length - 1 ? '1px solid rgba(255,255,255,0.04)' : 'none',
-          }}>
-            <ShieldCheck size={12} style={{ color: 'var(--color-safe)', flexShrink: 0 }} />
-            <code style={{ fontSize: '0.78rem', color: 'var(--fg)', fontFamily: 'var(--font-mono)', flex: 1 }}>
+          <div
+            key={e.id}
+            className={`flex items-center gap-3 px-3.5 py-2 ${i < entries.length - 1 ? 'border-b border-border-color' : ''}`}
+          >
+            <ShieldCheck size={13} className="shrink-0 text-success" />
+            <code className="min-w-0 flex-1 truncate font-mono text-[0.78rem] font-bold text-neon">
               {e.ecosystem ? `${e.ecosystem}/` : ''}{e.package}
             </code>
-            <span style={{ fontSize: '0.7rem', color: 'var(--color-muted)', flex: 2 }}>{e.reason || '—'}</span>
-            <span style={{ fontSize: '0.68rem', color: 'var(--color-muted)', fontFamily: 'var(--font-mono)' }}>{e.added_by}</span>
+            <span className="hidden min-w-0 flex-[2] truncate text-[0.72rem] text-text-muted sm:block">{e.reason || '—'}</span>
+            <span className="hidden shrink-0 font-mono text-[0.66rem] text-text-muted md:block">{e.added_by}</span>
             <button
+              type="button"
               onClick={() => remove.mutate(e.id)}
-              title="Remove"
-              style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--color-critical)', padding: 2 }}
+              title="Revoke permit"
+              className="wd-hover grid h-7 w-7 shrink-0 place-items-center rounded border border-transparent bg-transparent text-text-muted hover:border-critical hover:text-critical"
             >
               <Trash2 size={12} />
             </button>
           </div>
         ))}
-      </div>
+      </Card>
 
       {/* Blocklist from policy (read-only) */}
-      <div className="rounded-lg p-4 space-y-2 bg-surface border border-border-color">
-        <div className="flex items-center gap-2">
-          <ShieldX className="text-critical" size={14} />
-          <p className="text-xs font-mono font-bold text-critical">BLOCKLIST</p>
-        </div>
-        <p className="text-xs text-text-secondary">
-          Blocked packages are managed via policy.yaml — use <code className="text-success">cwctl policy set deny=pkg@version</code>
-        </p>
-      </div>
+      <Card className="cyber-lift border-critical">
+        <CardHeader icon={ShieldX} title="Deny roster" description="Denials are sealed in policy.yaml, not here" />
+        <CardBody>
+          <p className="m-0 text-[0.78rem] text-text-secondary">
+            Denied packages are managed via the doctrine file — issue{' '}
+            <code className="font-mono text-[0.74rem] text-neon">cwctl policy set deny=pkg@version</code>
+          </p>
+        </CardBody>
+      </Card>
     </div>
   );
 }

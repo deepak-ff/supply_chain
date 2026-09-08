@@ -2,6 +2,8 @@ import { useState } from 'react';
 import { Terminal, Server } from 'lucide-react';
 import { CopyButton } from '../components/CopyButton';
 import { cn } from '../components/ui/utils';
+import { CyberKicker } from '../components/cyber/CyberViz';
+import { useUIStore } from '../store/ui';
 
 type Method = 'GET' | 'POST' | 'PUT' | 'DELETE';
 
@@ -114,7 +116,7 @@ const GROUPS: EndpointGroup[] = [
   {
     title: 'Trust',
     endpoints: [
-      { method: 'GET', path: '/api/v1/trust', description: 'Dynamic Trust Score summary for every tracked package' },
+      { method: 'GET', path: '/api/v1/trust', description: 'Trust Pulse summary for every tracked package' },
       { method: 'GET', path: '/api/v1/trust/lock', description: 'Build current behavioural lock + verify against ./chainwarden.lock when present' },
       { method: 'GET', path: '/api/v1/trust/package/:ecosystem/:name', description: 'Baseline, score and observation history for one package' },
       { method: 'GET', path: '/api/v1/trust/diff/:ecosystem/:name', description: 'Metric delta between two releases (?from=&to=; default previous vs latest)' },
@@ -163,17 +165,17 @@ const GROUPS: EndpointGroup[] = [
 ];
 
 const METHOD_COLOR: Record<Method, string> = {
-  GET: 'var(--primary-blue)',
+  GET: 'var(--neon)',
   POST: 'var(--success)',
   PUT: 'var(--warning)',
   DELETE: 'var(--critical)',
 };
 
 const METHOD_BG: Record<Method, string> = {
-  GET: 'var(--blue-light)',
-  POST: 'rgba(22,163,74,0.1)',
-  PUT: 'rgba(217,119,6,0.1)',
-  DELETE: 'rgba(220,38,38,0.1)',
+  GET: 'color-mix(in srgb, var(--neon) 12%, transparent)',
+  POST: 'color-mix(in srgb, var(--success) 12%, transparent)',
+  PUT: 'color-mix(in srgb, var(--warning) 12%, transparent)',
+  DELETE: 'color-mix(in srgb, var(--critical) 12%, transparent)',
 };
 
 function baseUrl() {
@@ -194,10 +196,10 @@ function MethodBadge({ method }: { method: Method }) {
 function EndpointRow({ endpoint }: { endpoint: Endpoint }) {
   const curl = `curl -X ${endpoint.method} ${baseUrl()}${endpoint.path}`;
   return (
-    <div className="flex items-center gap-3 px-4 py-3 border-b border-border-color last:border-b-0">
+    <div className="flex items-center gap-3 px-4 py-3 border-b border-border-color last:border-b-0 hover:bg-surface-muted">
       <MethodBadge method={endpoint.method} />
       <div className="flex-1 min-w-0">
-        <code className="text-xs font-mono text-text-primary break-all">{endpoint.path}</code>
+        <code className="text-xs font-mono font-bold text-neon break-all">{endpoint.path}</code>
         <p className="text-xs text-text-secondary mt-0.5">{endpoint.description}</p>
       </div>
       <CopyButton text={curl} label="curl" className="shrink-0" />
@@ -226,7 +228,7 @@ function HeroExample() {
 }`;
 
   return (
-    <div className="rounded-xl border border-border-color bg-surface shadow-sm overflow-hidden">
+    <div className="cyber-lift rounded border border-border-color bg-surface overflow-hidden">
       <div className="flex items-center justify-between px-4 pt-4 pb-2">
         <div className="flex items-center gap-2.5">
           <MethodBadge method="POST" />
@@ -247,8 +249,8 @@ function HeroExample() {
           type="button"
           onClick={() => setTab('request')}
           className={cn(
-            'text-xs font-medium px-3 py-1.5 rounded-md focus-visible:ring-2 focus-visible:ring-primary-blue focus-visible:outline-none',
-            tab === 'request' ? 'bg-blue-light text-primary-blue' : 'text-text-secondary hover:bg-surface-muted'
+            'text-xs font-medium px-3 py-1.5 rounded-md focus-visible:ring-2 focus-visible:ring-neon focus-visible:outline-none',
+            tab === 'request' ? 'bg-[color-mix(in_srgb,var(--neon)_12%,transparent)] text-neon shadow-glow' : 'text-text-secondary hover:bg-surface-muted'
           )}
         >
           Request
@@ -257,8 +259,8 @@ function HeroExample() {
           type="button"
           onClick={() => setTab('response')}
           className={cn(
-            'text-xs font-medium px-3 py-1.5 rounded-md focus-visible:ring-2 focus-visible:ring-primary-blue focus-visible:outline-none',
-            tab === 'response' ? 'bg-blue-light text-primary-blue' : 'text-text-secondary hover:bg-surface-muted'
+            'text-xs font-medium px-3 py-1.5 rounded-md focus-visible:ring-2 focus-visible:ring-neon focus-visible:outline-none',
+            tab === 'response' ? 'bg-[color-mix(in_srgb,var(--neon)_12%,transparent)] text-neon shadow-glow' : 'text-text-secondary hover:bg-surface-muted'
           )}
         >
           Response
@@ -301,17 +303,24 @@ function HeroExample() {
 }
 
 export function ApiDocsPage() {
+  const navigate = useUIStore(s => s.navigate);
   return (
     <div className="flex flex-col gap-5">
-      <div className="flex items-center gap-3">
-        <Server size={20} className="text-primary-blue" />
-        <div>
-          <h1 className="text-lg font-bold text-text-primary">API Reference</h1>
-          <p className="mt-0.5 text-xs text-text-secondary">
-            Real routes from the ChainWarden REST API, grouped by area. Base URL defaults to{' '}
-            <code className="text-[0.72rem]">http://localhost:8080</code> in local dev, or your{' '}
-            <code className="text-[0.72rem]">VITE_API_URL</code> if set.
-          </p>
+      <div>
+        <CyberKicker index="X-06" label="archives // api reference" />
+        <div className="flex items-center gap-2.5">
+          <Server size={20} className="text-neon drop-shadow-[0_0_8px_var(--neon)]" />
+          <div>
+            <h1 className="m-0 text-[1.15rem] font-bold tracking-tight text-text-primary">API Reference</h1>
+            <p className="m-0 mt-1 text-[0.78rem] text-text-secondary">
+              Live routes from the command uplink, grouped by theatre. Base URL defaults to{' '}
+              <code className="font-mono text-[0.72rem] text-neon">http://localhost:8080</code> in local dev, or your{' '}
+              <code className="font-mono text-[0.72rem] text-neon">VITE_API_URL</code> if set.
+            </p>
+            <button type="button" onClick={() => navigate('/manual')} className="wd-hover mt-1 border-none bg-transparent p-0 font-mono text-[0.72rem] font-bold text-neon hover:underline">
+              Field Manual →
+            </button>
+          </div>
         </div>
       </div>
 
@@ -329,8 +338,8 @@ export function ApiDocsPage() {
 
       {GROUPS.map(group => (
         <div key={group.title}>
-          <h2 className="text-xs font-semibold uppercase tracking-wide text-text-muted mb-2">{group.title}</h2>
-          <div className="rounded-xl border border-border-color bg-surface shadow-sm overflow-hidden">
+          <h2 className="m-0 mb-2 font-mono text-[0.72rem] font-bold uppercase tracking-[0.18em] text-text-muted">{group.title}</h2>
+          <div className="cyber-lift rounded border border-border-color bg-surface overflow-hidden">
             {group.endpoints.map(ep => (
               <EndpointRow key={`${ep.method}-${ep.path}`} endpoint={ep} />
             ))}

@@ -377,13 +377,13 @@ The ChainWarden Risk Score aggregates all findings into a single letter grade:
 | D | High severity present | Address within 48 hours |
 | F | Critical severity present | Address immediately |
 
-**Step 5 — Map the attack surface**
+**Step 5 — Map the exposure**
 
-Open the dashboard at `http://localhost:3000`. Navigate to **Attack Surface** to view the dependency topology graph — a force-directed visualization of all dependencies for the active workspace. Nodes are colored by worst finding severity, and the exposure breakdown sidebar shows risk distribution by ecosystem.
+Open the dashboard at `http://localhost:8080`. Navigate to **Exposure Map** to view the dependency topology graph — a force-directed visualization of all dependencies for the active workspace. Nodes are colored by worst finding severity, and the exposure breakdown sidebar shows risk distribution by ecosystem.
 
-**Step 6 — Review scan sessions and history**
+**Step 6 — Review sweep logs and history**
 
-The **Scan Sessions** page shows all past scans for the active workspace with timestamps, package counts, and finding summaries. Export any session as JSON, CSV, or HTML report for audit trails.
+The **Sweep Logs** page shows all past sweeps for the active workspace with timestamps, package counts, and finding summaries. Export any session as JSON, CSV, or HTML report for audit trails.
 
 **Step 7 — Use workspaces for project isolation**
 
@@ -468,12 +468,12 @@ Action: Remove this package immediately
 
 **Step 3 — Investigate via the dashboard**
 
-Open the dashboard and navigate to **Live Monitor**. The monitor page polls the API every 10 seconds and shows:
+Open the dashboard and navigate to **Live Sentinel**. The monitor page polls the API every 10 seconds and shows:
 - Live finding count with severity breakdown
 - Recent scan timeline
 - Per-manifest finding diffs
 
-For a visual map of the blast radius, switch to **Attack Surface** — the dependency topology graph highlights affected nodes in red/orange based on severity.
+For a visual map of the blast radius, switch to **Exposure Map** — the dependency topology graph highlights affected nodes in red/orange based on severity.
 
 **Step 4 — Block a package via policy**
 

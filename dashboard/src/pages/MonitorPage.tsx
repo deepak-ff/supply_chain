@@ -4,10 +4,10 @@ import {
   LineChart, Line, XAxis, YAxis, CartesianGrid,
   Tooltip as RechartsTooltip, ResponsiveContainer, Legend,
 } from 'recharts';
-import { axisProps, gridProps, tooltipProps } from '../lib/chartTheme';
+import { axisProps, gridProps, tooltipProps, legendProps } from '../lib/chartTheme';
 import {
   Activity, Shield, ShieldAlert, ShieldBan, ShieldCheck,
-  Clock, History, AlertTriangle, Package, Zap,
+  Clock, History, AlertTriangle, Package, Zap, Radio,
 } from 'lucide-react';
 import {
   getDashboardStats, getRecentResults, getDashboardTimeline, padTimeline,
@@ -16,72 +16,44 @@ import {
 } from '../lib/api';
 import type { MonitorEvent } from '../lib/api';
 import { ActivityFeed } from '../components/ActivityFeed';
+import { Card, CardHeader, CardBody } from '../components/ui/card';
+import { StatTile } from '../components/ui/stat-tile';
+import { StatusChip } from '../components/ui/status-chip';
+import { DataTable, type DataTableColumn } from '../components/ui/data-table';
+import { ThreatTicker, CyberKicker, type TickerItem } from '../components/cyber/CyberViz';
 import { cn } from '../components/ui/utils';
 
 const SEV = {
-  critical: { hex: '#DC2626' },
-  high:     { hex: '#EA580C' },
-  medium:   { hex: '#D97706' },
-  low:      { hex: '#06B6D4' },
+  critical: { hex: '#FF4D5E' },
+  high:     { hex: '#FF8A3D' },
+  medium:   { hex: '#FFB224' },
+  low:      { hex: '#00E5FF' },
 } as const;
 
-function Card({ children, className }: { children: React.ReactNode; className?: string }) {
-  return (
-    <div className={cn('rounded-xl border border-border-color bg-surface shadow-sm', className)}>
-      {children}
-    </div>
-  );
+// ── Live wire ticker (fed by recent probe results) ─────────────────────────
+
+function SentinelTicker() {
+  const { data } = useQuery({
+    queryKey: ['monitor-recent-scans'],
+    queryFn: () => getRecentResults(15),
+    refetchInterval: 15_000,
+    retry: false,
+  });
+  const items: TickerItem[] = useMemo(() => {
+    const results = data?.results ?? [];
+    return results.slice(0, 12).map((r, i) => {
+      const sev = (r.severity?.toUpperCase() ?? 'INFO') as TickerItem['severity'];
+      return {
+        id: `${r.package}-${r.scanned_at}-${i}`,
+        severity: ['CRITICAL', 'HIGH', 'MEDIUM', 'LOW'].includes(sev) ? sev : 'INFO',
+        text: `${r.ecosystem}/${r.package}@${r.version} — ${r.findings_count} hit${r.findings_count !== 1 ? 's' : ''}`,
+      };
+    });
+  }, [data]);
+  return <ThreatTicker items={items} />;
 }
 
-function PanelHeader({ title, badge, action }: { title: string; badge?: React.ReactNode; action?: React.ReactNode }) {
-  return (
-    <div className="flex items-center justify-between px-4 pt-3 pb-2">
-      <div className="flex items-center gap-2">
-        <span className="text-[0.78rem] font-semibold text-text-primary">{title}</span>
-        {badge}
-      </div>
-      {action}
-    </div>
-  );
-}
-
-function KPITile({
-  label, value, icon: Icon, color, accentColor, className,
-}: {
-  label: string; value: number; icon: typeof Activity;
-  color: string; accentColor?: string; className?: string;
-}) {
-  return (
-    <Card className={cn('relative overflow-hidden', className)}>
-      {accentColor && (
-        <div className="absolute left-0 top-2.5 bottom-2.5 w-[3px] rounded-r-sm" style={{ background: accentColor }} />
-      )}
-      <div className={cn('p-4', accentColor && 'pl-5')}>
-        <div className="flex items-center gap-1.5 mb-1.5">
-          <Icon size={13} className="text-text-muted" />
-          <span className="text-[0.68rem] text-text-secondary">{label}</span>
-        </div>
-        <span className="text-[1.6rem] font-bold tabular-nums leading-none" style={{ color }}>{value}</span>
-      </div>
-    </Card>
-  );
-}
-
-function SevBadge({ severity }: { severity: string }) {
-  const s = severity?.toUpperCase();
-  const color = s === 'CRITICAL' ? 'var(--critical)' : s === 'HIGH' ? '#EA580C' : s === 'MEDIUM' ? 'var(--warning)' : 'var(--cyan)';
-  return (
-    <span className="text-[0.58rem] font-semibold uppercase tracking-wide px-1.5 py-0.5 rounded"
-      style={{
-        background: `color-mix(in srgb, ${color} 12%, transparent)`,
-        color,
-      }}>
-      {s === 'CRITICAL' ? 'crit' : s?.toLowerCase().slice(0, 4) ?? '—'}
-    </span>
-  );
-}
-
-// ── Finding Trend ─────────────────────────────────────────────────────────
+// ── Signal trend ───────────────────────────────────────────────────────────
 
 function TrendCard() {
   const { data } = useQuery({
@@ -95,12 +67,17 @@ function TrendCard() {
   if (points.every(p => p.total === 0)) return null;
 
   return (
-    <Card>
-      <PanelHeader
-        title="Finding trend"
-        badge={<span className="text-[0.6rem] text-text-muted font-medium uppercase tracking-wide">14 days</span>}
+    <Card className="cyber-lift">
+      <CardHeader
+        title="Signal trend"
+        description="Live findings over the last 14 days"
+        action={
+          <span className="font-mono text-[0.6rem] font-bold uppercase tracking-[0.18em] text-neon">
+            14 days
+          </span>
+        }
       />
-      <div className="px-3 pb-3">
+      <CardBody>
         <ResponsiveContainer width="100%" height={200}>
           <LineChart data={points} margin={{ top: 8, right: 12, left: -16, bottom: 0 }}>
             <CartesianGrid {...gridProps} />
@@ -111,19 +88,60 @@ function TrendCard() {
               }} interval="preserveStartEnd" />
             <YAxis {...axisProps} />
             <RechartsTooltip {...tooltipProps} />
-            <Legend iconType="plainline" wrapperStyle={{ fontSize: 10, paddingTop: 4 }} />
+            <Legend {...legendProps} />
             <Line type="monotone" dataKey="critical" name="Critical" stroke={SEV.critical.hex} strokeWidth={2} dot={false} isAnimationActive animationDuration={200} />
             <Line type="monotone" dataKey="high" name="High" stroke={SEV.high.hex} strokeWidth={2} dot={false} isAnimationActive animationDuration={200} />
             <Line type="monotone" dataKey="medium" name="Medium" stroke={SEV.medium.hex} strokeWidth={2} dot={false} isAnimationActive animationDuration={200} />
             <Line type="monotone" dataKey="low" name="Low" stroke={SEV.low.hex} strokeWidth={2} dot={false} isAnimationActive animationDuration={200} />
           </LineChart>
         </ResponsiveContainer>
-      </div>
+      </CardBody>
     </Card>
   );
 }
 
-// ── Recent Scans ──────────────────────────────────────────────────────────
+// ── Recent probes ──────────────────────────────────────────────────────────
+
+interface RecentScan {
+  package: string; version: string; ecosystem: string;
+  severity: string; findings_count: number; scanned_at: string;
+}
+
+const recentColumns: Array<DataTableColumn<RecentScan>> = [
+  {
+    key: 'package', header: 'Package', sortable: true, sortValue: (r) => r.package,
+    render: (r) => (
+      <span className="truncate font-mono text-[0.74rem] text-text-primary">
+        <span className="text-text-muted">{r.ecosystem}/</span>{r.package}
+      </span>
+    ),
+  },
+  {
+    key: 'version', header: 'Version', sortable: true, sortValue: (r) => r.version,
+    render: (r) => <span className="font-mono text-[0.72rem] text-text-muted">{r.version}</span>,
+    className: 'w-[100px]',
+  },
+  {
+    key: 'severity', header: 'Severity', sortable: true, sortValue: (r) => r.severity,
+    render: (r) => <StatusChip tone={r.severity} dot={false} />,
+    className: 'w-[104px]',
+  },
+  {
+    key: 'count', header: 'Hits', numeric: true, sortable: true, sortValue: (r) => r.findings_count,
+    render: (r) => <span className="font-mono font-bold tabular-nums">{r.findings_count}</span>,
+    className: 'w-[70px]',
+  },
+  {
+    key: 'time', header: 'Time', numeric: true, sortable: true,
+    sortValue: (r) => new Date(r.scanned_at).getTime(),
+    render: (r) => (
+      <span className="font-mono text-[0.7rem] text-text-muted">
+        {new Date(r.scanned_at).toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' })}
+      </span>
+    ),
+    className: 'w-[80px]',
+  },
+];
 
 function RecentScansCard() {
   const { data, isLoading } = useQuery({
@@ -133,55 +151,34 @@ function RecentScansCard() {
     retry: false,
   });
 
-  const results = data?.results ?? [];
+  const results: RecentScan[] = data?.results ?? [];
 
   return (
-    <Card>
-      <PanelHeader title="Recent scans" />
-      <div className="px-4 pb-3">
-        {isLoading ? (
-          <div className="py-8 text-center">
-            <p className="text-[0.78rem] text-text-secondary animate-pulse">Loading scans…</p>
-          </div>
-        ) : results.length === 0 ? (
-          <div className="py-6 text-center">
-            <Package size={18} className="text-text-muted opacity-40 mx-auto mb-1" />
-            <p className="text-[0.75rem] text-text-secondary">No scans yet — run a scan to see results.</p>
-          </div>
-        ) : (
-          <div className="overflow-x-auto">
-            <table className="w-full text-[0.72rem]">
-              <thead>
-                <tr className="border-b border-border-color">
-                  {['Package', 'Version', 'Severity', 'Findings', 'Time'].map(h => (
-                    <th key={h} className="text-left py-1.5 px-2 text-[0.62rem] font-semibold uppercase tracking-wide text-text-muted">{h}</th>
-                  ))}
-                </tr>
-              </thead>
-              <tbody>
-                {results.map((r, i) => (
-                  <tr key={i} className="border-b border-border-color last:border-b-0">
-                    <td className="py-2 px-2 font-mono text-text-primary">
-                      <span className="text-text-muted">{r.ecosystem}/</span>{r.package}
-                    </td>
-                    <td className="py-2 px-2 font-mono text-text-muted">{r.version}</td>
-                    <td className="py-2 px-2"><SevBadge severity={r.severity} /></td>
-                    <td className="py-2 px-2 font-mono text-text-primary">{r.findings_count}</td>
-                    <td className="py-2 px-2 text-text-muted">
-                      {new Date(r.scanned_at).toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' })}
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
-        )}
-      </div>
+    <Card className="cyber-lift">
+      <CardHeader
+        title="Recent probes"
+        description="Fresh findings off the wire"
+      />
+      <DataTable
+        columns={recentColumns}
+        rows={results}
+        rowKey={(r) => `${r.ecosystem}:${r.package}@${r.version}-${r.scanned_at}`}
+        loading={isLoading}
+        skeletonRows={5}
+        dense
+        initialSort={{ key: 'time', dir: 'desc' }}
+        empty={{
+          icon: Package,
+          title: 'No probes yet',
+          description: 'Run a probe to see findings here.',
+          command: 'cwctl scan .',
+        }}
+      />
     </Card>
   );
 }
 
-// ── Deny List Manager ─────────────────────────────────────────────────────
+// ── Containment (quarantine / block) ───────────────────────────────────────
 
 function DenyListCard() {
   const qc = useQueryClient();
@@ -222,57 +219,62 @@ function DenyListCard() {
   };
 
   return (
-    <Card>
-      <PanelHeader
-        title="Package policy actions"
-        badge={
-          <span className="flex items-center gap-1">
-            <Shield size={12} className="text-text-muted" />
-          </span>
-        }
+    <Card className="cyber-lift">
+      <CardHeader
+        icon={Shield}
+        title="Containment"
+        description="Quarantine or block a package everywhere the sentry watches."
       />
-      <div className="px-4 pb-4 space-y-3">
-        <div className="flex gap-2 flex-wrap">
+      <CardBody className="flex flex-col gap-4">
+        <div className="flex flex-wrap gap-2">
           <input
             value={pkg} onChange={e => setPkg(e.target.value)}
-            placeholder="Package name"
-            className="flex-1 min-w-[140px] px-2.5 py-1.5 rounded-lg text-[0.78rem] font-mono border border-border-color bg-surface-muted text-text-primary placeholder:text-text-muted focus:outline-none focus:border-primary-blue" />
+            placeholder="package name_"
+            aria-label="Package name"
+            className="min-w-[140px] flex-1 rounded border border-border-color bg-bg-base px-2.5 py-2 font-mono text-[0.78rem] text-text-primary placeholder:text-text-muted" />
           <input
             value={reason} onChange={e => setReason(e.target.value)}
-            placeholder="Reason (optional)"
-            className="flex-[1.5] min-w-[180px] px-2.5 py-1.5 rounded-lg text-[0.78rem] font-mono border border-border-color bg-surface-muted text-text-primary placeholder:text-text-muted focus:outline-none focus:border-primary-blue" />
+            placeholder="reason (optional)_"
+            aria-label="Reason"
+            className="min-w-[180px] flex-[1.5] rounded border border-border-color bg-bg-base px-2.5 py-2 font-mono text-[0.78rem] text-text-primary placeholder:text-text-muted" />
           <button
+            type="button"
             disabled={!pkg.trim() || loading === 'new'}
             onClick={() => doAction('quarantine', pkg.trim(), reason.trim())}
-            className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-[0.72rem] font-medium border cursor-pointer disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
-            style={{ borderColor: 'color-mix(in srgb, var(--warning) 40%, transparent)', background: 'color-mix(in srgb, var(--warning) 8%, transparent)', color: 'var(--warning)' }}>
+            className="wd-hover flex items-center gap-1.5 rounded border border-[color-mix(in_srgb,var(--warning)_45%,transparent)] bg-[color-mix(in_srgb,var(--warning)_10%,transparent)] px-4 py-2 font-mono text-[0.72rem] font-bold uppercase tracking-widest text-warning hover:shadow-glow disabled:cursor-not-allowed disabled:opacity-40"
+          >
             <ShieldAlert size={13} /> Quarantine
           </button>
           <button
+            type="button"
             disabled={!pkg.trim() || loading === 'new'}
             onClick={() => doAction('block', pkg.trim(), reason.trim())}
-            className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-[0.72rem] font-medium border cursor-pointer disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
-            style={{ borderColor: 'color-mix(in srgb, var(--critical) 40%, transparent)', background: 'color-mix(in srgb, var(--critical) 8%, transparent)', color: 'var(--critical)' }}>
+            className="wd-hover flex items-center gap-1.5 rounded border border-[color-mix(in_srgb,var(--critical)_45%,transparent)] bg-[color-mix(in_srgb,var(--critical)_10%,transparent)] px-4 py-2 font-mono text-[0.72rem] font-bold uppercase tracking-widest text-critical hover:shadow-glow disabled:cursor-not-allowed disabled:opacity-40"
+          >
             <ShieldBan size={13} /> Block
           </button>
         </div>
 
         {denyPackages.length > 0 && (
           <div>
-            <p className="text-[0.62rem] font-semibold uppercase tracking-wide text-text-muted mb-2">
-              Denied packages ({denyPackages.length})
+            <p className="m-0 mb-2 font-mono text-[0.62rem] font-bold uppercase tracking-[0.18em] text-text-muted">
+              Neutralized packages ({denyPackages.length})
             </p>
-            <div className="flex gap-1.5 flex-wrap">
+            <div className="flex flex-wrap gap-1.5">
               {denyPackages.map(d => (
-                <span key={d} className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-[0.68rem] font-mono"
-                  style={{ background: 'color-mix(in srgb, var(--critical) 8%, transparent)', border: '1px solid color-mix(in srgb, var(--critical) 20%, transparent)', color: 'var(--critical)' }}>
+                <span
+                  key={d}
+                  className="inline-flex items-center gap-1.5 rounded border border-[color-mix(in_srgb,var(--critical)_30%,transparent)] bg-[color-mix(in_srgb,var(--critical)_8%,transparent)] px-2.5 py-1 font-mono text-[0.68rem] text-critical"
+                >
                   <ShieldBan size={11} /> {d}
                   <button
+                    type="button"
                     disabled={loading === d}
                     onClick={() => doUnquarantine(d)}
-                    title="Remove from deny list"
-                    className="ml-0.5 px-1 py-0.5 rounded text-[0.6rem] cursor-pointer bg-transparent border transition-colors"
-                    style={{ borderColor: 'color-mix(in srgb, var(--success) 30%, transparent)', color: 'var(--success)' }}>
+                    title="Release from containment"
+                    aria-label={`Release ${d} from containment`}
+                    className="wd-hover ml-0.5 grid h-5 w-5 place-items-center rounded border border-[color-mix(in_srgb,var(--success)_35%,transparent)] bg-transparent text-success hover:shadow-glow disabled:opacity-40"
+                  >
                     <ShieldCheck size={10} />
                   </button>
                 </span>
@@ -280,12 +282,58 @@ function DenyListCard() {
             </div>
           </div>
         )}
-      </div>
+      </CardBody>
     </Card>
   );
 }
 
-// ── Events History ────────────────────────────────────────────────────────
+// ── Action log ─────────────────────────────────────────────────────────────
+
+const ACTION_TONE: Record<string, string> = {
+  quarantine: 'border-[color-mix(in_srgb,var(--warning)_40%,transparent)] bg-[color-mix(in_srgb,var(--warning)_12%,transparent)] text-warning',
+  block: 'border-[color-mix(in_srgb,var(--critical)_40%,transparent)] bg-[color-mix(in_srgb,var(--critical)_12%,transparent)] text-critical',
+  unquarantine: 'border-[color-mix(in_srgb,var(--success)_40%,transparent)] bg-[color-mix(in_srgb,var(--success)_12%,transparent)] text-success',
+};
+
+const ACTION_LABEL: Record<string, string> = {
+  quarantine: 'QUARANTINE',
+  block: 'BLOCK',
+  unquarantine: 'RELEASE',
+};
+
+const eventColumns: Array<DataTableColumn<MonitorEvent>> = [
+  {
+    key: 'time', header: 'Time', sortable: true,
+    sortValue: (r) => new Date(r.timestamp).getTime(),
+    render: (r) => (
+      <span className="flex items-center gap-1 font-mono text-[0.7rem] text-text-muted">
+        <Clock size={10} />
+        {new Date(r.timestamp).toLocaleString('en-US', { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' })}
+      </span>
+    ),
+    className: 'w-[170px]',
+  },
+  {
+    key: 'action', header: 'Action', sortable: true, sortValue: (r) => r.action,
+    render: (r) => (
+      <span className={cn(
+        'inline-block rounded border px-1.5 py-0.5 font-mono text-[0.6rem] font-bold uppercase tracking-wider',
+        ACTION_TONE[r.action] ?? 'border-border-color bg-surface-muted text-text-muted',
+      )}>
+        {ACTION_LABEL[r.action] ?? r.action.toUpperCase()}
+      </span>
+    ),
+    className: 'w-[130px]',
+  },
+  {
+    key: 'package', header: 'Package', sortable: true, sortValue: (r) => r.package,
+    render: (r) => <span className="font-mono text-[0.74rem] text-text-primary">{r.package}</span>,
+  },
+  {
+    key: 'reason', header: 'Reason',
+    render: (r) => <span className="text-[0.72rem] text-text-muted">{r.reason || '—'}</span>,
+  },
+];
 
 function EventsCard() {
   const { data, isLoading } = useQuery({
@@ -297,81 +345,39 @@ function EventsCard() {
 
   const events: MonitorEvent[] = data?.events ?? [];
 
-  const actionStyle = (action: string) => {
-    switch (action) {
-      case 'quarantine': return { color: 'var(--warning)', label: 'QUARANTINE' };
-      case 'block': return { color: 'var(--critical)', label: 'BLOCK' };
-      case 'unquarantine': return { color: 'var(--success)', label: 'ALLOW' };
-      default: return { color: 'var(--text-muted)', label: action.toUpperCase() };
-    }
-  };
-
   return (
-    <Card>
-      <PanelHeader
-        title="Action history"
-        badge={<History size={12} className="text-text-muted" />}
+    <Card className="cyber-lift">
+      <CardHeader
+        icon={History}
+        title="Action log"
+        description="Every containment order the sentry has executed."
       />
-      <div className="px-4 pb-3">
-        {isLoading ? (
-          <div className="py-8 text-center">
-            <p className="text-[0.78rem] text-text-secondary animate-pulse">Loading events…</p>
-          </div>
-        ) : events.length === 0 ? (
-          <div className="py-6 text-center">
-            <History size={18} className="text-text-muted opacity-40 mx-auto mb-1" />
-            <p className="text-[0.75rem] text-text-secondary">No policy actions recorded yet.</p>
-          </div>
-        ) : (
-          <div className="overflow-x-auto max-h-[400px] overflow-y-auto">
-            <table className="w-full text-[0.72rem]">
-              <thead className="sticky top-0">
-                <tr className="border-b border-border-color">
-                  {['Time', 'Action', 'Package', 'Reason'].map(h => (
-                    <th key={h} className="text-left py-1.5 px-2 text-[0.62rem] font-semibold uppercase tracking-wide text-text-muted bg-surface">{h}</th>
-                  ))}
-                </tr>
-              </thead>
-              <tbody>
-                {events.map((ev, i) => {
-                  const s = actionStyle(ev.action);
-                  return (
-                    <tr key={i} className="border-b border-border-color last:border-b-0">
-                      <td className="py-2 px-2 font-mono text-text-muted whitespace-nowrap">
-                        <Clock size={10} className="inline mr-1 align-middle" />
-                        {new Date(ev.timestamp).toLocaleString('en-US', { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' })}
-                      </td>
-                      <td className="py-2 px-2">
-                        <span className="text-[0.58rem] font-semibold uppercase tracking-wide px-1.5 py-0.5 rounded"
-                          style={{
-                            background: `color-mix(in srgb, ${s.color} 12%, transparent)`,
-                            color: s.color,
-                          }}>
-                          {s.label}
-                        </span>
-                      </td>
-                      <td className="py-2 px-2 font-mono text-text-primary">{ev.package}</td>
-                      <td className="py-2 px-2 text-text-muted">{ev.reason || '—'}</td>
-                    </tr>
-                  );
-                })}
-              </tbody>
-            </table>
-          </div>
-        )}
-      </div>
+      <DataTable
+        columns={eventColumns}
+        rows={events}
+        rowKey={(r) => `${r.timestamp}-${r.action}-${r.package}`}
+        loading={isLoading}
+        skeletonRows={5}
+        dense
+        initialSort={{ key: 'time', dir: 'desc' }}
+        empty={{
+          icon: History,
+          title: 'No actions on record',
+          description: 'Quarantine or block a package to start the log.',
+        }}
+      />
     </Card>
   );
 }
 
-// ── Tab Navigation ────────────────────────────────────────────────────────
+// ── Tab navigation ─────────────────────────────────────────────────────────
 
 type TabKey = 'overview' | 'actions' | 'history';
 
 const TABS: { key: TabKey; label: string; icon: typeof Activity }[] = [
-  { key: 'overview', label: 'Overview', icon: Activity },
-  { key: 'actions', label: 'Policy Actions', icon: Shield },
-  { key: 'history', label: 'Event History', icon: History },
+  { key: 'overview', label: 'Overwatch', icon: Radio },
+  { key: 'actions', label: 'Containment', icon: Shield },
+  { key: 'history', label: 'Action log', icon: History },
 ];
 
 export default function MonitorPage() {
@@ -417,121 +423,126 @@ export default function MonitorPage() {
   const lastRefresh = dataUpdatedAt ? new Date(dataUpdatedAt) : null;
 
   return (
-    <div className="flex flex-col">
-      <div className="p-5 flex flex-col gap-4">
-        {/* Header */}
-        <div className="flex items-center justify-between">
+    <div className="flex flex-col gap-5">
+      <SentinelTicker />
+
+      {/* Header */}
+      <div>
+        <CyberKicker index="O-01" label="overwatch // live sentinel" />
+        <div className="flex flex-wrap items-center justify-between gap-2">
           <div>
-            <h1 className="text-[1.1rem] font-bold text-text-primary">Live Monitor</h1>
-            <p className="text-[0.75rem] text-text-secondary mt-0.5">
-              Real-time security posture{lastRefresh ? ` — updated ${lastRefresh.toLocaleTimeString()}` : ''}
+            <h1 className="m-0 flex items-center gap-2 text-[1.15rem] font-bold tracking-tight text-text-primary">
+              <Activity size={18} className="text-neon" aria-hidden="true" /> Live Sentinel
+            </h1>
+            <p className="m-0 mt-1 font-mono text-[0.68rem] text-text-muted">
+              real-time security posture{lastRefresh ? ` — refreshed ${lastRefresh.toLocaleTimeString()}` : ''}
             </p>
           </div>
           {isError ? (
-            <span className="text-[0.72rem] text-critical flex items-center gap-1.5">
+            <span className="flex items-center gap-1.5 font-mono text-[0.7rem] font-bold uppercase tracking-widest text-critical">
               <AlertTriangle size={13} /> API unreachable
             </span>
           ) : (
-            <span className="flex items-center gap-1.5 text-[0.72rem]" style={{ color: 'var(--success)' }}>
-              <span className="relative flex h-2 w-2">
-                <span className="animate-ping absolute inline-flex h-full w-full rounded-full opacity-75 bg-success" />
-                <span className="relative inline-flex rounded-full h-2 w-2 bg-success" />
-              </span>
-              {stats?.ecosystems_covered?.length ?? 0} ecosystems monitored
+            <span className="flex items-center gap-2 rounded border border-[color-mix(in_srgb,var(--success)_30%,transparent)] bg-[color-mix(in_srgb,var(--success)_8%,transparent)] px-2.5 py-1.5 font-mono text-[0.68rem] text-success">
+              <span aria-hidden="true" className="sonar h-1.5 w-1.5 rounded-full bg-success text-success" />
+              {stats?.ecosystems_covered?.length ?? 0} ecosystems watched
             </span>
           )}
         </div>
-
-        {/* Tab bar */}
-        <div className="flex gap-0.5 border-b border-border-color">
-          {TABS.map(t => {
-            const Icon = t.icon;
-            const active = tab === t.key;
-            return (
-              <button key={t.key} onClick={() => setTab(t.key)}
-                className={cn(
-                  'flex items-center gap-1.5 px-4 py-2 text-[0.78rem] font-medium bg-transparent border-none cursor-pointer transition-colors',
-                  active ? 'text-text-primary border-b-2' : 'text-text-muted hover:text-text-secondary',
-                )}
-                style={active ? { borderBottomColor: 'var(--primary-blue)', borderBottomWidth: 2, borderBottomStyle: 'solid' } : undefined}>
-                <Icon size={14} /> {t.label}
-              </button>
-            );
-          })}
-        </div>
-
-        {/* Tab content */}
-        {tab === 'overview' && (
-          <>
-            {isLoading && !stats ? (
-              <div className="py-12 text-center">
-                <p className="text-[0.78rem] text-text-secondary animate-pulse">Loading monitor data…</p>
-              </div>
-            ) : isError && !stats ? (
-              <div className="py-12 text-center">
-                <AlertTriangle size={24} className="text-text-muted opacity-40 mx-auto mb-2" />
-                <p className="text-[0.78rem] text-text-secondary mb-1">Could not reach API. Is the server running?</p>
-                <code className="text-[0.7rem] font-mono text-primary-blue">cwctl serve</code>
-              </div>
-            ) : (
-              <>
-                {/* KPI strip */}
-                <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-2.5">
-                  <KPITile className="fg-entrance" label="Total packages" value={totalPkgs} icon={Package} color="var(--text-primary)" />
-                  <KPITile className="fg-entrance fg-entrance-delay-1" label="Scanned today" value={scannedToday} icon={Zap} color="var(--success)" accentColor="var(--success)" />
-                  <KPITile className="fg-entrance fg-entrance-delay-2" label="Total findings" value={totalFindings} icon={AlertTriangle} color="var(--warning)" accentColor="var(--warning)" />
-                  <KPITile className="fg-entrance fg-entrance-delay-3" label="Critical" value={critFindings} icon={ShieldAlert} color="var(--critical)" accentColor="var(--critical)" />
-                  <KPITile className="fg-entrance fg-entrance-delay-4" label="High" value={highFindings} icon={AlertTriangle} color="#EA580C" accentColor="#EA580C" />
-                </div>
-
-                {/* Trend chart */}
-                <TrendCard />
-
-                {/* Recent scans + live activity */}
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-3.5">
-                  <RecentScansCard />
-                  <Card className="flex flex-col">
-                    <PanelHeader
-                      title="Live activity"
-                      badge={
-                        <span className="relative flex h-2 w-2">
-                          <span className="animate-ping absolute inline-flex h-full w-full rounded-full opacity-75 bg-success" />
-                          <span className="relative inline-flex rounded-full h-2 w-2 bg-success" />
-                        </span>
-                      }
-                    />
-                    <div className="flex-1 overflow-hidden">
-                      <ActivityFeed limit={15} />
-                    </div>
-                  </Card>
-                </div>
-
-                {/* System info */}
-                <Card>
-                  <PanelHeader title="System info" />
-                  <div className="px-4 pb-3">
-                    <div className="flex items-center justify-between py-2 border-b border-border-color">
-                      <span className="text-[0.72rem] text-text-secondary">Last updated</span>
-                      <span className="text-[0.72rem] font-mono text-text-primary">
-                        {stats?.last_updated ? new Date(stats.last_updated).toLocaleString() : '—'}
-                      </span>
-                    </div>
-                    <div className="flex items-center justify-between py-2">
-                      <span className="text-[0.72rem] text-text-secondary">Ecosystems covered</span>
-                      <span className="text-[0.72rem] font-mono text-text-primary">
-                        {stats?.ecosystems_covered && stats.ecosystems_covered.length > 0 ? stats.ecosystems_covered.join(', ') : '—'}
-                      </span>
-                    </div>
-                  </div>
-                </Card>
-              </>
-            )}
-          </>
-        )}
-
-        {tab === 'actions' && <DenyListCard />}
-        {tab === 'history' && <EventsCard />}
       </div>
+
+      {/* Tab bar */}
+      <div className="flex gap-1 border-b border-border-color" role="tablist" aria-label="Sentinel views">
+        {TABS.map(t => {
+          const Icon = t.icon;
+          const active = tab === t.key;
+          return (
+            <button
+              key={t.key}
+              role="tab"
+              aria-selected={active}
+              onClick={() => setTab(t.key)}
+              className={cn(
+                'wd-hover -mb-px flex items-center gap-1.5 border-b-2 bg-transparent px-4 py-2 font-mono text-[0.74rem] font-bold uppercase tracking-wider',
+                active
+                  ? 'border-neon text-neon drop-shadow-[0_0_8px_var(--neon)]'
+                  : 'border-transparent text-text-secondary hover:text-text-primary',
+              )}
+            >
+              <Icon size={14} /> {t.label}
+            </button>
+          );
+        })}
+      </div>
+
+      {/* Tab content */}
+      {tab === 'overview' && (
+        <>
+          {isLoading && !stats ? (
+            <div className="py-12 text-center">
+              <p className="m-0 animate-pulse font-mono text-[0.78rem] text-text-secondary">tuning the sentinel…</p>
+            </div>
+          ) : isError && !stats ? (
+            <div className="py-12 text-center">
+              <AlertTriangle size={24} className="mx-auto mb-2 text-text-muted opacity-40" />
+              <p className="m-0 mb-1 text-[0.78rem] text-text-secondary">Could not reach API. Is the server running?</p>
+              <code className="font-mono text-[0.7rem] text-neon">cwctl serve</code>
+            </div>
+          ) : (
+            <div className="flex flex-col gap-5">
+              {/* KPI strip */}
+              <div className="grid grid-cols-2 gap-5 sm:grid-cols-3 lg:grid-cols-5">
+                <StatTile label="Packages" value={totalPkgs} icon={Package} className="cyber-lift fg-entrance" />
+                <StatTile label="Probed today" value={scannedToday} icon={Zap} accent="success" className="cyber-lift fg-entrance fg-entrance-delay-1" />
+                <StatTile label="Live findings" value={totalFindings} icon={AlertTriangle} accent="amber" className="cyber-lift fg-entrance fg-entrance-delay-2" />
+                <StatTile label="Critical" value={critFindings} icon={ShieldAlert} accent="critical" className="cyber-lift fg-entrance fg-entrance-delay-3" />
+                <StatTile label="High" value={highFindings} icon={AlertTriangle} accent="warning" className="cyber-lift fg-entrance fg-entrance-delay-4" />
+              </div>
+
+              <TrendCard />
+
+              {/* Recent probes + live wire */}
+              <div className="grid grid-cols-1 gap-5 md:grid-cols-2">
+                <RecentScansCard />
+                <Card className="cyber-lift flex flex-col">
+                  <CardHeader
+                    title="Live wire"
+                    description="Streaming engine + probe events"
+                    action={
+                      <span aria-hidden="true" className="sonar h-2 w-2 rounded-full bg-success text-success" />
+                    }
+                  />
+                  <CardBody className="flex-1 overflow-hidden">
+                    <ActivityFeed limit={15} />
+                  </CardBody>
+                </Card>
+              </div>
+
+              {/* System info */}
+              <Card className="cyber-lift">
+                <CardHeader title="Grid status" description="Sentinel telemetry" />
+                <CardBody className="flex flex-col gap-0 p-0">
+                  <div className="flex items-center justify-between border-b border-border-color px-4 py-2.5">
+                    <span className="font-mono text-[0.68rem] uppercase tracking-wider text-text-muted">Last sweep</span>
+                    <span className="font-mono text-[0.74rem] text-text-primary">
+                      {stats?.last_updated ? new Date(stats.last_updated).toLocaleString() : '—'}
+                    </span>
+                  </div>
+                  <div className="flex items-center justify-between px-4 py-2.5">
+                    <span className="font-mono text-[0.68rem] uppercase tracking-wider text-text-muted">Ecosystems watched</span>
+                    <span className="text-right font-mono text-[0.74rem] text-neon">
+                      {stats?.ecosystems_covered && stats.ecosystems_covered.length > 0 ? stats.ecosystems_covered.join(' · ') : '—'}
+                    </span>
+                  </div>
+                </CardBody>
+              </Card>
+            </div>
+          )}
+        </>
+      )}
+
+      {tab === 'actions' && <DenyListCard />}
+      {tab === 'history' && <EventsCard />}
     </div>
   );
 }

@@ -24,10 +24,12 @@ async function getCompletions() {
   }>
 }
 
+const TERM_FONT = "'JetBrains Mono', 'Menlo', 'Monaco', 'Cascadia Code', 'Consolas', monospace"
+
 export function TerminalPage() {
   const [input, setInput] = useState('')
   const [lines, setLines] = useState<OutputLine[]>([
-    { type: 'system', text: 'ChainWarden Terminal v1.0.0' },
+    { type: 'system', text: 'STRIKE CONSOLE v2.0 — secure uplink to the grid' },
     { type: 'system', text: 'Type "help" for available commands.' },
     { type: 'system', text: '' },
   ])
@@ -174,94 +176,62 @@ export function TerminalPage() {
   }
 
   return (
-    <div style={{
-      display: 'flex',
-      flexDirection: 'column',
-      height: '100%',
-      padding: '12px',
-      background: '#0C0C0C',
-      boxSizing: 'border-box',
-    }}>
+    <div className="flex h-full flex-col gap-3 p-1">
+      <div>
+        <p className="m-0 font-mono text-[0.62rem] font-bold uppercase tracking-[0.22em] text-text-muted">
+          <span className="text-neon drop-shadow-[0_0_6px_var(--neon)]">R-07</span>
+          <span className="mx-2 text-border-color">/</span>
+          recon // strike console
+        </p>
+      </div>
+
       {/* Terminal window */}
-      <div style={{
-        flex: 1,
-        display: 'flex',
-        flexDirection: 'column',
-        borderRadius: '8px',
-        overflow: 'hidden',
-        border: '1px solid #333',
-        boxShadow: '0 8px 32px rgba(0,0,0,0.5)',
-        minHeight: 0,
-      }}>
+      <div
+        className="flex min-h-0 flex-1 flex-col overflow-hidden rounded border border-border-color bg-bg-base shadow-card"
+        style={{ fontFamily: TERM_FONT }}
+      >
         {/* Title bar */}
-        <div style={{
-          display: 'flex',
-          alignItems: 'center',
-          height: '36px',
-          padding: '0 12px',
-          background: '#1E1E1E',
-          borderBottom: '1px solid #333',
-          gap: '8px',
-          flexShrink: 0,
-          userSelect: 'none',
-        }}>
-          <div style={{ display: 'flex', gap: '6px' }}>
-            <div style={{ width: 12, height: 12, borderRadius: '50%', background: '#FF5F57' }} />
-            <div style={{ width: 12, height: 12, borderRadius: '50%', background: '#FFBD2E' }} />
-            <div style={{ width: 12, height: 12, borderRadius: '50%', background: '#28C840' }} />
+        <div className="flex h-9 flex-shrink-0 select-none items-center gap-2 border-b border-border-color bg-surface px-3">
+          <div className="flex gap-1.5">
+            <div className="h-3 w-3 rounded-full bg-critical shadow-[0_0_6px_var(--critical)]" />
+            <div className="h-3 w-3 rounded-full bg-warning shadow-[0_0_6px_var(--warning)]" />
+            <div className="h-3 w-3 rounded-full bg-success shadow-[0_0_6px_var(--success)]" />
           </div>
-          <div style={{
-            flex: 1,
-            textAlign: 'center',
-            fontSize: '12px',
-            fontFamily: "'Menlo', 'Monaco', 'Cascadia Code', 'Consolas', monospace",
-            color: '#808080',
-            letterSpacing: '0.02em',
-          }}>
-            cwctl — ChainWarden Terminal
+          <div className="flex-1 text-center text-[0.7rem] tracking-wide text-text-muted">
+            cwctl <span className="text-neon">—</span> secure uplink
           </div>
-          <div style={{ width: 48 }} />
+          <div className="w-12" />
         </div>
 
         {/* Terminal body */}
         <div
           ref={scrollRef}
           onClick={focusInput}
-          style={{
-            flex: 1,
-            overflow: 'auto',
-            padding: '12px 14px',
-            background: '#0C0C0C',
-            fontFamily: "'Menlo', 'Monaco', 'Cascadia Code', 'Consolas', monospace",
-            fontSize: '13px',
-            lineHeight: '20px',
-            cursor: 'text',
-            minHeight: 0,
-          }}
+          className="min-h-0 flex-1 cursor-text overflow-auto px-3.5 py-3 text-[0.8rem] leading-5"
         >
           {lines.map((line, i) => (
-            <div key={i} style={{ minHeight: '20px', whiteSpace: 'pre-wrap', wordBreak: 'break-word' }}>
+            <div key={i} className="min-h-5 whitespace-pre-wrap break-words">
               {line.type === 'prompt' ? (
                 <>
-                  <span style={{ color: '#28C840' }}>❯</span>
-                  <span style={{ color: '#E8E8E8' }}> {line.text.replace('$ cwctl ', '')}</span>
+                  <span className="text-neon drop-shadow-[0_0_6px_var(--neon)]">❯</span>
+                  <span className="text-text-primary"> {line.text.replace('$ cwctl ', '')}</span>
                 </>
               ) : line.type === 'error' ? (
-                <span style={{ color: '#FF5F57' }}>{line.text}</span>
+                <span className="text-critical">{line.text}</span>
               ) : line.type === 'system' ? (
-                <span style={{ color: '#666' }}>{line.text}</span>
+                <span className="text-text-muted">{line.text}</span>
               ) : (
-                <span style={{ color: '#CCCCCC' }}>{line.text}</span>
+                <span className="text-text-secondary">{line.text}</span>
               )}
             </div>
           ))}
 
           {/* Active prompt */}
-          <div style={{ display: 'flex', alignItems: 'center', minHeight: '20px' }}>
-            <span style={{ color: running ? '#555' : '#28C840', marginRight: '6px' }}>
-              {running ? '⏳' : '❯'}
+          <div className="flex min-h-5 items-center">
+            <span className={running ? 'mr-1.5 text-text-muted' : 'mr-1.5 text-neon drop-shadow-[0_0_6px_var(--neon)]'}>
+              {running ? '◌' : '❯'}
             </span>
-            <div style={{ position: 'relative', flex: 1, display: 'flex', alignItems: 'center' }}>
+            <div className="relative flex flex-1 items-center">
               <input
                 ref={inputRef}
                 type="text"
@@ -272,28 +242,12 @@ export function TerminalPage() {
                 autoFocus
                 spellCheck={false}
                 autoComplete="off"
-                style={{
-                  width: '100%',
-                  background: 'transparent',
-                  border: 'none',
-                  outline: 'none',
-                  color: '#E8E8E8',
-                  fontFamily: 'inherit',
-                  fontSize: 'inherit',
-                  lineHeight: 'inherit',
-                  padding: 0,
-                  margin: 0,
-                  caretColor: '#28C840',
-                }}
+                className="m-0 w-full border-none bg-transparent p-0 font-[inherit] text-[inherit] leading-[inherit] text-text-primary outline-none"
+                style={{ caretColor: 'var(--neon)' }}
               />
               {running && (
-                <span style={{
-                  color: '#666',
-                  fontSize: '11px',
-                  marginLeft: '8px',
-                  whiteSpace: 'nowrap',
-                }}>
-                  running... (ctrl+c to stop)
+                <span className="ml-2 whitespace-nowrap text-[0.68rem] text-text-muted">
+                  running… <span className="text-neon">(ctrl+c to abort)</span>
                 </span>
               )}
             </div>
@@ -301,31 +255,18 @@ export function TerminalPage() {
         </div>
 
         {/* Status bar */}
-        <div style={{
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'space-between',
-          height: '24px',
-          padding: '0 12px',
-          background: '#1A1A2E',
-          borderTop: '1px solid #333',
-          fontSize: '11px',
-          fontFamily: "'Menlo', 'Monaco', 'Cascadia Code', 'Consolas', monospace",
-          color: '#666',
-          flexShrink: 0,
-          userSelect: 'none',
-        }}>
-          <div style={{ display: 'flex', gap: '14px' }}>
-            <span>
-              <span style={{ color: '#28C840', marginRight: 4 }}>●</span>
-              connected
+        <div className="flex h-6 flex-shrink-0 select-none items-center justify-between border-t border-border-color bg-surface px-3 text-[0.66rem] text-text-muted">
+          <div className="flex gap-3.5">
+            <span className="flex items-center gap-1.5">
+              <span className="sonar h-1.5 w-1.5 rounded-full bg-success text-success" />
+              <span className="text-success">uplink live</span>
             </span>
             <span>{cmdHistory.length} commands</span>
           </div>
-          <div style={{ display: 'flex', gap: '14px' }}>
+          <div className="flex gap-3.5">
             <span>↑↓ history</span>
             <span>^L clear</span>
-            <span>^C cancel</span>
+            <span>^C abort</span>
           </div>
         </div>
       </div>

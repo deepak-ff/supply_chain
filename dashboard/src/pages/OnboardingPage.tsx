@@ -11,6 +11,7 @@ import { CopyButton } from '../components/CopyButton';
 import { Input } from '../components/ui/input';
 import { Button } from '../components/ui/button';
 import { Card } from '../components/ui/card';
+import { CyberKicker } from '../components/cyber/CyberViz';
 
 const ECOSYSTEMS = ['npm', 'pypi', 'go', 'rubygems', 'crates', 'maven', 'huggingface', 'mcp'];
 
@@ -92,22 +93,25 @@ export function OnboardingPage({ onComplete }: OnboardingPageProps) {
   return (
     <div className="flex min-h-screen items-center justify-center px-6 py-12">
       <div className="w-full max-w-lg">
+        <div className="mb-6 flex justify-center">
+          <CyberKicker index="X-01" label="first contact // warden induction" />
+        </div>
         {/* Step indicator */}
         <div className="mb-8 flex items-center justify-center gap-2">
           {[1, 2, 3, 4].map(n => (
             <div
               key={n}
               className="h-1.5 w-10 rounded-full"
-              style={{ background: n <= step ? 'var(--primary-blue)' : 'var(--border-color)' }}
+              style={{ background: n <= step ? 'var(--neon)' : 'var(--border-color)', boxShadow: n <= step ? '0 0 8px var(--neon)' : undefined }}
             />
           ))}
         </div>
 
-        <Card className="p-8">
+        <Card className="cyber-lift p-8">
           {/* Step 1: Workspace name */}
           {step === 1 && (
             <div>
-              <h1 className="text-xl font-bold text-text-primary">Name your workspace</h1>
+              <h1 className="text-xl font-bold tracking-tight text-text-primary">Name your war room</h1>
               <p className="mt-2 text-sm text-text-secondary">
                 A personal label shown in this browser only — it isn't sent anywhere or tied to
                 your account.
@@ -133,7 +137,7 @@ export function OnboardingPage({ onComplete }: OnboardingPageProps) {
           {/* Step 2: Connect environment */}
           {step === 2 && (
             <div>
-              <h1 className="text-xl font-bold text-text-primary">Connect an environment</h1>
+              <h1 className="text-xl font-bold tracking-tight text-text-primary">Breach an environment</h1>
               <p className="mt-2 text-sm text-text-secondary">
                 Pick how you want to run your first scan.
               </p>
@@ -149,11 +153,11 @@ export function OnboardingPage({ onComplete }: OnboardingPageProps) {
                     className={
                       'flex items-start gap-3 rounded-lg border p-4 text-left transition-colors ' +
                       (connectOption === opt.id
-                        ? 'border-primary-blue bg-blue-light/40'
-                        : 'border-border-color bg-surface hover:bg-surface-muted')
+                        ? 'border-neon bg-[color-mix(in_srgb,var(--neon)_10%,transparent)] shadow-glow'
+                        : 'border-border-color bg-surface hover:border-neon hover:bg-surface-muted')
                     }
                   >
-                    <opt.icon size={18} className="mt-0.5 shrink-0 text-primary-blue" />
+                    <opt.icon size={18} className="mt-0.5 shrink-0 text-neon" />
                     <div>
                       <div className="text-sm font-semibold text-text-primary">{opt.label}</div>
                       <div className="mt-0.5 text-xs text-text-secondary">{opt.desc}</div>
@@ -174,7 +178,7 @@ export function OnboardingPage({ onComplete }: OnboardingPageProps) {
           {/* Step 3: Initial scan */}
           {step === 3 && (
             <div>
-              <h1 className="text-xl font-bold text-text-primary">Run your first scan</h1>
+              <h1 className="text-xl font-bold tracking-tight text-text-primary">Run your first sweep</h1>
 
               {connectOption === 'registry' && (
                 <div className="mt-6 space-y-4">
@@ -208,7 +212,7 @@ export function OnboardingPage({ onComplete }: OnboardingPageProps) {
                     onClick={() => fileRef.current?.click()}
                     className={
                       'cursor-pointer rounded-lg border-2 border-dashed p-6 text-center transition-colors ' +
-                      (dragOver ? 'border-primary-blue bg-blue-light/30' : 'border-border-color')
+                      (dragOver ? 'border-neon bg-[color-mix(in_srgb,var(--neon)_8%,transparent)] shadow-glow' : 'border-border-color')
                     }
                   >
                     <input
@@ -242,7 +246,7 @@ export function OnboardingPage({ onComplete }: OnboardingPageProps) {
                     Run this from any project directory:
                   </p>
                   <div className="flex items-center justify-between gap-3 rounded-md border border-border-color bg-surface-muted px-4 py-3">
-                    <code className="font-mono text-sm text-text-primary">cwctl scan .</code>
+                    <code className="font-mono text-sm text-neon">cwctl scan .</code>
                     <CopyButton text="cwctl scan ." />
                   </div>
                   <p className="text-xs text-text-muted">
@@ -250,7 +254,7 @@ export function OnboardingPage({ onComplete }: OnboardingPageProps) {
                     dashboard to review them once the scan finishes.
                   </p>
                   <Button className="w-full" onClick={finish}>
-                    Go to dashboard <ArrowRight size={14} />
+                    Enter the command deck <ArrowRight size={14} />
                   </Button>
                 </div>
               )}
@@ -263,7 +267,7 @@ export function OnboardingPage({ onComplete }: OnboardingPageProps) {
                     </div>
                   )}
                   {error && (
-                    <div className="mt-4 flex items-center gap-2 rounded-md border border-critical/20 bg-critical/10 px-3 py-2 text-xs text-critical">
+                    <div className="mt-4 flex items-center gap-2 rounded-md border border-[color-mix(in_srgb,var(--critical)_20%,transparent)] bg-[color-mix(in_srgb,var(--critical)_10%,transparent)] px-3 py-2 text-xs text-critical">
                       <AlertCircle size={13} className="shrink-0" />
                       {(error as Error).message}
                     </div>
@@ -282,16 +286,16 @@ export function OnboardingPage({ onComplete }: OnboardingPageProps) {
           {step === 4 && result && score !== null && (
             <div className="text-center">
               <ShieldCheck size={28} className="mx-auto mb-3 text-success" />
-              <h1 className="text-xl font-bold text-text-primary">Scan complete</h1>
+              <h1 className="text-xl font-bold tracking-tight text-text-primary">Sweep complete</h1>
               <div className="mt-6 flex justify-center">
                 <SecurityScore score={score} size={140} />
               </div>
               <p className="mt-4 text-sm text-text-secondary">
-                {result.summary.total} issue{result.summary.total === 1 ? '' : 's'} discovered in{' '}
+                {result.summary.total} finding{result.summary.total === 1 ? '' : 's'} in{' '}
                 <span className="font-mono text-text-primary">{result.package}</span>.
               </p>
               <Button className="mt-8 w-full" onClick={finish}>
-                Go to dashboard <ArrowRight size={14} />
+                Enter the command deck <ArrowRight size={14} />
               </Button>
             </div>
           )}

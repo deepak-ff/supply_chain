@@ -11,6 +11,7 @@ import { EmptyState } from '../components/EmptyState'
 import { LoadingState } from '../components/LoadingState'
 import { Table, TableHeader, TableBody, TableRow, TableHead, TableCell } from '../components/ui/table'
 import { useUIStore } from '../store/ui'
+import { CyberKicker } from '../components/cyber/CyberViz'
 
 // Mirrors the Go backend's internal/policy/policy.go severityOrd ordering —
 // same threshold approach used by ScanPage.tsx's severity filter, reused
@@ -46,9 +47,9 @@ function severityToStatus(sev: string): StatusBadgeStatus {
 
 const SEV_SUMMARY_COLOR: Record<string, string> = {
   CRITICAL: 'var(--critical)',
-  HIGH: '#EA580C',
+  HIGH: 'var(--amber)',
   MEDIUM: 'var(--warning)',
-  LOW: 'var(--cyan)',
+  LOW: 'var(--neon)',
 }
 
 function formatDate(iso: string): string {
@@ -112,7 +113,7 @@ function RiskDetailDrawer({ item, onClose }: { item: RiskItem | null; onClose: (
                     <path
                       d="M 10 60 A 50 50 0 0 1 110 60"
                       fill="none"
-                      stroke={item.risk_score >= 70 ? 'var(--critical)' : item.risk_score >= 40 ? '#EA580C' : item.risk_score >= 20 ? 'var(--warning)' : 'var(--cyan)'}
+                      stroke={item.risk_score >= 70 ? 'var(--critical)' : item.risk_score >= 40 ? 'var(--amber)' : item.risk_score >= 20 ? 'var(--warning)' : 'var(--neon)'}
                       strokeWidth="8"
                       strokeLinecap="round"
                       strokeDasharray={`${(item.risk_score / 100) * 157} 157`}
@@ -127,13 +128,13 @@ function RiskDetailDrawer({ item, onClose }: { item: RiskItem | null; onClose: (
 
                 <div className="grid grid-cols-2 gap-3">
                   <div className="rounded-lg border border-border-color p-3">
-                    <p className="text-xs text-text-secondary">Top severity</p>
+                    <p className="m-0 font-mono text-[0.64rem] font-bold uppercase tracking-[0.14em] text-text-muted">Peak severity</p>
                     <div className="mt-1.5">
                       <StatusBadge status={severityToStatus(item.top_severity)} label={item.top_severity} />
                     </div>
                   </div>
                   <div className="rounded-lg border border-border-color p-3">
-                    <p className="text-xs text-text-secondary">Findings</p>
+                    <p className="m-0 font-mono text-[0.64rem] font-bold uppercase tracking-[0.14em] text-text-muted">Findings</p>
                     <p className="mt-1 font-mono text-2xl font-bold text-text-primary">{item.finding_count}</p>
                   </div>
                 </div>
@@ -153,8 +154,8 @@ function RiskDetailDrawer({ item, onClose }: { item: RiskItem | null; onClose: (
                 <button
                   type="button"
                   onClick={() => { navigate('/scan'); onClose() }}
-                  className="flex w-full items-center justify-center gap-2 rounded-md bg-primary-blue px-4 py-2 text-sm font-medium text-white hover:opacity-90" >
-                  Run full scan
+                  className="wd-hover flex w-full items-center justify-center gap-2 rounded bg-neon px-4 py-2.5 font-mono text-[0.76rem] font-bold uppercase tracking-widest text-void hover:shadow-glow" >
+                  Run full sweep
                   <ArrowRight size={14} />
                 </button>
               </div>
@@ -189,17 +190,20 @@ export default function RisksPage() {
   return (
     <div className="flex flex-col gap-5">
       <div>
-        <h1 className="text-lg font-bold text-text-primary">Findings</h1>
-        <p className="mt-0.5 text-xs text-text-secondary">
-          Aggregated security risk across your scanned packages — click a row for detail
+        <CyberKicker index="X-08" label="archives // hot zones" />
+        <h1 className="m-0 flex items-center gap-2 text-[1.15rem] font-bold tracking-tight text-text-primary">
+          <AlertTriangle size={18} className="text-magenta drop-shadow-[0_0_8px_var(--magenta)]" /> Hot Zones
+        </h1>
+        <p className="m-0 mt-1 text-[0.78rem] text-text-secondary">
+          Aggregated threat heat across every swept package — click a row to interrogate it
         </p>
       </div>
 
       {/* Severity summary cards */}
       <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
         {(['CRITICAL', 'HIGH', 'MEDIUM', 'LOW'] as const).map(sev => (
-          <div key={sev} className="rounded-xl border border-border-color bg-surface p-4 shadow-sm">
-            <p className="text-xs text-text-secondary">{sev}</p>
+          <div key={sev} className="cyber-lift rounded border border-border-color bg-surface p-4">
+            <p className="m-0 font-mono text-[0.64rem] font-bold uppercase tracking-[0.14em] text-text-muted">{sev}</p>
             {risks.isLoading
               ? <div className="mt-1 h-7 w-10 animate-pulse rounded bg-surface-muted" />
               : <p className="mt-0.5 font-mono text-2xl font-bold" style={{ color: SEV_SUMMARY_COLOR[sev] }}>
@@ -214,18 +218,18 @@ export default function RisksPage() {
       {allRisks.length > 0 && (() => {
         const sevCounts = [
           { name: 'Critical', value: countBySev('CRITICAL'), color: 'var(--critical)' },
-          { name: 'High', value: countBySev('HIGH'), color: '#EA580C' },
+          { name: 'High', value: countBySev('HIGH'), color: 'var(--amber)' },
           { name: 'Medium', value: countBySev('MEDIUM'), color: 'var(--warning)' },
-          { name: 'Low', value: countBySev('LOW'), color: 'var(--cyan)' },
+          { name: 'Low', value: countBySev('LOW'), color: 'var(--neon)' },
         ].filter(d => d.value > 0);
         const gradeCounts = ['A', 'B', 'C', 'D', 'F'].map(g => ({
           name: g,
           value: allRisks.filter(r => r.risk_grade === g).length,
         })).filter(d => d.value > 0);
-        const GRADE_COLORS: Record<string, string> = { A: '#22c55e', B: '#60A5FA', C: '#F59E0B', D: '#EA580C', F: '#FF3D3D' };
+        const GRADE_COLORS: Record<string, string> = { A: '#3BE88C', B: '#00E5FF', C: '#FFB224', D: '#FF8A3D', F: '#FF4D5E' };
         return (
           <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-            <div className="rounded-xl border border-border-color bg-surface p-4 shadow-sm">
+            <div className="cyber-lift rounded border border-border-color bg-surface p-4">
               <p className="text-xs font-semibold uppercase text-text-secondary" style={{ letterSpacing: '0.05em' }}>Severity Distribution</p>
               <div style={{ display: 'flex', alignItems: 'center', gap: '1rem', marginTop: 8 }}>
                 <ResponsiveContainer width="50%" height={120}>
@@ -247,7 +251,7 @@ export default function RisksPage() {
                 </div>
               </div>
             </div>
-            <div className="rounded-xl border border-border-color bg-surface p-4 shadow-sm">
+            <div className="cyber-lift rounded border border-border-color bg-surface p-4">
               <p className="text-xs font-semibold uppercase text-text-secondary" style={{ letterSpacing: '0.05em' }}>Risk Grade Distribution</p>
               <div style={{ display: 'flex', alignItems: 'center', gap: '1rem', marginTop: 8 }}>
                 <ResponsiveContainer width="50%" height={120}>
@@ -274,10 +278,10 @@ export default function RisksPage() {
       })()}
 
       {/* Filters + table */}
-      <div className="overflow-hidden rounded-xl border border-border-color bg-surface shadow-sm">
+      <div className="cyber-lift overflow-hidden rounded border border-border-color bg-surface">
         <div className="flex items-center gap-3 border-b border-border-color px-4 py-3">
-          <AlertTriangle size={14} className="text-warning" />
-          <span className="text-xs font-semibold text-text-primary">{items.length} finding{items.length !== 1 ? 's' : ''}</span>
+          <AlertTriangle size={14} className="text-magenta" />
+          <span className="font-mono text-[0.74rem] font-bold text-text-primary">{items.length} hot zone{items.length !== 1 ? 's' : ''}</span>
           <div className="ml-auto flex gap-2">
             <select
               value={ecoFilter}
@@ -311,7 +315,7 @@ export default function RisksPage() {
           ) : (
             <EmptyState
               icon={AlertTriangle}
-              title="No active findings"
+              title="No hot zones"
               description="Run cwctl scan . to populate this view with real scan results." />
           )
         ) : (
@@ -337,7 +341,7 @@ export default function RisksPage() {
                   </TableCell>
                   <TableCell>
                     <span className="text-sm text-text-primary">
-                      {item.package_name} — {item.finding_count} finding{item.finding_count !== 1 ? 's' : ''} found
+                      {item.package_name} — {item.finding_count} finding{item.finding_count !== 1 ? 's' : ''}
                     </span>
                   </TableCell>
                   <TableCell>

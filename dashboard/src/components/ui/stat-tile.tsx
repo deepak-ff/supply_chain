@@ -22,14 +22,14 @@ export type StatTileAccent =
   | 'critical'
   | 'neutral'
 
-const ACCENT: Record<StatTileAccent, { rail: string; value: string }> = {
-  primary:  { rail: 'bg-primary',       value: 'text-text-primary' },
-  teal:     { rail: 'bg-teal',          value: 'text-teal' },
-  amber:    { rail: 'bg-amber',         value: 'text-amber' },
-  success:  { rail: 'bg-success',       value: 'text-success' },
-  warning:  { rail: 'bg-warning',       value: 'text-warning' },
-  critical: { rail: 'bg-critical',      value: 'text-critical' },
-  neutral:  { rail: 'bg-border-color',  value: 'text-text-primary' },
+const ACCENT: Record<StatTileAccent, { rail: string; value: string; glow: string }> = {
+  primary:  { rail: 'bg-neon shadow-[0_0_8px_var(--neon)]',       value: 'text-neon',      glow: 'drop-shadow-[0_0_10px_color-mix(in_srgb,var(--neon)_45%,transparent)]' },
+  teal:     { rail: 'bg-teal shadow-[0_0_8px_var(--teal)]',       value: 'text-teal',      glow: '' },
+  amber:    { rail: 'bg-amber shadow-[0_0_8px_var(--amber)]',     value: 'text-amber',     glow: '' },
+  success:  { rail: 'bg-success shadow-[0_0_8px_var(--success)]', value: 'text-success',   glow: '' },
+  warning:  { rail: 'bg-warning shadow-[0_0_8px_var(--warning)]', value: 'text-warning',   glow: '' },
+  critical: { rail: 'bg-critical shadow-[0_0_8px_var(--critical)]', value: 'text-critical', glow: '' },
+  neutral:  { rail: 'bg-border-color',  value: 'text-text-primary', glow: '' },
 }
 
 export type DeltaDirection = 'up' | 'down' | 'flat'
@@ -138,7 +138,7 @@ export function StatTile({
   return (
     <div
       className={cn(
-        'cw-brackets relative rounded border border-border-color bg-surface shadow-card',
+        'cw-brackets cyber-panel relative rounded border border-border-color shadow-card',
         className,
       )}
     >
@@ -157,7 +157,7 @@ export function StatTile({
           <Skeleton className="mt-2 h-7 w-16" />
         ) : (
           <div className="mt-1.5 flex items-baseline gap-2">
-            <span className={cn('font-mono text-[26px] font-semibold leading-none tabular-nums tracking-tight', tone.value)}>
+            <span className={cn('font-mono text-[28px] font-bold leading-none tabular-nums tracking-tight', tone.value, (tone as { glow?: string }).glow)}>
               {value}
             </span>
             {delta && <DeltaChip delta={delta} />}

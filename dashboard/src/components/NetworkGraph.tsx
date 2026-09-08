@@ -28,16 +28,16 @@ interface NetworkGraphProps {
 }
 
 const severityColor: Record<string, string> = {
-  critical: '#EF4444',
-  high: '#F97316',
-  medium: '#EAB308',
-  low: '#06B6D4',
-  none: '#6B7280',
+  critical: '#FF4D5E',
+  high: '#FF8A3D',
+  medium: '#FFB224',
+  low: '#00E5FF',
+  none: '#5E6F93',
 }
 
 const LINK_PALETTE = [
-  '#EC4899', '#8B5CF6', '#06B6D4', '#10B981', '#F59E0B',
-  '#3B82F6', '#EF4444', '#14B8A6', '#A855F7', '#F472B6',
+  '#00E5FF', '#FF2BD1', '#2FD4C2', '#3BE88C', '#FFB224',
+  '#7C6CFF', '#FF4D5E', '#14B8A6', '#A855F7', '#F472B6',
 ]
 
 function seededRandom(seed: number) {

@@ -20,6 +20,7 @@ import { StatusChip } from '../components/ui/status-chip';
 import { Skeleton } from '../components/ui/skeleton';
 import { EmptyState } from '../components/EmptyState';
 import { cn } from '../components/ui/utils';
+import { CyberKicker } from '../components/cyber/CyberViz';
 import {
   axisProps, gridProps, legendProps, seriesProps, tooltipProps, chartMargin,
 } from '../lib/chartTheme';
@@ -60,7 +61,8 @@ function ScoreDial({ score, state }: { score: number; state: string }) {
           className={stroke}
           strokeDasharray={circumference}
           strokeDashoffset={circumference * (1 - pct / 100)}
-          transform="rotate(-90 38 38)" />
+          transform="rotate(-90 38 38)"
+          style={{ filter: 'drop-shadow(0 0 6px currentColor)' }} />
       </svg>
       <div className="min-w-0">
         <p className="m-0 text-[28px] font-semibold leading-none tabular-nums text-text-primary">
@@ -306,7 +308,7 @@ function LockPanel() {
   const lock = useQuery({ queryKey: ['trust-lock'], queryFn: getTrustLock, refetchInterval: 60_000 });
 
   return (
-    <Card>
+    <Card className="cyber-lift">
       <CardHeader
         icon={Lock}
         title="Behavioural lockfile"
@@ -316,7 +318,7 @@ function LockPanel() {
             type="button"
             onClick={() => lock.refetch()}
             title="Re-verify against the lockfile"
-            className="wd-hover flex items-center gap-1.5 rounded border border-border-color bg-surface px-2 py-1 text-[0.7rem] font-medium text-text-secondary hover:bg-surface-muted hover:text-text-primary" >
+            className="wd-hover flex items-center gap-1.5 rounded border border-border-color bg-surface px-2 py-1 font-mono text-[0.68rem] font-bold uppercase tracking-wider text-text-secondary hover:border-neon hover:text-neon" >
             <RefreshCw size={11} aria-hidden="true" /> Re-check
           </button>
         }
@@ -368,7 +370,7 @@ function ReleaseDelta({ ecosystem, pkg }: { ecosystem: string; pkg: string }) {
   });
 
   return (
-    <Card>
+    <Card className="cyber-lift">
       <CardHeader
         icon={ArrowLeftRight}
         title="Release delta"
@@ -451,9 +453,10 @@ export function TrustPage() {
   return (
     <div className="space-y-5">
       <header>
-        <h1 className="m-0 flex items-center gap-2 text-[1.05rem] font-semibold text-text-primary">
-          <Radar size={18} className="text-primary" aria-hidden="true" />
-          Dynamic Trust Score
+        <CyberKicker index="O-05" label="overwatch // trust pulse" />
+        <h1 className="m-0 flex items-center gap-2 text-[1.15rem] font-bold tracking-tight text-text-primary">
+          <Radar size={18} className="text-neon drop-shadow-[0_0_8px_var(--neon)]" aria-hidden="true" />
+          Trust Pulse
         </h1>
         <p className="m-0 mt-1.5 max-w-3xl text-[0.78rem] leading-relaxed text-text-secondary">
           Signature scanning catches malware we have already seen. The trust engine catches a package
@@ -471,6 +474,7 @@ export function TrustPage() {
           icon={Activity}
           accent="primary"
           loading={tracked.isLoading}
+          className="cyber-lift fg-entrance"
         />
         <StatTile
           label="Average trust"
@@ -479,6 +483,7 @@ export function TrustPage() {
           accent="teal"
           hint="Mean score across the ledger"
           loading={tracked.isLoading}
+          className="cyber-lift fg-entrance fg-entrance-delay-1"
         />
         <StatTile
           label="Amber"
@@ -487,6 +492,7 @@ export function TrustPage() {
           accent="warning"
           hint="Drifting, not yet blocked"
           loading={tracked.isLoading}
+          className="cyber-lift fg-entrance fg-entrance-delay-2"
         />
         <StatTile
           label="Red"
@@ -495,6 +501,7 @@ export function TrustPage() {
           accent="critical"
           hint="Behaviour changed materially"
           loading={tracked.isLoading}
+          className="cyber-lift fg-entrance fg-entrance-delay-3"
         />
       </div>
 
@@ -502,7 +509,7 @@ export function TrustPage() {
 
       <div className="grid gap-5 lg:grid-cols-2">
         {/* Drift simulator */}
-        <Card>
+        <Card className="cyber-lift">
           <CardHeader
             icon={FlaskConical}
             title="Drift simulator"
@@ -524,14 +531,14 @@ export function TrustPage() {
                   className={cn(
                     'wd-hover rounded border px-2.5 py-2 text-left hover:bg-surface-muted',
                     scenario === s.id
-                      ? 'border-primary bg-[color-mix(in_srgb,var(--primary)_8%,transparent)]'
+                      ? 'border-neon bg-[color-mix(in_srgb,var(--neon)_10%,transparent)] shadow-glow'
                       : 'border-border-color',
                   )}
                 >
                   <span
                     className={cn(
                       'block text-[0.76rem] font-medium',
-                      scenario === s.id ? 'text-primary' : 'text-text-primary',
+                      scenario === s.id ? 'text-neon' : 'text-text-primary',
                     )}
                   >
                     {s.label}
@@ -577,7 +584,7 @@ export function TrustPage() {
         </Card>
 
         {/* Tracked packages — the ledger */}
-        <Card>
+        <Card className="cyber-lift">
           <CardHeader
             icon={ShieldCheck}
             title="Tracked packages"
@@ -587,7 +594,7 @@ export function TrustPage() {
                 <button
                   type="button"
                   onClick={() => setSelected(null)}
-                  className="wd-hover flex items-center gap-1 rounded border border-border-color bg-surface px-2 py-1 text-[0.7rem] font-medium text-text-secondary hover:bg-surface-muted hover:text-text-primary" >
+                  className="wd-hover flex items-center gap-1 rounded border border-border-color bg-surface px-2 py-1 font-mono text-[0.68rem] font-bold uppercase tracking-wider text-text-secondary hover:border-neon hover:text-neon" >
                   <X size={11} aria-hidden="true" /> Clear
                 </button>
               )
@@ -609,7 +616,7 @@ export function TrustPage() {
             maxHeightClass="max-h-[420px]"
             rowClassName={(p) =>
               selected?.package === p.package && selected?.ecosystem === p.ecosystem
-                ? 'bg-[color-mix(in_srgb,var(--primary)_8%,transparent)]'
+                ? 'bg-[color-mix(in_srgb,var(--neon)_10%,transparent)]'
                 : undefined
             }
             empty={{
@@ -630,7 +637,7 @@ export function TrustPage() {
 
       {/* Selected package detail */}
       {selected && (
-        <Card>
+        <Card className="cyber-lift">
           <CardHeader
             icon={Radar}
             title={`${selected.ecosystem}:${selected.package}`}
@@ -639,7 +646,7 @@ export function TrustPage() {
               <button
                 type="button"
                 onClick={() => setSelected(null)}
-                className="wd-hover flex items-center gap-1 rounded border border-border-color bg-surface px-2 py-1 text-[0.7rem] font-medium text-text-secondary hover:bg-surface-muted hover:text-text-primary" >
+                className="wd-hover flex items-center gap-1 rounded border border-border-color bg-surface px-2 py-1 font-mono text-[0.68rem] font-bold uppercase tracking-wider text-text-secondary hover:border-neon hover:text-neon" >
                 <X size={11} aria-hidden="true" /> Close
               </button>
             }

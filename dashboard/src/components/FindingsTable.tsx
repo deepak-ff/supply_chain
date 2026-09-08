@@ -202,7 +202,7 @@ function FragmentRow({
     <>
       <tr
         onClick={onToggle}
-        className="wd-hover cursor-pointer border-b border-border-color/60 hover:bg-[var(--row-hover)]" >
+        className="wd-hover cursor-pointer border-b border-[color-mix(in_srgb,var(--border-color)_60%,transparent)] hover:bg-[var(--row-hover)]" >
         <td className="py-2 pl-3 text-text-muted">
           {isOpen ? <ChevronDown size={13} /> : <ChevronRight size={13} />}
         </td>
@@ -212,7 +212,7 @@ function FragmentRow({
         <td className="px-3 py-2 text-[0.72rem] text-text-muted">{f.source}</td>
       </tr>
       {isOpen && (
-        <tr className="border-b border-border-color/60">
+        <tr className="border-b border-[color-mix(in_srgb,var(--border-color)_60%,transparent)]">
           <td colSpan={5} className="p-0">
             <div className="ml-9 mr-3 mb-3 rounded border border-border-color bg-bg-base p-3">
               {f.description && (
