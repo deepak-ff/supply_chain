@@ -6,69 +6,33 @@ import {
 } from 'recharts';
 import { axisProps, tooltipProps } from '../lib/chartTheme';
 import {
-  Network, Package, ShieldAlert, ShieldCheck, X,
-  Target, AlertTriangle,
+  Network, Package, ShieldAlert, ShieldCheck,
+  Target, AlertTriangle, X, Crosshair,
 } from 'lucide-react';
 import { getDependencyGraph, getActiveRisks } from '../lib/api';
 import { NetworkGraph, type NetworkGraphNode } from '../components/NetworkGraph';
+import { Card, CardHeader, CardBody } from '../components/ui/card';
+import { StatTile } from '../components/ui/stat-tile';
+import { EmptyState } from '../components/EmptyState';
+import { ExposureBars, CyberKicker } from '../components/cyber/CyberViz';
 import { cn } from '../components/ui/utils';
 import { useWorkspaceStore } from '../store/workspace';
 
 const SEV = {
-  critical: { color: 'var(--critical)', hex: '#DC2626', label: 'Critical' },
-  high:     { color: '#EA580C',         hex: '#EA580C', label: 'High' },
-  medium:   { color: 'var(--warning)',  hex: '#D97706', label: 'Medium' },
-  low:      { color: 'var(--cyan)',     hex: '#06B6D4', label: 'Low' },
-  none:     { color: '#98A2B3',         hex: '#98A2B3', label: 'Healthy' },
+  critical: { hex: '#FF4D5E', label: 'Critical', swatch: 'bg-critical' },
+  high:     { hex: '#FF8A3D', label: 'High',     swatch: 'bg-warning' },
+  medium:   { hex: '#FFB224', label: 'Medium',   swatch: 'bg-amber' },
+  low:      { hex: '#00E5FF', label: 'Low',      swatch: 'bg-neon' },
+  none:     { hex: '#5E6F93', label: 'Healthy',  swatch: 'bg-text-muted' },
 } as const;
 
 const ECO_COLORS: Record<string, string> = {
-  NPM: '#2563EB', PYPI: '#A855F7', GO: '#06B6D4', DOCKER: '#D97706',
-  HUGGINGFACE: '#EA580C', MCP: '#DC2626', RUBYGEMS: '#D97706',
-  CRATES: '#2563EB', MAVEN: '#DC2626',
+  NPM: '#00E5FF', PYPI: '#FF2BD1', GO: '#2FD4C2', DOCKER: '#FFB224',
+  HUGGINGFACE: '#FF8A3D', MCP: '#FF4D5E', RUBYGEMS: '#F472B6',
+  CRATES: '#7C6CFF', MAVEN: '#A3E635',
 };
 
-function Card({ children, className }: { children: React.ReactNode; className?: string }) {
-  return (
-    <div className={cn('rounded-xl border border-border-color bg-surface shadow-sm', className)}>
-      {children}
-    </div>
-  );
-}
-
-function PanelHeader({ title, badge, action }: { title: string; badge?: React.ReactNode; action?: React.ReactNode }) {
-  return (
-    <div className="flex items-center justify-between px-4 pt-3 pb-2">
-      <div className="flex items-center gap-2">
-        <span className="text-[0.78rem] font-semibold text-text-primary">{title}</span>
-        {badge}
-      </div>
-      {action}
-    </div>
-  );
-}
-
-function KPITile({
-  label, value, icon: Icon, color, accentColor, className,
-}: {
-  label: string; value: number; icon: typeof Package;
-  color: string; accentColor?: string; className?: string;
-}) {
-  return (
-    <Card className={cn('relative overflow-hidden', className)}>
-      {accentColor && (
-        <div className="absolute left-0 top-2.5 bottom-2.5 w-[3px] rounded-r-sm" style={{ background: accentColor }} />
-      )}
-      <div className={cn('p-4', accentColor && 'pl-5')}>
-        <div className="flex items-center gap-1.5 mb-1.5">
-          <Icon size={13} className="text-text-muted" />
-          <span className="text-[0.68rem] text-text-secondary">{label}</span>
-        </div>
-        <span className="text-[1.6rem] font-bold tabular-nums leading-none" style={{ color }}>{value}</span>
-      </div>
-    </Card>
-  );
-}
+const ECO_TONES = ['neon', 'teal', 'amber', 'warning', 'critical'] as const;
 
 function relativeTime(dateStr: string): string {
   const diff = Date.now() - new Date(dateStr).getTime();
@@ -161,8 +125,9 @@ export function AttackSurfacePage() {
     }
     return Object.entries(counts)
       .sort(([, a], [, b]) => b - a)
-      .map(([eco, count]) => ({ eco, count, color: ECO_COLORS[eco] ?? '#98A2B3' }));
+      .map(([eco, count]) => ({ eco, count, color: ECO_COLORS[eco] ?? '#5E6F93' }));
   }, [allRisks]);
+  const ecoMax = ecoBreakdown[0]?.count ?? 1;
 
   const topExposed = useMemo(() => {
     return [...allRisks]
@@ -174,57 +139,63 @@ export function AttackSurfacePage() {
   }, [allRisks]);
 
   return (
-    <div className="flex flex-col">
-      <div className="flex flex-col gap-4">
-        {/* Header */}
-        <div>
-          <h1 className="text-[1.1rem] font-bold text-text-primary">Attack Surface</h1>
-          <p className="text-[0.75rem] text-text-secondary mt-0.5">
-            Dependency attack surface derived from scan results — packages and their risk exposure.
-          </p>
-        </div>
+    <div className="flex flex-col gap-5">
+      {/* Header */}
+      <div>
+        <CyberKicker index="O-02" label="overwatch // exposure map" />
+        <h1 className="m-0 flex items-center gap-2 text-[1.15rem] font-bold tracking-tight text-text-primary">
+          <Crosshair size={18} className="text-magenta" aria-hidden="true" /> Exposure Map
+        </h1>
+        <p className="m-0 mt-1 text-[0.78rem] text-text-secondary">
+          Dependency blast radius derived from probe results — every package and its risk exposure.
+        </p>
+      </div>
 
-        {/* KPI strip */}
-        <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-2.5">
-          <KPITile className="fg-entrance" label="Total assets" value={summary.total} icon={Package} color="var(--text-primary)" />
-          <KPITile className="fg-entrance fg-entrance-delay-1" label="Critical" value={summary.critical} icon={ShieldAlert} color="var(--critical)" accentColor="var(--critical)" />
-          <KPITile className="fg-entrance fg-entrance-delay-2" label="High" value={summary.high} icon={AlertTriangle} color="#EA580C" accentColor="#EA580C" />
-          <KPITile className="fg-entrance fg-entrance-delay-3" label="Exposed" value={summary.exposed} icon={Target} color="var(--warning)" accentColor="var(--warning)" />
-          <KPITile className="fg-entrance fg-entrance-delay-4" label="Healthy" value={summary.healthy} icon={ShieldCheck} color="var(--success)" accentColor="var(--success)" />
-        </div>
+      {/* KPI strip */}
+      <div className="grid grid-cols-2 gap-5 sm:grid-cols-3 lg:grid-cols-5">
+        <StatTile label="Assets" value={summary.total} icon={Package} className="cyber-lift fg-entrance" />
+        <StatTile label="Critical" value={summary.critical} icon={ShieldAlert} accent="critical" className="cyber-lift fg-entrance fg-entrance-delay-1" />
+        <StatTile label="High" value={summary.high} icon={AlertTriangle} accent="warning" className="cyber-lift fg-entrance fg-entrance-delay-2" />
+        <StatTile label="Exposed" value={summary.exposed} icon={Target} accent="amber" className="cyber-lift fg-entrance fg-entrance-delay-3" />
+        <StatTile label="Healthy" value={summary.healthy} icon={ShieldCheck} accent="success" className="cyber-lift fg-entrance fg-entrance-delay-4" />
+      </div>
 
-        {/* Graph + sidebar */}
-        <div className="grid grid-cols-1 lg:grid-cols-[3fr_1fr] gap-2.5">
-          {/* Topology graph */}
-          <Card className="relative">
-            <PanelHeader
-              title="Dependency topology"
-              badge={
-                <span className="text-[0.58rem] px-1.5 py-0.5 rounded-full font-medium"
-                  style={{ background: 'color-mix(in srgb, var(--primary-blue) 12%, transparent)', color: 'var(--primary-blue)' }}>
-                  {summary.total} nodes
-                </span>
-              }
-            />
-            <div className="flex gap-3 px-4 pb-1.5 flex-wrap">
+      {/* Graph + sidebar */}
+      <div className="grid grid-cols-1 gap-5 lg:grid-cols-[3fr_1fr]">
+        {/* Topology graph */}
+        <Card className="cyber-lift relative">
+          <CardHeader
+            title="Blast topology"
+            description="Click any node to interrogate it"
+            action={
+              <span className="rounded border border-[color-mix(in_srgb,var(--neon)_35%,transparent)] bg-[color-mix(in_srgb,var(--neon)_10%,transparent)] px-2 py-0.5 font-mono text-[0.62rem] font-bold text-neon">
+                {summary.total} nodes
+              </span>
+            }
+          />
+          <CardBody>
+            <div className="mb-2 flex flex-wrap gap-4">
               {Object.entries(SEV).map(([key, s]) => (
                 <div key={key} className="flex items-center gap-1.5">
-                  <div className="w-2 h-2 rounded-full shrink-0" style={{ background: s.hex }} />
-                  <span className="text-[0.65rem] text-text-secondary">{s.label}</span>
+                  <span aria-hidden="true" className={cn('h-2 w-2 shrink-0 rounded-full', s.swatch)} style={{ boxShadow: `0 0 6px ${s.hex}` }} />
+                  <span className="font-mono text-[0.64rem] uppercase tracking-wider text-text-secondary">{s.label}</span>
                 </div>
               ))}
             </div>
-            <div ref={graphContainerRef} className="px-2 pb-2 flex items-center justify-center w-full">
+            <div ref={graphContainerRef} className="flex w-full items-center justify-center overflow-hidden rounded border border-border-color bg-bg-base">
               {graph.isLoading ? (
-                <div className="py-20 text-center w-full">
-                  <Network size={24} className="text-text-muted opacity-40 mx-auto mb-2 animate-pulse" />
-                  <p className="text-[0.78rem] text-text-secondary">Loading attack surface…</p>
+                <div className="w-full py-20 text-center">
+                  <Network size={24} className="mx-auto mb-2 animate-pulse text-neon" />
+                  <p className="m-0 font-mono text-[0.78rem] text-text-secondary">mapping the grid…</p>
                 </div>
               ) : isEmpty ? (
-                <div className="py-20 text-center w-full">
-                  <Network size={28} className="text-text-muted opacity-40 mx-auto mb-2" />
-                  <p className="text-[0.78rem] text-text-secondary mb-1">No attack surface data yet</p>
-                  <code className="text-[0.7rem] font-mono text-primary-blue">cwctl scan .</code>
+                <div className="w-full px-4 py-10">
+                  <EmptyState
+                    icon={Network}
+                    title="No exposure data yet"
+                    description="The topology is built from probe output — run one probe to map it."
+                    command="cwctl scan ."
+                  />
                 </div>
               ) : (
                 <NetworkGraph
@@ -236,189 +207,191 @@ export function AttackSurfacePage() {
                 />
               )}
             </div>
+          </CardBody>
 
-            {/* Node detail popover */}
-            {selected && (
-              <div className="absolute top-12 right-3 z-10 w-64 max-w-[calc(100vw-3rem)] rounded-xl border border-border-color bg-surface p-4 shadow-lg">
-                <div className="flex items-start justify-between">
-                  <div className="pr-2">
-                    <p className="font-mono text-[0.78rem] font-semibold text-text-primary">
-                      {selected.name}
-                    </p>
-                    {selected.version && (
-                      <p className="text-[0.65rem] text-text-muted font-mono mt-0.5">@{selected.version}</p>
-                    )}
-                  </div>
-                  <button onClick={() => setSelected(null)}
-                    className="rounded p-0.5 text-text-muted hover:bg-surface-muted hover:text-text-primary shrink-0 cursor-pointer bg-transparent border-none">
-                    <X size={13} />
-                  </button>
-                </div>
-                <div className="mt-2">
-                  {selected.id === 'root' ? (
-                    <span className="text-[0.68rem] text-text-secondary">Application root node</span>
-                  ) : (
-                    <span className="text-[0.62rem] font-semibold uppercase tracking-wide px-2 py-0.5 rounded"
-                      style={{
-                        background: `color-mix(in srgb, ${SEV[(selected.severity ?? 'none') as keyof typeof SEV]?.hex ?? '#98A2B3'} 12%, transparent)`,
-                        color: SEV[(selected.severity ?? 'none') as keyof typeof SEV]?.hex ?? '#98A2B3',
-                      }}>
-                      {(selected.severity ?? 'none').toUpperCase()}
-                    </span>
+          {/* Node detail popover */}
+          {selected && (
+            <div className="cw-brackets absolute right-3 top-14 z-10 w-64 max-w-[calc(100vw-3rem)] rounded border border-neon bg-surface p-4 shadow-glow">
+              <div className="flex items-start justify-between">
+                <div className="min-w-0 pr-2">
+                  <p className="m-0 truncate font-mono text-[0.78rem] font-bold text-text-primary">
+                    {selected.name}
+                  </p>
+                  {selected.version && (
+                    <p className="m-0 mt-0.5 font-mono text-[0.65rem] text-neon">@{selected.version}</p>
                   )}
                 </div>
+                <button
+                  type="button"
+                  onClick={() => setSelected(null)}
+                  aria-label="Close node details"
+                  className="wd-hover grid h-6 w-6 shrink-0 place-items-center rounded border border-transparent bg-transparent text-text-muted hover:border-neon hover:text-neon"
+                >
+                  <X size={13} />
+                </button>
               </div>
-            )}
-          </Card>
-
-          {/* Sidebar — severity donut + ecosystem bars */}
-          <div className="flex flex-col gap-2.5">
-            {/* Severity donut */}
-            <Card>
-              <PanelHeader title="Exposure breakdown" />
-              <div className="flex flex-col items-center px-3 pb-3">
-                <div className="relative">
-                  <ResponsiveContainer width={120} height={120}>
-                    <PieChart>
-                      <Pie
-                        data={sevDonut.length > 0 ? sevDonut : [{ name: 'none', value: 1, color: 'var(--border-color)' }]}
-                        innerRadius={38} outerRadius={54} dataKey="value"
-                        paddingAngle={2} startAngle={90} endAngle={-270}>
-                        {(sevDonut.length > 0 ? sevDonut : [{ color: 'var(--border-color)' }]).map((s, i) => (
-                          <Cell key={i} fill={s.color} />
-                        ))}
-                      </Pie>
-                    </PieChart>
-                  </ResponsiveContainer>
-                  <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 text-center pointer-events-none">
-                    <div className="text-[1rem] font-bold text-text-primary font-mono leading-none">{summary.total}</div>
-                    <div className="text-[0.48rem] text-text-muted mt-0.5 uppercase tracking-wider">assets</div>
-                  </div>
-                </div>
-                <div className="w-full flex flex-col gap-1.5 mt-1">
-                  {sevDonut.map(s => (
-                    <div key={s.name} className="flex items-center gap-2">
-                      <div className="w-2 h-2 rounded-[3px] shrink-0" style={{ background: s.color }} />
-                      <span className="text-[0.68rem] text-text-secondary flex-1">{s.name}</span>
-                      <span className="text-[0.72rem] font-semibold text-text-primary font-mono">{s.value}</span>
-                    </div>
-                  ))}
-                </div>
-              </div>
-            </Card>
-
-            {/* Ecosystem breakdown */}
-            <Card>
-              <PanelHeader title="By ecosystem" />
-              <div className="px-4 pb-3">
-                {ecoBreakdown.length > 0 ? (
-                  <div className="flex flex-col gap-2">
-                    {ecoBreakdown.map(e => {
-                      const max = ecoBreakdown[0]?.count ?? 1;
-                      return (
-                        <div key={e.eco}>
-                          <div className="flex items-center justify-between mb-0.5">
-                            <span className="text-[0.68rem] font-medium text-text-primary">{e.eco}</span>
-                            <span className="text-[0.62rem] text-text-muted font-mono">{e.count}</span>
-                          </div>
-                          <div className="h-1 rounded-full overflow-hidden bg-surface-muted">
-                            <div className="h-full rounded-full"
-                              style={{ width: `${(e.count / max) * 100}%`, background: e.color }} />
-                          </div>
-                        </div>
-                      );
-                    })}
-                  </div>
+              <div className="mt-2">
+                {selected.id === 'root' ? (
+                  <span className="font-mono text-[0.68rem] text-text-secondary">// application root node</span>
                 ) : (
-                  <p className="text-[0.72rem] text-text-secondary py-2 text-center">No data.</p>
+                  <span
+                    className="rounded border px-2 py-0.5 font-mono text-[0.62rem] font-bold uppercase tracking-wider"
+                    style={{
+                      borderColor: `color-mix(in srgb, ${SEV[(selected.severity ?? 'none') as keyof typeof SEV]?.hex ?? '#5E6F93'} 45%, transparent)`,
+                      background: `color-mix(in srgb, ${SEV[(selected.severity ?? 'none') as keyof typeof SEV]?.hex ?? '#5E6F93'} 12%, transparent)`,
+                      color: SEV[(selected.severity ?? 'none') as keyof typeof SEV]?.hex ?? '#5E6F93',
+                    }}
+                  >
+                    {(selected.severity ?? 'none').toUpperCase()}
+                  </span>
                 )}
               </div>
-            </Card>
-          </div>
-        </div>
-
-        {/* Top exposed packages table + findings by ecosystem bar */}
-        <div className="grid grid-cols-1 lg:grid-cols-[3fr_2fr] gap-2.5">
-          {/* Most exposed packages */}
-          <Card>
-            <PanelHeader title="Most exposed packages" />
-            <div className="px-4 pb-3">
-              {topExposed.length === 0 ? (
-                <div className="py-6 text-center">
-                  <ShieldCheck size={18} className="text-text-muted opacity-40 mx-auto mb-1" />
-                  <p className="text-[0.75rem] text-text-secondary">No exposed packages</p>
-                </div>
-              ) : (
-                <div className="flex flex-col">
-                  {topExposed.map((r, i) => {
-                    const sevKey = r.top_severity?.toLowerCase() as keyof typeof SEV;
-                    const sev = SEV[sevKey] ?? SEV.none;
-                    return (
-                      <div key={`${r.package_name}-${i}`}
-                        className={cn('flex items-center gap-2.5 py-2', i < topExposed.length - 1 && 'border-b border-border-color')}>
-                        <span className="text-[0.58rem] font-semibold uppercase tracking-wide px-1.5 py-0.5 rounded w-12 text-center shrink-0"
-                          style={{
-                            background: `color-mix(in srgb, ${sev.hex} 12%, transparent)`,
-                            color: sev.hex,
-                          }}>
-                          {r.top_severity === 'CRITICAL' ? 'crit' : r.top_severity?.toLowerCase().slice(0, 4)}
-                        </span>
-                        <div className="flex-1 min-w-0">
-                          <span className="text-[0.72rem] font-mono text-text-primary overflow-hidden text-ellipsis whitespace-nowrap block">
-                            {r.package_name}
-                          </span>
-                          <span className="text-[0.6rem] text-text-muted font-mono">@{r.version}</span>
-                        </div>
-                        <span className="text-[0.6rem] text-text-muted px-1.5 py-0.5 rounded shrink-0 bg-surface-muted"
->
-                          {r.ecosystem.toLowerCase()}
-                        </span>
-                        <div className="flex items-center gap-1 shrink-0">
-                          <span className="text-[0.62rem] text-text-muted">Grade</span>
-                          <span className="text-[0.68rem] font-semibold" style={{
-                            color: r.risk_grade === 'F' ? 'var(--critical)' : r.risk_grade === 'D' ? '#EA580C' :
-                              r.risk_grade === 'C' ? 'var(--warning)' : 'var(--success)',
-                          }}>{r.risk_grade}</span>
-                        </div>
-                        <span className="text-[0.68rem] text-text-secondary font-mono w-8 text-right shrink-0">
-                          {r.finding_count}
-                        </span>
-                        <span className="text-[0.6rem] text-text-muted w-14 text-right shrink-0">
-                          {relativeTime(r.first_seen)}
-                        </span>
-                      </div>
-                    );
-                  })}
-                </div>
-              )}
             </div>
-          </Card>
+          )}
+        </Card>
 
-          {/* Findings by ecosystem bar chart */}
-          <Card>
-            <PanelHeader title="Findings by ecosystem" />
-            <div className="px-3 pb-3">
-              {ecoBreakdown.length > 0 ? (
-                <ResponsiveContainer width="100%" height={260}>
-                  <BarChart data={ecoBreakdown} layout="vertical" margin={{ top: 4, right: 20, left: 10, bottom: 0 }}>
-                    <XAxis type="number" {...axisProps} />
-                    <YAxis type="category" dataKey="eco" {...axisProps} width={55} />
-                    <RechartsTooltip {...tooltipProps} />
-                    <Bar dataKey="count" name="Packages" radius={[0, 4, 4, 0]}>
-                      {ecoBreakdown.map((e, i) => (
-                        <Cell key={i} fill={e.color} />
+        {/* Sidebar — severity donut + ecosystem bars */}
+        <div className="flex flex-col gap-5">
+          <Card className="cyber-lift">
+            <CardHeader title="Exposure split" description="Assets by state" />
+            <CardBody className="flex flex-col items-center">
+              <div className="relative">
+                <ResponsiveContainer width={128} height={128}>
+                  <PieChart>
+                    <Pie
+                      data={sevDonut.length > 0 ? sevDonut : [{ name: 'none', value: 1, color: 'var(--border-color)' }]}
+                      innerRadius={42} outerRadius={58} dataKey="value"
+                      paddingAngle={3} startAngle={90} endAngle={-270}
+                      stroke="var(--surface)" strokeWidth={2}
+                    >
+                      {(sevDonut.length > 0 ? sevDonut : [{ color: 'var(--border-color)' }]).map((s, i) => (
+                        <Cell key={i} fill={s.color} style={{ filter: `drop-shadow(0 0 6px ${s.color})` }} />
                       ))}
-                    </Bar>
-                  </BarChart>
+                    </Pie>
+                    <RechartsTooltip {...tooltipProps} />
+                  </PieChart>
                 </ResponsiveContainer>
-              ) : (
-                <div className="h-64 flex items-center justify-center">
-                  <p className="text-[0.78rem] text-text-secondary">No ecosystem data.</p>
+                <div className="pointer-events-none absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 text-center">
+                  <div className="neon-text font-mono text-[1.2rem] font-bold leading-none tabular-nums">{summary.total}</div>
+                  <div className="mt-0.5 font-mono text-[0.52rem] uppercase tracking-[0.2em] text-text-muted">assets</div>
                 </div>
+              </div>
+              <div className="mt-2 flex w-full flex-col gap-1.5">
+                {sevDonut.map(s => (
+                  <div key={s.name} className="flex items-center gap-2">
+                    <span aria-hidden="true" className="h-2 w-2 shrink-0 rounded-[3px]" style={{ background: s.color, boxShadow: `0 0 6px ${s.color}` }} />
+                    <span className="flex-1 font-mono text-[0.68rem] uppercase tracking-wider text-text-secondary">{s.name}</span>
+                    <span className="font-mono text-[0.74rem] font-bold tabular-nums text-text-primary">{s.value}</span>
+                  </div>
+                ))}
+              </div>
+            </CardBody>
+          </Card>
+
+          <Card className="cyber-lift">
+            <CardHeader title="By ecosystem" description="Hot zones per registry" />
+            <CardBody>
+              {ecoBreakdown.length > 0 ? (
+                <ExposureBars
+                  rows={ecoBreakdown.slice(0, 6).map((e, i) => ({
+                    label: e.eco,
+                    value: e.count,
+                    max: ecoMax,
+                    tone: ECO_TONES[i % ECO_TONES.length],
+                  }))}
+                />
+              ) : (
+                <p className="m-0 py-2 text-center font-mono text-[0.72rem] text-text-muted">// no signals yet</p>
               )}
-            </div>
+            </CardBody>
           </Card>
         </div>
+      </div>
+
+      {/* Most exposed packages + findings by ecosystem */}
+      <div className="grid grid-cols-1 gap-5 lg:grid-cols-[3fr_2fr]">
+        <Card className="cyber-lift">
+          <CardHeader title="Most exposed packages" description="Highest blast radius first" />
+          <CardBody>
+            {topExposed.length === 0 ? (
+              <EmptyState
+                icon={ShieldCheck}
+                title="No exposed packages"
+                description="Nothing is currently above your severity threshold."
+                command="cwctl scan . --fail-on=high"
+              />
+            ) : (
+              <div className="flex flex-col">
+                {topExposed.map((r, i) => {
+                  const sevKey = r.top_severity?.toLowerCase() as keyof typeof SEV;
+                  const sev = SEV[sevKey] ?? SEV.none;
+                  const gradeColor = r.risk_grade === 'F' ? 'var(--critical)' : r.risk_grade === 'D' ? '#FF8A3D' :
+                    r.risk_grade === 'C' ? 'var(--warning)' : 'var(--success)';
+                  return (
+                    <div
+                      key={`${r.package_name}-${i}`}
+                      className={cn('flex items-center gap-2.5 py-2', i < topExposed.length - 1 && 'border-b border-border-color')}
+                    >
+                      <span
+                        className="w-12 shrink-0 rounded border px-1.5 py-0.5 text-center font-mono text-[0.6rem] font-bold uppercase tracking-wide"
+                        style={{
+                          borderColor: `color-mix(in srgb, ${sev.hex} 40%, transparent)`,
+                          background: `color-mix(in srgb, ${sev.hex} 12%, transparent)`,
+                          color: sev.hex,
+                        }}
+                      >
+                        {r.top_severity === 'CRITICAL' ? 'crit' : r.top_severity?.toLowerCase().slice(0, 4)}
+                      </span>
+                      <div className="min-w-0 flex-1">
+                        <span className="block truncate font-mono text-[0.72rem] text-text-primary">
+                          {r.package_name}
+                        </span>
+                        <span className="font-mono text-[0.6rem] text-neon">@{r.version}</span>
+                      </div>
+                      <span className="shrink-0 rounded border border-border-color bg-surface-muted px-1.5 py-0.5 font-mono text-[0.6rem] uppercase tracking-wider text-text-muted">
+                        {r.ecosystem.toLowerCase()}
+                      </span>
+                      <div className="flex shrink-0 items-center gap-1">
+                        <span className="font-mono text-[0.6rem] uppercase tracking-wider text-text-muted">grade</span>
+                        <span className="font-mono text-[0.72rem] font-bold" style={{ color: gradeColor, textShadow: `0 0 8px ${gradeColor}` }}>{r.risk_grade}</span>
+                      </div>
+                      <span className="w-8 shrink-0 text-right font-mono text-[0.7rem] font-bold tabular-nums text-text-secondary">
+                        {r.finding_count}
+                      </span>
+                      <span className="w-14 shrink-0 text-right font-mono text-[0.6rem] text-text-muted">
+                        {relativeTime(r.first_seen)}
+                      </span>
+                    </div>
+                  );
+                })}
+              </div>
+            )}
+          </CardBody>
+        </Card>
+
+        <Card className="cyber-lift">
+          <CardHeader title="Findings by ecosystem" description="Where the hits land" />
+          <CardBody>
+            {ecoBreakdown.length > 0 ? (
+              <ResponsiveContainer width="100%" height={260}>
+                <BarChart data={ecoBreakdown} layout="vertical" margin={{ top: 4, right: 20, left: 10, bottom: 0 }}>
+                  <XAxis type="number" {...axisProps} />
+                  <YAxis type="category" dataKey="eco" {...axisProps} width={72} />
+                  <RechartsTooltip {...tooltipProps} />
+                  <Bar dataKey="count" name="Packages" radius={[0, 4, 4, 0]} barSize={18}>
+                    {ecoBreakdown.map((e, i) => (
+                      <Cell key={i} fill={e.color} style={{ filter: `drop-shadow(0 0 5px ${e.color})` }} />
+                    ))}
+                  </Bar>
+                </BarChart>
+              </ResponsiveContainer>
+            ) : (
+              <div className="flex h-64 items-center justify-center">
+                <p className="m-0 font-mono text-[0.78rem] text-text-muted">// no ecosystem data</p>
+              </div>
+            )}
+          </CardBody>
+        </Card>
       </div>
     </div>
   );

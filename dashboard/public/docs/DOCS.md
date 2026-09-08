@@ -843,7 +843,7 @@ CLI flags always override config file values.
 ```bash
 make up                              # postgres + redis + api
 cd dashboard && npm ci && npm run dev
-# Open http://localhost:3000
+# Open http://localhost:8080
 ```
 
 **Full dev stack:**
@@ -884,75 +884,75 @@ Projects are organized into **workspaces** — each workspace maintains its own 
 - **Default** workspace is created automatically
 - Create new workspaces from the sidebar dropdown
 - Each workspace tracks its own dependency topology and scan results
-- Workspace context flows into scan sessions, attack surface mapping, and export
+- Workspace context flows into sweep logs, exposure mapping, and export
 
 ### Pages
 
-The dashboard ships **30+ pages** across 7 categories — all connected to live backend data:
+The dashboard ships **40+ pages** across 6 sections — all connected to live backend data:
 
 **Analyze**
 
 | Page | What it does |
 |---|---|
-| **Dashboard** | SOC-style overview — security posture grading, severity cards, 30-day recharts timeline, activity feed, risk heatmap, top risks, engine coverage, fix rate |
-| **Scan Now** | 3-tab scanner: **registry** package scan, **file upload** (drag-drop archive), **remote SSH** host scan — each runs all 8 engines with engine status bar |
-| **Scan Sessions** | Full scan history per workspace — view past results, re-scan, export as JSON/CSV/HTML |
-| **Recursive Scan** | Multi-package batch scan — comma-separated packages, per-package results |
-| **System Audit** | brew / gem / docker / PATH security audit across all package managers |
-| **Logs** | Structured log viewer for scan and system events |
+| **Command Deck** | mission-control overview — security posture grading, severity cards, 30-day recharts timeline, activity feed, risk heatmap, top risks, engine coverage, fix rate |
+| **Threat Probe** | 3-tab probe: **registry** package scan, **file upload** (drag-drop archive), **remote SSH** host scan — each runs all 8 engines with engine status bar |
+| **Sweep Logs** | Full sweep history per workspace — view past results, re-scan, export as JSON/CSV/HTML |
+| **Deep Trace** | Multi-package batch sweep — comma-separated packages, per-package results |
+| **Host Inspect** | brew / gem / docker / PATH security audit across all package managers |
+| **Signal Logs** | Structured log viewer for scan and system events |
 
 **Monitor**
 
 | Page | What it does |
 |---|---|
-| **Live Monitor** | Live SBOM monitoring with auto-quarantine — auto-reconnect with exponential backoff |
-| **Attack Surface** | Dependency topology graph (force-directed) with exposure breakdown by ecosystem, risk-colored nodes, interactive zoom/pan |
-| **Dependency Drift** | 30-day vulnerability trend chart with severity breakdown |
-| **Alerts** | Real-time security alerts — severity filter, dismissed toggle, one-click dismiss |
+| **Live Sentinel** | Live SBOM monitoring with auto-quarantine — auto-reconnect with exponential backoff |
+| **Exposure Map** | Dependency topology graph (force-directed) with exposure breakdown by ecosystem, risk-colored nodes, interactive zoom/pan |
+| **Drift Radar** | 30-day vulnerability trend chart with severity breakdown |
+| **Red Alerts** | Real-time security alerts — severity filter, dismissed toggle, one-click dismiss |
 | **Alert Timeline** | Chronological alert history with severity trend |
 
 **AI-Powered**
 
 | Page | What it does |
 |---|---|
-| **AI Security Analysis** | AI supply chain threat analysis |
-| **Advisory** | AI-generated security advisory per package (needs AI provider API key) |
-| **AI Agents** | Live SSE feed of autonomous patch agent sessions — session status badge, event log |
+| **Neural Shield** | AI supply chain threat analysis |
+| **Oracle Brief** | AI-generated security advisory per package (needs AI provider API key) |
+| **Fix Operatives** | Live SSE feed of autonomous patch agent sessions — session status badge, event log |
 
 **Inventory**
 
 | Page | What it does |
 |---|---|
 | **Workspaces** | Multi-workspace project management with independent scan histories |
-| **Inventory** | Paginated package list with search, ecosystem filter, and risk grades |
-| **SBOM** | Generate and download CycloneDX / SPDX in 4 formats |
-| **Exports** | SBOM format guide + generate links |
+| **Supply Vault** | Paginated package list with search, ecosystem filter, and risk grades |
+| **Manifest Ledger** | Generate and download CycloneDX / SPDX in 4 formats |
+| **Intel Extracts** | SBOM format guide + generate links |
 
 **Policy & Signing**
 
 | Page | What it does |
 |---|---|
-| **Policy** | Policy-as-code rules, threshold enforcement |
-| **Allowlist** | Add/remove trusted packages that bypass policy enforcement (full CRUD) |
-| **Sign / Verify** | Sigstore keyless signing + attestation verification |
-| **Provenance** | SLSA provenance tracking |
-| **Intelligence** | Detection signatures browser, signature authoring wizard, manual refresh |
+| **Directives** | Policy-as-code rules, threshold enforcement |
+| **Permit / Deny** | Add/remove trusted packages that bypass policy enforcement (full CRUD) |
+| **Threat Prints** | Sigstore keyless signing + attestation verification |
+| **Origin Trail** | SLSA provenance tracking |
+| **Signal Intel** | Detection signatures browser, signature authoring wizard, manual refresh |
 
 **Integrations**
 
 | Page | What it does |
 |---|---|
-| **Webhooks** | Configure Slack/Discord/HTTP alerts + test delivery |
-| **CI/CD** | GitHub Actions, GitLab CI, Makefile integration snippets |
+| **Tripwires** | Configure Slack/Discord/HTTP alerts + test delivery |
+| **Pipeline Sentry** | GitHub Actions, GitLab CI, Makefile integration snippets |
 
 **Tools**
 
 | Page | What it does |
 |---|---|
-| **Web Terminal** | Built-in terminal for running `cwctl` commands directly from the dashboard |
-| **Docs** | Developer documentation and guides |
+| **Strike Console** | Built-in terminal for running `cwctl` commands directly from the dashboard |
+| **Field Manual** | Developer documentation and guides |
 | **API Reference** | API endpoint documentation |
-| **Settings** | Configuration management |
+| **War-Room Tuning** | Configuration management |
 
 ### Scan engine status bar
 
@@ -968,7 +968,7 @@ artifact downloaded — full scan
 ### File upload scan
 
 ```
-Dashboard → Scan Now → Upload Project tab
+Dashboard → Threat Probe → upload tab
 Drop any .tar.gz / .zip / .jar / .gem / .whl
 → Extracts and runs all 8 engines
 → Returns findings + engine status
@@ -977,7 +977,7 @@ Drop any .tar.gz / .zip / .jar / .gem / .whl
 ### Remote SSH scan
 
 ```
-Dashboard → Scan Now → Remote tab
+Dashboard → Threat Probe → remote tab
 Enter host, port, username, and key path
 → Connects via SSH, discovers manifests
 → Runs full scan on remote dependencies
@@ -1043,10 +1043,10 @@ Supported manifests: package.json, package-lock.json, yarn.lock, pnpm-lock.yaml,
 
 The scan is fully read-only — only `echo`, `find`, and `cat` commands run on the remote host. Nothing is installed or written remotely.
 
-### Attack Surface Mapping
+### Exposure Mapping
 
 ```
-Dashboard → Attack Surface
+Dashboard → Exposure Map
 → Force-directed dependency topology graph
 → Nodes colored by worst finding severity
 → Interactive zoom, pan, and node inspection
@@ -1056,16 +1056,16 @@ Dashboard → Attack Surface
 
 The topology graph shows the active workspace name as the root node, with all dependencies radiating outward. Node colors map to severity: red (critical), orange (high), amber (medium), blue (low), grey (clean).
 
-### Scan Sessions & Export
+### Sweep Logs & Export
 
-Every scan creates a session record tied to the active workspace. The **Scan Sessions** page lets you:
-- Browse scan history with timestamps, package counts, and finding summaries
-- Re-scan any previous session
+Every scan creates a session record tied to the active workspace. The **Sweep Logs** page lets you:
+- Browse sweep history with timestamps, package counts, and finding summaries
+- Re-run any previous sweep
 - Export results as JSON, CSV, or HTML report
 
-### Web Terminal
+### Strike Console
 
-The dashboard includes a built-in web terminal under **Tools → Terminal**. It streams `cwctl` command output in real time via SSE.
+The dashboard includes a built-in web terminal under **Recon → Strike Console**. It streams `cwctl` command output in real time via SSE.
 
 - Allowlisted commands only (scan, sbom, doctor, version, help, etc.)
 - Shell injection characters are rejected
@@ -1074,7 +1074,7 @@ The dashboard includes a built-in web terminal under **Tools → Terminal**. It 
 
 ### Live agent feed
 
-`Dashboard → AI Agents` — connects via Server-Sent Events.  
+`Dashboard → Fix Operatives` — connects via Server-Sent Events.  
 When `cwctl patch` runs, events stream in real time: `start` → `step` → `patch` → `done`.  
 No page refresh needed. Reconnects automatically on disconnect.
 
@@ -1491,7 +1491,7 @@ cwctl scan . --fail-on=high --format=sarif > results.sarif
 
 # SOC Enterprise stack
 docker compose -f docker-compose.enterprise.yml up -d
-open http://localhost:3000
+open http://localhost:8080
 
 # Air-gapped
 cwctl scan . --offline

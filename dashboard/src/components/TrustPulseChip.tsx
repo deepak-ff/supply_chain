@@ -72,9 +72,9 @@ export function TrustPulseChip({
     <button
       type="button"
       onClick={() => onNavigate('/trust')}
-      title="Dynamic Trust Score — click to open the Trust page"
+      title="Trust Pulse — click to open the Trust Pulse page"
       className={cn(
-        'wd-hover flex h-7 shrink-0 items-center gap-1.5 rounded border bg-surface-muted/60 px-2',
+        'wd-hover flex h-7 shrink-0 items-center gap-1.5 rounded border bg-[color-mix(in_srgb,var(--surface-muted)_60%,transparent)] px-2',
         'text-[0.7rem] font-medium hover:bg-surface-muted',
         tone.text,
         tone.ring,

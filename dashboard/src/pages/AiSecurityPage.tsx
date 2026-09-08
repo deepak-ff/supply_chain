@@ -1,60 +1,83 @@
 import { useQuery } from '@tanstack/react-query';
-import { Bot, AlertTriangle, Server } from 'lucide-react';
+import { Bot, AlertTriangle, Server, ShieldAlert } from 'lucide-react';
 import { listPackages } from '../lib/api';
+import { Card, CardHeader, CardBody } from '../components/ui/card';
+import { StatTile } from '../components/ui/stat-tile';
+import { CyberKicker } from '../components/cyber/CyberViz';
 
 export function AiSecurityPage() {
   const hf = useQuery({ queryKey: ['pkgs-hf'],  queryFn: () => listPackages({ page_size: 1, ecosystem: 'huggingface' }), staleTime: 120_000 });
   const mcp = useQuery({ queryKey: ['pkgs-mcp'], queryFn: () => listPackages({ page_size: 1, ecosystem: 'mcp' }),         staleTime: 120_000 });
 
-  const stats = [
-    { label: 'AI Model Dependencies',  value: hf.data?.total  ?? '—', icon: Bot,          color: 'var(--color-indigo)',   desc: 'HuggingFace + ONNX models tracked in inventory' },
-    { label: 'MCP Server Packages',    value: mcp.data?.total ?? '—', icon: Server,        color: 'var(--color-warn)',     desc: 'Model Context Protocol server packages' },
-    { label: 'Unsafe Pickle Files',    value: 0,                        icon: AlertTriangle, color: 'var(--color-critical)', desc: 'Files with unsafe_pickle.load() detected' },
-  ];
-
   return (
-    <div className="space-y-6">
-      <div className="flex items-center gap-3">
-        <Bot className="text-primary" size={22} />
-        <div>
-          <h1 className="text-xl font-bold font-mono text-text-primary">AI Security</h1>
-          <p className="text-sm text-text-secondary">
-            Detect unsafe AI model usage, pickle files, MCP servers, and agentic risk.
-          </p>
+    <div className="flex flex-col gap-5">
+      <div>
+        <CyberKicker index="R-02" label="recon // neural shield" />
+        <div className="flex items-center gap-2.5">
+          <Bot size={20} className="text-magenta drop-shadow-[0_0_8px_var(--magenta)]" aria-hidden="true" />
+          <div>
+            <h1 className="m-0 text-[1.15rem] font-bold tracking-tight text-text-primary">Neural Shield</h1>
+            <p className="m-0 mt-0.5 text-[0.78rem] text-text-secondary">
+              Unsafe model weights, poisoned pickles, rogue MCP servers and agentic risk — under one shield.
+            </p>
+          </div>
         </div>
       </div>
 
-      <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
-        {stats.map(s => (
-          <div
-            key={s.label}
-            className="rounded-lg p-4 bg-surface border border-border-color"
-
-          >
-            <s.icon size={16} style={{ color: s.color, marginBottom: '0.5rem' }} />
-            <div style={{ fontSize: '1.75rem', fontWeight: 700, fontFamily: 'var(--font-mono)', color: s.color }}>
-              {s.value}
-            </div>
-            <div style={{ fontSize: '0.72rem', color: 'var(--fg)', fontWeight: 600, marginTop: '0.25rem' }}>{s.label}</div>
-            <div style={{ fontSize: '0.68rem', color: 'var(--color-muted)', marginTop: '0.2rem' }}>{s.desc}</div>
-          </div>
-        ))}
+      <div className="grid grid-cols-1 gap-5 sm:grid-cols-3">
+        <StatTile
+          label="AI model dependencies"
+          value={hf.data?.total ?? '—'}
+          icon={Bot}
+          accent="primary"
+          hint="HuggingFace + ONNX models in the vault"
+          loading={hf.isLoading}
+          className="cyber-lift fg-entrance"
+        />
+        <StatTile
+          label="MCP server packages"
+          value={mcp.data?.total ?? '—'}
+          icon={Server}
+          accent="warning"
+          hint="Model Context Protocol servers"
+          loading={mcp.isLoading}
+          className="cyber-lift fg-entrance fg-entrance-delay-1"
+        />
+        <StatTile
+          label="Unsafe pickle files"
+          value={0}
+          icon={AlertTriangle}
+          accent="critical"
+          hint="unsafe_pickle.load() sinks detected"
+          className="cyber-lift fg-entrance fg-entrance-delay-2"
+        />
       </div>
 
-      <div className="rounded-lg p-4 space-y-2 bg-surface border border-border-color">
-        <p className="text-xs font-mono font-bold text-text-secondary">CLI COMMANDS</p>
-        <code className="text-xs block text-success">cwctl scan . --ai</code>
-        <code className="text-xs block text-success">cwctl scan huggingface/bert-base-uncased</code>
-        <code className="text-xs block text-success">cwctl scan mcp/filesystem@1.0.0</code>
-      </div>
+      <Card className="cyber-lift">
+        <CardHeader title="Strike commands" description="Probe the neural front from your terminal" />
+        <CardBody className="flex flex-col gap-2">
+          {['cwctl scan . --ai', 'cwctl scan huggingface/bert-base-uncased', 'cwctl scan mcp/filesystem@1.0.0'].map(c => (
+            <code key={c} className="rounded border border-border-color bg-bg-base px-3 py-2 font-mono text-[0.74rem] text-neon">
+              <span className="mr-2 select-none text-magenta">$</span>{c}
+            </code>
+          ))}
+        </CardBody>
+      </Card>
 
-      <div className="rounded-lg p-4 space-y-2" style={{ background: 'rgba(255,61,61,0.06)', border: '1px solid rgba(255,61,61,0.15)' }}>
-        <p className="text-xs font-mono font-bold text-critical">UNSAFE PICKLE DETECTION</p>
-        <p className="text-xs text-text-secondary">
-          Pickle files loaded with <code className="text-warning">unsafe_pickle.load()</code> can execute arbitrary code during deserialization.
-          ChainWarden detects these patterns in AI model weights and Python scripts.
-        </p>
-      </div>
+      <Card className="cyber-lift border-critical">
+        <CardHeader
+          icon={ShieldAlert}
+          title="Unsafe pickle detection"
+          description="Deserialization is remote code execution wearing a lab coat"
+        />
+        <CardBody>
+          <p className="m-0 text-[0.78rem] leading-relaxed text-text-secondary">
+            Pickle files loaded with <code className="rounded bg-surface-muted px-1 py-0.5 font-mono text-[0.72rem] text-warning">unsafe_pickle.load()</code> can
+            execute arbitrary code during deserialization. The shield flags these patterns in model
+            weights and Python scripts before they ever load.
+          </p>
+        </CardBody>
+      </Card>
     </div>
   );
 }

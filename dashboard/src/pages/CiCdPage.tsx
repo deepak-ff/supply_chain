@@ -1,4 +1,6 @@
 import { GitMerge } from 'lucide-react';
+import { Card, CardHeader, CardBody } from '../components/ui/card';
+import { CyberKicker } from '../components/cyber/CyberViz';
 
 const GH_ACTIONS = `name: Security Scan
 on: [push, pull_request]
@@ -27,19 +29,31 @@ const GITLAB_CI = `chainwarden:
 
 const MAKEFILE = `# In your Makefile:
 security:
-\tcwctl scan . --ci --fail-on=critical
+\\tcwctl scan . --ci --fail-on=critical
 
 security-full:
-\tcwctl scan . --verbose --format sarif > results.sarif`;
+\\tcwctl scan . --verbose --format sarif > results.sarif`;
+
+const FLAGS = [
+  '--ci              # Quiet mode + SARIF output + fail-on=high',
+  '--fail-on=critical # Only fail pipeline on critical findings',
+  '--format sarif    # SARIF 2.1.0 for GitHub/GitLab code scanning',
+  '--prod-only       # Skip dev/test dependencies',
+];
 
 export function CiCdPage() {
   return (
-    <div className="space-y-6">
-      <div className="flex items-center gap-3">
-        <GitMerge className="text-primary" size={20} />
-        <div>
-          <h1 className="text-xl font-bold font-mono text-text-primary">CI/CD Integration</h1>
-          <p className="text-sm mt-0.5 text-text-secondary">Integrate ChainWarden into your CI/CD pipelines for continuous supply chain security.</p>
+    <div className="flex flex-col gap-5">
+      <div>
+        <CyberKicker index="U-04" label="uplinks // pipeline sentry" />
+        <div className="flex items-center gap-2.5">
+          <GitMerge size={20} className="text-magenta drop-shadow-[0_0_8px_var(--magenta)]" aria-hidden="true" />
+          <div>
+            <h1 className="m-0 text-[1.15rem] font-bold tracking-tight text-text-primary">Pipeline Sentry</h1>
+            <p className="m-0 mt-0.5 text-[0.78rem] text-text-secondary">
+              Post a sentry on every merge — break the build before the breach breaks you.
+            </p>
+          </div>
         </div>
       </div>
 
@@ -48,41 +62,34 @@ export function CiCdPage() {
         { title: 'GitLab CI',      lang: 'yaml', code: GITLAB_CI },
         { title: 'Makefile',       lang: 'make', code: MAKEFILE },
       ].map(s => (
-        <div
-          key={s.title}
-          className="rounded-lg"
-          style={{ background: 'var(--surface)', border: '1px solid rgba(255,255,255,0.06)', overflow: 'hidden' }}
-        >
-          <div style={{ padding: '0.625rem 0.875rem', borderBottom: '1px solid rgba(255,255,255,0.06)', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-            <span style={{ fontSize: '0.75rem', fontWeight: 600, color: 'var(--fg)' }}>{s.title}</span>
-            <span style={{ fontSize: '0.65rem', color: 'var(--color-muted)', fontFamily: 'var(--font-mono)' }}>{s.lang}</span>
-          </div>
-          <pre
-            style={{
-              padding: '0.875rem',
-              fontSize: '0.72rem',
-              fontFamily: 'var(--font-mono)',
-              color: 'var(--color-safe)',
-              overflowX: 'auto',
-              margin: 0,
-              lineHeight: 1.6,
-              whiteSpace: 'pre',
-            }}
-          >
-            {s.code}
-          </pre>
-        </div>
+        <Card key={s.title} className="cyber-lift overflow-hidden">
+          <CardHeader
+            title={s.title}
+            description="Drop-in sentry post"
+            action={
+              <span className="rounded border border-border-color bg-bg-base px-2 py-0.5 font-mono text-[0.64rem] font-bold uppercase tracking-widest text-magenta">
+                {s.lang}
+              </span>
+            }
+          />
+          <CardBody className="p-0">
+            <pre className="m-0 overflow-x-auto p-3.5 font-mono text-[0.72rem] leading-relaxed text-neon">
+              {s.code}
+            </pre>
+          </CardBody>
+        </Card>
       ))}
 
-      <div className="rounded-lg p-4 bg-surface border border-border-color">
-        <p className="text-xs font-mono font-bold mb-2 text-text-secondary">CI-OPTIMIZED FLAGS</p>
-        <div className="space-y-1">
-          <code className="text-xs block text-success">{'--ci              # Quiet mode + SARIF output + fail-on=high'}</code>
-          <code className="text-xs block text-success">{'--fail-on=critical # Only fail pipeline on critical findings'}</code>
-          <code className="text-xs block text-success">{'--format sarif    # SARIF 2.1.0 for GitHub/GitLab code scanning'}</code>
-          <code className="text-xs block text-success">{'--prod-only       # Skip dev/test dependencies'}</code>
-        </div>
-      </div>
+      <Card className="cyber-lift">
+        <CardHeader title="Sentry field orders" description="Flags tuned for the pipeline" />
+        <CardBody className="flex flex-col gap-2">
+          {FLAGS.map(f => (
+            <code key={f} className="overflow-x-auto whitespace-pre rounded border border-border-color bg-bg-base px-3 py-2 font-mono text-[0.74rem] text-neon">
+              {f}
+            </code>
+          ))}
+        </CardBody>
+      </Card>
     </div>
   );
 }

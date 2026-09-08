@@ -1,15 +1,20 @@
 import { useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { Bell, X } from 'lucide-react';
+import { Siren, X } from 'lucide-react';
 import { listAlerts, dismissAlert } from '../lib/api';
 import type { Severity } from '../types/api';
+import { Card, CardHeader, CardBody } from '../components/ui/card';
+import { StatusChip } from '../components/ui/status-chip';
+import { EmptyState } from '../components/EmptyState';
+import { CyberKicker } from '../components/cyber/CyberViz';
+import { cn } from '../components/ui/utils';
 
-const SEV_COLORS: Record<string, string> = {
-  CRITICAL:      'var(--color-critical)',
-  HIGH:          'var(--color-high)',
-  MEDIUM:        'var(--color-medium)',
-  LOW:           'var(--color-low)',
-  INFORMATIONAL: 'var(--color-info)',
+const SEV_DOT: Record<string, string> = {
+  CRITICAL: 'bg-critical shadow-[0_0_8px_var(--critical)]',
+  HIGH: 'bg-warning shadow-[0_0_8px_var(--warning)]',
+  MEDIUM: 'bg-amber shadow-[0_0_8px_var(--amber)]',
+  LOW: 'bg-neon shadow-[0_0_8px_var(--neon)]',
+  INFORMATIONAL: 'bg-teal shadow-[0_0_8px_var(--teal)]',
 };
 
 function relativeTime(dateStr: string): string {
@@ -46,86 +51,124 @@ export function AlertsPage() {
   const severities = ['ALL', 'CRITICAL', 'HIGH', 'MEDIUM', 'LOW', 'INFORMATIONAL'];
 
   return (
-    <div className="space-y-5">
-      <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-xl font-bold font-mono text-text-primary">Alerts</h1>
-          <p className="text-sm mt-1 text-text-secondary">
-            Security alerts from all scan engines.
-            {data?.total !== undefined && <span> ({data.total} total)</span>}
-          </p>
-        </div>
-        <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
-          <label style={{ fontSize: '0.72rem', color: 'var(--color-muted)', display: 'flex', alignItems: 'center', gap: 4, cursor: 'pointer' }}>
-            <input type="checkbox" checked={showDismissed} onChange={e => setShowDismissed(e.target.checked)} />
-            show dismissed
+    <div className="flex flex-col gap-5">
+      <div>
+        <CyberKicker index="O-04" label="overwatch // red alerts" />
+        <div className="flex flex-wrap items-center justify-between gap-2">
+          <div>
+            <h1 className="m-0 flex items-center gap-2 text-[1.15rem] font-bold tracking-tight text-text-primary">
+              <Siren size={18} className="text-critical drop-shadow-[0_0_8px_var(--critical)]" aria-hidden="true" />
+              Red Alerts
+            </h1>
+            <p className="m-0 mt-1 text-[0.78rem] text-text-secondary">
+              Threat pings from every engine.
+              {data?.total !== undefined && (
+                <span className="ml-1 font-mono font-bold text-magenta">({data.total} live)</span>
+              )}
+            </p>
+          </div>
+          <label className="flex cursor-pointer items-center gap-2 font-mono text-[0.7rem] uppercase tracking-wider text-text-muted">
+            <input
+              type="checkbox"
+              checked={showDismissed}
+              onChange={e => setShowDismissed(e.target.checked)}
+              className="h-3.5 w-3.5 accent-[var(--neon)]"
+            />
+            show neutralized
           </label>
-          <Bell className="text-warning" size={18} />
         </div>
       </div>
 
       {/* Severity filter */}
-      <div style={{ display: 'flex', gap: '0.375rem', flexWrap: 'wrap' }}>
-        {severities.map(s => (
-          <button key={s} onClick={() => setSevFilter(s)} style={{
-            padding: '0.25rem 0.625rem',
-            borderRadius: '0.25rem',
-            fontSize: '0.7rem',
-            fontFamily: 'var(--font-mono)',
-            fontWeight: 600,
-            background: sevFilter === s ? (SEV_COLORS[s] ?? 'var(--color-indigo)') : 'var(--surface)',
-            color: sevFilter === s ? '#fff' : 'var(--color-muted)',
-            border: '1px solid rgba(255,255,255,0.08)',
-            cursor: 'pointer',
-          }}>
-            {s}
-          </button>
-        ))}
+      <div className="flex flex-wrap gap-1.5" role="group" aria-label="Filter by severity">
+        {severities.map(s => {
+          const active = sevFilter === s;
+          return (
+            <button
+              key={s}
+              type="button"
+              onClick={() => setSevFilter(s)}
+              aria-pressed={active}
+              className={cn(
+                'wd-hover rounded border px-2.5 py-1 font-mono text-[0.68rem] font-bold tracking-wider',
+                active
+                  ? 'border-neon bg-[color-mix(in_srgb,var(--neon)_14%,transparent)] text-neon shadow-glow'
+                  : 'border-border-color bg-surface text-text-muted hover:border-neon hover:text-neon',
+              )}
+            >
+              {s}
+            </button>
+          );
+        })}
       </div>
 
       {/* Alert list */}
-      <div className="rounded-lg bg-surface border border-border-color">
-        {isLoading && (
-          <div style={{ padding: '2rem', textAlign: 'center', color: 'var(--color-muted)', fontSize: '0.8rem' }}>Loading alerts…</div>
-        )}
-        {!isLoading && alerts.length === 0 && (
-          <div style={{ padding: '2rem', textAlign: 'center', color: 'var(--color-muted)', fontSize: '0.8rem' }}>No alerts. Run a scan to generate findings.</div>
-        )}
-        {alerts.map((al, i) => (
-          <div key={al.id} style={{
-            display: 'flex', alignItems: 'flex-start', gap: '0.75rem',
-            padding: '0.75rem 1rem',
-            borderBottom: i < alerts.length - 1 ? '1px solid rgba(255,255,255,0.04)' : 'none',
-            opacity: al.dismissed ? 0.45 : 1,
-          }}>
-            <div style={{
-              width: 8, height: 8, borderRadius: '50%',
-              background: SEV_COLORS[al.severity as Severity] ?? 'var(--color-muted)',
-              marginTop: 5, flexShrink: 0,
-            }} />
-            <div className="flex-1 min-w-0">
-              <p style={{ fontSize: '0.8rem', color: 'var(--fg)', margin: 0 }}>{al.message}</p>
-              {al.package_name && (
-                <p style={{ fontSize: '0.7rem', color: 'var(--color-muted)', fontFamily: 'var(--font-mono)', margin: '0.15rem 0 0' }}>
-                  {al.ecosystem ? `${al.ecosystem}/` : ''}{al.package_name}{al.version ? `@${al.version}` : ''}
-                </p>
+      <Card className="cyber-lift">
+        <CardHeader
+          title="Incoming signals"
+          description={isLoading ? 'Tuning the wire…' : `${alerts.length} signal${alerts.length !== 1 ? 's' : ''} on screen`}
+          action={
+            <span aria-hidden="true" className="sonar h-2 w-2 rounded-full bg-critical text-critical" />
+          }
+        />
+        <CardBody className="flex flex-col gap-0 p-0">
+          {isLoading && (
+            <p className="m-0 animate-pulse px-4 py-8 text-center font-mono text-[0.78rem] text-text-muted">
+              {'// listening for signals…'}
+            </p>
+          )}
+          {!isLoading && alerts.length === 0 && (
+            <div className="px-4 py-6">
+              <EmptyState
+                icon={Siren}
+                title="Wire is quiet"
+                description="No alerts at this severity. Run a probe to generate signals."
+                command="cwctl scan ."
+              />
+            </div>
+          )}
+          {alerts.map((al, i) => (
+            <div
+              key={al.id}
+              className={cn(
+                'flex items-start gap-3 px-4 py-3',
+                i < alerts.length - 1 && 'border-b border-border-color',
+                al.dismissed && 'opacity-45',
+              )}
+            >
+              <span
+                aria-hidden="true"
+                className={cn('mt-1.5 h-2 w-2 shrink-0 rounded-full', SEV_DOT[al.severity as Severity] ?? 'bg-text-muted')}
+              />
+              <div className="min-w-0 flex-1">
+                <p className="m-0 text-[0.8rem] leading-snug text-text-primary">{al.message}</p>
+                <div className="mt-1 flex flex-wrap items-center gap-2">
+                  <StatusChip tone={al.severity} dot={false} />
+                  {al.package_name && (
+                    <span className="truncate font-mono text-[0.7rem] text-neon">
+                      {al.ecosystem ? `${al.ecosystem}/` : ''}{al.package_name}{al.version ? `@${al.version}` : ''}
+                    </span>
+                  )}
+                </div>
+              </div>
+              <span className="shrink-0 whitespace-nowrap font-mono text-[0.66rem] text-text-muted">
+                {relativeTime(al.occurred_at)}
+              </span>
+              {!al.dismissed && (
+                <button
+                  type="button"
+                  onClick={() => dismiss.mutate(al.id)}
+                  title="Neutralize alert"
+                  aria-label="Neutralize alert"
+                  className="wd-hover grid h-6 w-6 shrink-0 place-items-center rounded border border-transparent bg-transparent text-text-muted hover:border-neon hover:text-neon"
+                >
+                  <X size={13} />
+                </button>
               )}
             </div>
-            <span style={{ fontSize: '0.68rem', color: 'var(--color-muted)', whiteSpace: 'nowrap', flexShrink: 0 }}>
-              {relativeTime(al.occurred_at)}
-            </span>
-            {!al.dismissed && (
-              <button
-                onClick={() => dismiss.mutate(al.id)}
-                title="Dismiss"
-                style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--color-muted)', flexShrink: 0, padding: 2 }}
-              >
-                <X size={12} />
-              </button>
-            )}
-          </div>
-        ))}
-      </div>
+          ))}
+        </CardBody>
+      </Card>
     </div>
   );
 }

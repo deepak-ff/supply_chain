@@ -81,6 +81,8 @@ const SessionDetailPage     = lazy(() => import('./pages/SessionDetailPage'));
 const LogMonitorPage        = lazy(() => import('./pages/LogMonitorPage').then(m => ({ default: m.LogMonitorPage })));
 const TerminalPage          = lazy(() => import('./pages/TerminalPage').then(m => ({ default: m.TerminalPage })));
 const PublicDocsPage        = lazy(() => import('./pages/PublicDocsPage').then(m => ({ default: m.PublicDocsPage })));
+const DocsPage              = lazy(() => import('./pages/DocsPage').then(m => ({ default: m.DocsPage })));
+const ApiDocsPage           = lazy(() => import('./pages/ApiDocsPage').then(m => ({ default: m.ApiDocsPage })));
 
 function RouteFallback() {
   return (
@@ -154,6 +156,8 @@ function Router({ path }: { path: string }) {
     case '/attack-surface': return <ErrorBoundary><AttackSurfacePage /></ErrorBoundary>;
     case '/graph':          return <ErrorBoundary><GraphPage /></ErrorBoundary>;
     case '/integrations':   return <ErrorBoundary><IntegrationsPage /></ErrorBoundary>;
+    case '/manual':        return <ErrorBoundary><DocsPage /></ErrorBoundary>;
+    case '/api-reference': return <ErrorBoundary><ApiDocsPage /></ErrorBoundary>;
     default:             return <ErrorBoundary><DashboardPage /></ErrorBoundary>;
   }
 }

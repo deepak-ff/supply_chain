@@ -21,18 +21,18 @@
  */
 import { createElement, type CSSProperties } from 'react';
 
-/** Ordered series palette — violet, teal, amber. */
-export const CHART_SERIES = ['var(--chart-1)', 'var(--chart-2)', 'var(--chart-3)'] as const;
+/** Ordered series palette — neon cyan, magenta, amber. */
+export const CHART_SERIES = ['var(--neon)', 'var(--magenta)', 'var(--amber)'] as const;
 
 /** Categorical palette for charts with more than three series (treemaps, donuts). */
 export const CHART_CATEGORICAL = [
-  'var(--chart-1)',
-  'var(--chart-2)',
-  'var(--chart-3)',
-  'var(--primary)',
+  'var(--neon)',
+  'var(--magenta)',
+  'var(--amber)',
   'var(--teal)',
   'var(--success)',
   'var(--critical)',
+  'var(--warning)',
   'var(--text-muted)',
 ] as const;
 

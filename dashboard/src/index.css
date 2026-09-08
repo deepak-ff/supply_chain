@@ -3,96 +3,89 @@
 @tailwind utilities;
 
 /* ════════════════════════════════════════════════════════════════════════
-   ChainWarden — "VIGIL" design system · Phosphor security-terminal identity
+   ChainWarden — "NEON SENTRY" design system · cyber-ops command identity
    ════════════════════════════════════════════════════════════════════════
-   A dark ops-console aesthetic: phosphor-green brand light, amber alert
-   hues, a faint grid + scanline backdrop, mono display type, and HUD-style
-   corner brackets on every panel. Everything flows from these tokens so the
-   whole surface stays coherent. No webfonts, no external assets — the font
-   stacks are system-local (offline / air-gapped safe).
+   Dark-first cyber console: deep-void blues, neon-cyan brand light,
+   magenta alert glow, HUD brackets, scan sweeps, radar pings and a live
+   threat ticker. Light mode ("day ops") keeps the same geometry with an
+   arctic-cyber palette. Everything flows from these tokens.
    ════════════════════════════════════════════════════════════════════════ */
 
 :root {
-  /* ── ChainWarden "VIGIL" design tokens — light ("paper terminal") ──── */
-  --bg-base:       #F2F6F3;
+  /* ── "day ops" light palette ─────────────────────────────────────── */
+  --bg-base:       #EAF1FF;
   --surface:       #FFFFFF;
-  --surface-muted: #E9EFEB;
-  --border-color:  #D5DED8;
-  --text-primary:  #0E1512;
-  --text-secondary:#3E4C45;
-  --text-muted:    #7A8A82;
-  --primary:       #0E9F6E;   /* emerald — reads as text + button bg on white */
-  --accent-soft:   #DCF4E8;
-  --teal:          #0E9AA7;   /* low severity / cyan accents */
+  --surface-muted: #E3EBFA;
+  --surface-glass: rgba(255, 255, 255, 0.72);
+  --border-color:  #C6D4F2;
+  --text-primary:  #0A1430;
+  --text-secondary:#33415F;
+  --text-muted:    #6B7A9D;
+  --primary:       #0B5FFF;
+  --accent-soft:   #D8E6FF;
+  --teal:          #0891B2;
   --success:       #0F9D58;
-  --warning:       #C2410C;   /* medium severity */
-  --amber:         #B45309;   /* high severity */
+  --warning:       #C2410C;
+  --amber:         #B45309;
   --critical:      #D92D20;
+  --neon:          #0B5FFF;
+  --magenta:       #C026D3;
+  --lime:          #4D7C0F;
 
-  /* ── Backdrop texture (grid + scanline + ambient glow) ─────────────── */
-  --grid-line:     rgba(14, 20, 17, 0.05);
-  --scanline:      rgba(14, 20, 17, 0.02);
-  --bg-glow:       rgba(14, 159, 110, 0.06);
+  --grid-line:     rgba(11, 95, 255, 0.07);
+  --scanline:      rgba(10, 20, 48, 0.025);
+  --bg-glow:       rgba(11, 95, 255, 0.10);
+  --bg-glow-2:     rgba(192, 38, 211, 0.08);
 
-  /* ── Shell + component-layer tokens ──────────────────────────────────
-     One border, one shadow, one radius everywhere. --ring-soft is the
-     single focus-visible ring colour. */
   --ring-soft:     color-mix(in srgb, var(--primary) 40%, transparent);
-  --shadow-card:   0 1px 2px rgba(14, 20, 17, 0.05),
-                   0 1px 3px rgba(14, 20, 17, 0.06);
+  --shadow-card:   0 1px 2px rgba(10, 20, 48, 0.06), 0 8px 28px rgba(11, 95, 255, 0.08);
+  --shadow-glow:   0 0 0 1px color-mix(in srgb, var(--primary) 22%, transparent), 0 0 22px rgba(11, 95, 255, 0.18);
   --skeleton:      color-mix(in srgb, var(--text-muted) 18%, transparent);
   --row-hover:     color-mix(in srgb, var(--primary) 6%, transparent);
 
-  /* ── Chart series palette (see lib/chartTheme.ts) ──────────────────── */
   --chart-1:       var(--primary);
-  --chart-2:       var(--teal);
+  --chart-2:       var(--magenta);
   --chart-3:       var(--amber);
+  --chart-4:       var(--teal);
+  --chart-5:       var(--success);
 
-  /* ── Shell metrics ─────────────────────────────────────────────────── */
-  --shell-h:             52px;
-  --sidebar-w:           236px;
-  --sidebar-w-collapsed: 56px;
-  --page-max-w:          1400px;
+  --shell-h:             56px;
+  --sidebar-w:           244px;
+  --sidebar-w-collapsed: 60px;
+  --page-max-w:          1480px;
   --page-gutter:         24px;
   --page-rhythm:         20px;
 
-  /* ── Backward-compat aliases (see block below) ─────────────────────── */
   --primary-blue:  var(--primary);
   --blue-light:    var(--accent-soft);
   --cyan:          var(--teal);
 
   --font-sans:     ui-sans-serif, system-ui, -apple-system, 'Segoe UI', Roboto,
                    'Helvetica Neue', Arial, 'Noto Sans', sans-serif;
-  --font-mono:     ui-monospace, 'SF Mono', 'JetBrains Mono', 'Cascadia Mono',
+  --font-mono:     'JetBrains Mono', ui-monospace, 'SF Mono', 'Cascadia Mono',
                    'Roboto Mono', Menlo, Consolas, 'Liberation Mono', monospace;
 
-  /* ── shadcn/ui HSL tokens — recomputed for the VIGIL light palette ──── */
-  --background:            150 20% 95%;  /* #F2F6F3 */
-  --foreground:            156 20% 7%;   /* #0E1512 */
-  --card:                  0 0% 100%;    /* #FFFFFF */
-  --card-foreground:       156 20% 7%;   /* #0E1512 */
-  --popover:               0 0% 100%;    /* #FFFFFF */
-  --popover-foreground:    156 20% 7%;   /* #0E1512 */
-  --primary:               157 84% 34%;  /* #0E9F6E */
-  --primary-foreground:    0 0% 100%;    /* #FFFFFF */
-  --secondary:             150 20% 92%;  /* #E9EFEB */
-  --secondary-foreground:  156 20% 7%;   /* #0E1512 */
-  --muted:                 150 20% 92%;  /* #E9EFEB */
-  --muted-foreground:      150 10% 26%;  /* #3E4C45 */
-  --accent:                151 58% 91%;  /* #DCF4E8 */
-  --accent-foreground:     157 84% 26%;  /* emerald, darkened */
-  --destructive:           4 74% 49%;    /* #D92D20 */
-  --destructive-foreground:0 0% 100%;    /* #FFFFFF */
-  --border:                150 13% 84%;  /* #D5DED8 */
-  --input:                 150 13% 84%;  /* #D5DED8 */
-  --ring:                  157 84% 34%;  /* #0E9F6E */
-  --radius:                0.375rem;     /* 6px — soft "panel" corners */
+  --background:            222 100% 96%;
+  --foreground:            222 60% 12%;
+  --card:                  0 0% 100%;
+  --card-foreground:       222 60% 12%;
+  --popover:               0 0% 100%;
+  --popover-foreground:    222 60% 12%;
+  --primary:               222 100% 52%;
+  --primary-foreground:    0 0% 100%;
+  --secondary:             222 60% 92%;
+  --secondary-foreground:  222 60% 12%;
+  --muted:                 222 60% 92%;
+  --muted-foreground:      222 20% 38%;
+  --accent:                222 100% 90%;
+  --accent-foreground:     222 100% 32%;
+  --destructive:           4 74% 49%;
+  --destructive-foreground:0 0% 100%;
+  --border:                222 55% 84%;
+  --input:                 222 55% 84%;
+  --ring:                  222 100% 52%;
+  --radius:                0.5rem;
 
-  /* ── Transitional backward-compat aliases ────────────────────────────
-     Map the OLD custom-property names (used via inline style={{color:
-     'var(--x)'}} across src/pages and src/components) onto the VIGIL token
-     set so every existing page keeps rendering. Remove this block once all
-     pages are migrated to the new tokens/Tailwind utilities directly. */
   --bg-surface:    var(--surface);
   --surface-2:     var(--surface-muted);
   --bg-elevated:   var(--surface-muted);
@@ -105,68 +98,70 @@
   --color-muted:   var(--text-secondary);
   --color-indigo:  var(--primary);
   --color-info:    var(--teal);
-  --color-purple:  #0E9F6E;
+  --color-purple:  var(--magenta);
   --color-high:    var(--amber);
   --color-medium:  var(--warning);
   --color-low:     var(--teal);
 }
 
 .dark {
-  /* ── ChainWarden "VIGIL" design tokens — dark ("phosphor terminal") ── */
-  --bg-base:       #050807;
-  --surface:       #0A0F0C;
-  --surface-muted: #0F1612;
-  --border-color:  #1C2620;
-  --text-primary:  #E8F2EC;
-  --text-secondary:#93A79C;
-  --text-muted:    #5C6E64;
-  --primary:       #33F0A8;   /* phosphor mint — the brand light */
-  --accent-soft:   #0C241B;
+  /* ── "night ops" cyber palette — deep void + neon cyan ───────────── */
+  --bg-base:       #04070F;
+  --surface:       #0A1122;
+  --surface-muted: #101A33;
+  --surface-glass: rgba(10, 17, 34, 0.72);
+  --border-color:  #1C2A4D;
+  --text-primary:  #EAF2FF;
+  --text-secondary:#9FB0D0;
+  --text-muted:    #5E6F93;
+  --primary:       #00E5FF;
+  --accent-soft:   #082233;
   --teal:          #2FD4C2;
   --success:       #3BE88C;
   --warning:       #FF8A3D;
   --amber:         #FFB224;
-  --critical:      #FF5C5C;
+  --critical:      #FF4D5E;
+  --neon:          #00E5FF;
+  --magenta:       #FF2BD1;
+  --lime:          #A3E635;
 
-  /* ── Backdrop texture (dark) ───────────────────────────────────────── */
-  --grid-line:     rgba(51, 240, 168, 0.035);
-  --scanline:      rgba(0, 0, 0, 0.35);
-  --bg-glow:       rgba(51, 240, 168, 0.05);
+  --grid-line:     rgba(0, 229, 255, 0.055);
+  --scanline:      rgba(0, 0, 0, 0.32);
+  --bg-glow:       rgba(0, 229, 255, 0.09);
+  --bg-glow-2:     rgba(255, 43, 209, 0.07);
 
-  /* ── Shell + component-layer tokens — dark ─────────────────────────── */
-  --ring-soft:     color-mix(in srgb, var(--primary) 55%, transparent);
-  --shadow-card:   0 1px 0 rgba(255, 255, 255, 0.02),
-                   0 4px 24px rgba(0, 0, 0, 0.5);
-  --skeleton:      color-mix(in srgb, var(--text-muted) 24%, transparent);
-  --row-hover:     color-mix(in srgb, var(--primary) 9%, transparent);
+  --ring-soft:     color-mix(in srgb, var(--primary) 60%, transparent);
+  --shadow-card:   0 1px 0 rgba(255, 255, 255, 0.03), 0 12px 40px rgba(0, 0, 0, 0.55);
+  --shadow-glow:   0 0 0 1px rgba(0, 229, 255, 0.28), 0 0 28px rgba(0, 229, 255, 0.22), 0 0 64px rgba(0, 229, 255, 0.08);
+  --skeleton:      color-mix(in srgb, var(--text-muted) 26%, transparent);
+  --row-hover:     color-mix(in srgb, var(--primary) 10%, transparent);
 
-  /* ── Backward-compat aliases (dark) — see :root comment ────────────── */
   --primary-blue:  var(--primary);
   --blue-light:    var(--accent-soft);
   --cyan:          var(--teal);
 
-  /* ── shadcn/ui HSL tokens — dark equivalents ───────────────────────── */
-  --background:            150 20% 4%;   /* #050807 */
-  --foreground:            150 22% 93%;  /* #E8F2EC */
-  --card:                  150 20% 6%;   /* #0A0F0C */
-  --card-foreground:       150 22% 93%;  /* #E8F2EC */
-  --popover:               150 20% 6%;   /* #0A0F0C */
-  --popover-foreground:    150 22% 93%;  /* #E8F2EC */
-  --primary:               157 86% 57%;  /* #33F0A8 */
-  --primary-foreground:    155 70% 5%;   /* near-black on phosphor */
-  --secondary:             150 19% 9%;   /* #0F1612 */
-  --secondary-foreground:  150 22% 93%;  /* #E8F2EC */
-  --muted:                 150 19% 9%;   /* #0F1612 */
-  --muted-foreground:      150 12% 62%;  /* #93A79C */
-  --accent:                156 44% 10%;  /* #0C241B */
-  --accent-foreground:     150 22% 93%;  /* #E8F2EC */
-  --destructive:           0 100% 68%;   /* #FF5C5C */
-  --destructive-foreground:150 20% 4%;   /* #050807 */
-  --border:                150 15% 12%;  /* #1C2620 */
-  --input:                 150 15% 12%;  /* #1C2620 */
-  --ring:                  157 86% 57%;  /* #33F0A8 */
+  --background:            222 60% 4%;
+  --foreground:            222 60% 94%;
+  --card:                  222 55% 8%;
+  --card-foreground:       222 60% 94%;
+  --popover:               222 55% 8%;
+  --popover-foreground:    222 60% 94%;
+  /* NOTE: no shadcn `--primary` triplet here on purpose — `--primary` stays
+     a hex token (see top of this block) so bare `var(--primary)` uses in
+     plain CSS stay valid. Tailwind reads it via `primary.DEFAULT`. */
+  --primary-foreground:    222 80% 4%;
+  --secondary:             222 50% 12%;
+  --secondary-foreground:  222 60% 94%;
+  --muted:                 222 50% 12%;
+  --muted-foreground:      222 25% 66%;
+  --accent:                195 80% 12%;
+  --accent-foreground:     187 100% 70%;
+  --destructive:           353 100% 65%;
+  --destructive-foreground:222 60% 4%;
+  --border:                222 45% 16%;
+  --input:                 222 45% 16%;
+  --ring:                  187 100% 50%;
 
-  /* ── Transitional backward-compat aliases (dark) — see :root comment ── */
   --bg-surface:    var(--surface);
   --surface-2:     var(--surface-muted);
   --bg-elevated:   var(--surface-muted);
@@ -179,17 +174,13 @@
   --color-muted:   var(--text-secondary);
   --color-indigo:  var(--primary);
   --color-info:    var(--teal);
-  --color-purple:  #33F0A8;
+  --color-purple:  var(--magenta);
   --color-high:    var(--amber);
   --color-medium:  var(--warning);
   --color-low:     var(--teal);
 }
 
-* {
-  box-sizing: border-box;
-  margin: 0;
-  padding: 0;
-}
+* { box-sizing: border-box; margin: 0; padding: 0; }
 
 body {
   background-color: var(--bg-base);
@@ -198,175 +189,221 @@ body {
   font-size: 14px;
   line-height: 1.5;
   -webkit-font-smoothing: antialiased;
-  /* ── VIGIL backdrop ─────────────────────────────────────────────────
-     Layered, deterministic, pure-CSS: a faint engineering grid, a barely
-     visible scanline raster, and a phosphor ambient glow at the top. Fixed
-     attachment so the grid doesn't scroll with content. */
+  /* Cyber backdrop: scanlines + engineering grid + dual neon aura */
   background-image:
-    repeating-linear-gradient(
-      0deg,
-      var(--scanline) 0px,
-      var(--scanline) 1px,
-      transparent 1px,
-      transparent 3px
-    ),
+    repeating-linear-gradient(0deg, var(--scanline) 0px, var(--scanline) 1px, transparent 1px, transparent 3px),
     linear-gradient(var(--grid-line) 1px, transparent 1px),
     linear-gradient(90deg, var(--grid-line) 1px, transparent 1px),
-    radial-gradient(1400px 800px at 50% -12%, var(--bg-glow), transparent 72%);
-  background-attachment: scroll, scroll, scroll, scroll;
-  background-size: 100% 3px, 30px 30px, 30px 30px, 100% 100%;
-  background-repeat: repeat, repeat, repeat, no-repeat;
+    radial-gradient(1100px 520px at 12% -10%, var(--bg-glow), transparent 70%),
+    radial-gradient(1000px 520px at 88% -8%, var(--bg-glow-2), transparent 70%);
+  background-size: 100% 3px, 28px 28px, 28px 28px, 100% 100%, 100% 100%;
+  background-repeat: repeat, repeat, repeat, no-repeat, no-repeat;
 }
 
-code, pre, .mono {
-  font-family: var(--font-mono);
-}
+code, pre, .mono { font-family: var(--font-mono); }
 
-::-webkit-scrollbar { width: 8px; height: 8px; }
+::-webkit-scrollbar { width: 9px; height: 9px; }
 ::-webkit-scrollbar-track { background: var(--bg-base); }
 ::-webkit-scrollbar-thumb {
-  background: var(--border-color);
-  border-radius: 4px;
+  background: linear-gradient(180deg, color-mix(in srgb, var(--primary) 55%, transparent), var(--border-color));
+  border-radius: 6px;
+  border: 2px solid var(--bg-base);
 }
-::-webkit-scrollbar-thumb:hover { background: var(--text-muted); }
+::-webkit-scrollbar-thumb:hover { background: var(--primary); }
 
 input, select, textarea { outline: none; }
 input:focus, select:focus, textarea:focus {
   border-color: var(--primary) !important;
-  box-shadow: 0 0 0 1px color-mix(in srgb, var(--primary) 30%, transparent);
+  box-shadow: 0 0 0 1px color-mix(in srgb, var(--primary) 35%, transparent), 0 0 16px color-mix(in srgb, var(--primary) 25%, transparent);
 }
 
-button { cursor: pointer; border: none; transition: opacity 0.15s; }
-button:hover:not(:disabled) { opacity: 0.85; }
+button { cursor: pointer; border: none; transition: opacity 0.15s, box-shadow 0.15s, transform 0.15s; }
+button:hover:not(:disabled) { opacity: 0.9; }
 button:disabled { cursor: not-allowed; }
 
-/* ── Focus ──────────────────────────────────────────────────────────────
-   Every interactive element gets the same soft phosphor ring on keyboard
-   focus. :focus-visible only, so mouse clicks stay clean. */
 :where(a, button, input, select, textarea, summary, [tabindex]):focus-visible {
   outline: 2px solid var(--ring-soft);
   outline-offset: 2px;
 }
 
-/* ── Hover/active transitions ──────────────────────────────────────────
-   150ms ease, colour-only properties. Never width/height/margin. */
 .wd-hover {
-  transition:
-    background-color 150ms ease,
-    border-color 150ms ease,
-    color 150ms ease,
-    opacity 150ms ease,
-    box-shadow 150ms ease;
-}
-@media (prefers-reduced-motion: reduce) {
-  .wd-hover { transition: none; }
+  transition: background-color 150ms ease, border-color 150ms ease, color 150ms ease,
+    opacity 150ms ease, box-shadow 150ms ease, transform 150ms ease;
 }
 
-/* ════════════════════════════════════════════════════════════════════════
-   VIGIL signature motifs
-   ════════════════════════════════════════════════════════════════════════ */
+/* ════════════════════════════════════════════════════════════════════
+   CYBER signature motifs
+   ════════════════════════════════════════════════════════════════════ */
 
-/* ── HUD corner brackets ────────────────────────────────────────────────
-   The one recurring "unique point": every panel carries a faint targeting
-   reticle in its top-left / bottom-right corners. Applied to Card and
-   StatTile so the whole surface reads as one system. */
+/* HUD corner brackets — stronger neon version */
 .cw-brackets { position: relative; }
 .cw-brackets::before,
 .cw-brackets::after {
   content: '';
   position: absolute;
-  width: 9px;
-  height: 9px;
+  width: 12px;
+  height: 12px;
   pointer-events: none;
-  opacity: 0.65;
-  transition: opacity 150ms ease, border-color 150ms ease;
+  opacity: 0.85;
+  transition: opacity 150ms ease, filter 150ms ease;
+  filter: drop-shadow(0 0 4px color-mix(in srgb, var(--primary) 60%, transparent));
 }
 .cw-brackets::before {
-  top: -1px;
-  left: -1px;
-  border-top: 1.5px solid var(--primary);
-  border-left: 1.5px solid var(--primary);
+  top: -1px; left: -1px;
+  border-top: 2px solid var(--primary);
+  border-left: 2px solid var(--primary);
   border-top-left-radius: var(--radius);
 }
 .cw-brackets::after {
-  bottom: -1px;
-  right: -1px;
-  border-bottom: 1.5px solid var(--primary);
-  border-right: 1.5px solid var(--primary);
+  bottom: -1px; right: -1px;
+  border-bottom: 2px solid var(--primary);
+  border-right: 2px solid var(--primary);
   border-bottom-right-radius: var(--radius);
 }
-.cw-brackets:hover::before,
-.cw-brackets:hover::after { opacity: 1; }
+.cw-brackets:hover::before, .cw-brackets:hover::after { opacity: 1; filter: drop-shadow(0 0 8px var(--primary)); }
 
-/* ── Blinking cursor (brand mark, status) ─────────────────────────────── */
-@keyframes cw-blink {
-  0%, 49% { opacity: 1; }
-  50%, 100% { opacity: 0; }
+/* Cyber panel — gradient hairline top edge + glass */
+.cyber-panel {
+  position: relative;
+  background: linear-gradient(180deg, color-mix(in srgb, var(--surface) 88%, transparent), var(--surface));
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius);
+  box-shadow: var(--shadow-card);
+  overflow: hidden;
 }
+.cyber-panel::before {
+  content: '';
+  position: absolute;
+  top: 0; left: 0; right: 0;
+  height: 2px;
+  background: linear-gradient(90deg, transparent, var(--primary) 22%, var(--magenta) 55%, var(--primary) 78%, transparent);
+  opacity: 0.85;
+}
+
+/* Neon display text */
+.neon-text {
+  color: var(--primary);
+  text-shadow: 0 0 12px color-mix(in srgb, var(--primary) 55%, transparent), 0 0 32px color-mix(in srgb, var(--primary) 25%, transparent);
+}
+.neon-text-magenta {
+  color: var(--magenta);
+  text-shadow: 0 0 12px color-mix(in srgb, var(--magenta) 55%, transparent);
+}
+
+/* Blinking cursor */
+@keyframes cw-blink { 0%, 49% { opacity: 1; } 50%, 100% { opacity: 0; } }
 .cw-blink {
   display: inline-block;
-  width: 0.55em;
-  height: 1em;
+  width: 0.55em; height: 1em;
   margin-left: 2px;
   transform: translateY(2px);
   background: var(--primary);
+  box-shadow: 0 0 8px var(--primary);
   animation: cw-blink 1.1s steps(1) infinite;
 }
 
-/* ── Live scan sweep (top bar status rail) ────────────────────────────── */
-@keyframes cw-sweep {
-  0%   { transform: translateX(-120%); }
-  100% { transform: translateX(240%); }
-}
-.cw-scanrail {
-  position: relative;
-  overflow: hidden;
-}
+/* Live scan sweep rail */
+@keyframes cw-sweep { 0% { transform: translateX(-130%) skewX(-18deg); } 100% { transform: translateX(260%) skewX(-18deg); } }
+.cw-scanrail { position: relative; overflow: hidden; }
 .cw-scanrail::after {
   content: '';
-  position: absolute;
-  top: 0;
-  bottom: 0;
-  left: 0;
+  position: absolute; top: 0; bottom: 0; left: 0;
   width: 42%;
-  background: linear-gradient(
-    90deg,
-    transparent,
-    color-mix(in srgb, var(--primary) 14%, transparent),
-    transparent
-  );
-  transform: skewX(-18deg);
+  background: linear-gradient(90deg, transparent, color-mix(in srgb, var(--primary) 18%, transparent), transparent);
   animation: cw-sweep 3.2s ease-in-out infinite;
   pointer-events: none;
 }
 
-/* ── Alive status dot ─────────────────────────────────────────────────── */
+/* Alive status dot with sonar ring */
 @keyframes cw-pulse {
   0%, 100% { box-shadow: 0 0 0 0 color-mix(in srgb, var(--success) 55%, transparent); }
-  50%      { box-shadow: 0 0 0 5px transparent; }
+  50% { box-shadow: 0 0 0 6px transparent; }
 }
-.cw-live-dot {
+.cw-live-dot { border-radius: 9999px; background: var(--success); animation: cw-pulse 2s ease-out infinite; }
+
+@keyframes sonar-ping {
+  0% { transform: scale(0.6); opacity: 0.9; }
+  100% { transform: scale(2.4); opacity: 0; }
+}
+.sonar { position: relative; }
+.sonar::after {
+  content: '';
+  position: absolute; inset: 0;
   border-radius: 9999px;
-  background: var(--success);
-  animation: cw-pulse 2s ease-out infinite;
+  border: 1.5px solid currentColor;
+  animation: sonar-ping 1.8s ease-out infinite;
+}
+
+/* Radar sweep — conic rotating beam */
+@keyframes radar-spin { to { transform: rotate(360deg); } }
+.cyber-radar-beam {
+  background: conic-gradient(from 0deg, color-mix(in srgb, var(--primary) 55%, transparent), transparent 22%);
+  animation: radar-spin 4s linear infinite;
+}
+
+/* Threat ticker */
+@keyframes ticker-scroll { 0% { transform: translateX(0); } 100% { transform: translateX(-50%); } }
+.cyber-ticker-track {
+  display: flex; width: max-content;
+  animation: ticker-scroll 36s linear infinite;
+}
+.cyber-ticker-track:hover { animation-play-state: paused; }
+
+/* Flowing dashed links (SVG) */
+@keyframes dash-flow { to { stroke-dashoffset: -24; } }
+.cyber-flow { stroke-dasharray: 5 5; animation: dash-flow 1.4s linear infinite; }
+
+/* Neon pulse ring for gauntlets / grades */
+@keyframes neon-breathe {
+  0%, 100% { filter: drop-shadow(0 0 6px color-mix(in srgb, var(--primary) 45%, transparent)); }
+  50% { filter: drop-shadow(0 0 16px color-mix(in srgb, var(--primary) 70%, transparent)); }
+}
+.cyber-breathe { animation: neon-breathe 3.2s ease-in-out infinite; }
+
+/* Hex badge */
+.cyber-hex {
+  clip-path: polygon(25% 0%, 75% 0%, 100% 50%, 75% 100%, 25% 100%, 0% 50%);
+}
+
+/* Sidebar active neon rail */
+.cyber-active {
+  background: linear-gradient(90deg, color-mix(in srgb, var(--primary) 16%, transparent), color-mix(in srgb, var(--primary) 4%, transparent));
+  box-shadow: inset 0 0 18px color-mix(in srgb, var(--primary) 10%, transparent);
+}
+.cyber-active-rail {
+  background: linear-gradient(180deg, var(--primary), var(--magenta));
+  box-shadow: 0 0 10px var(--primary), 0 0 22px color-mix(in srgb, var(--primary) 50%, transparent);
+}
+
+/* Section divider with circuit dots */
+.cyber-divider {
+  background-image: linear-gradient(90deg, var(--border-color) 55%, transparent 45%);
+  background-size: 7px 1px;
+  background-repeat: repeat-x;
+  height: 1px;
+}
+
+/* Card lift */
+.cyber-lift { transition: transform 180ms ease, box-shadow 180ms ease, border-color 180ms ease; }
+.cyber-lift:hover {
+  transform: translateY(-2px);
+  border-color: color-mix(in srgb, var(--primary) 45%, var(--border-color));
+  box-shadow: var(--shadow-card), var(--shadow-glow);
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .cw-blink, .cw-scanrail::after, .cw-live-dot { animation: none !important; }
+  .cw-blink, .cw-scanrail::after, .cw-live-dot, .sonar::after,
+  .cyber-radar-beam, .cyber-ticker-track, .cyber-flow, .cyber-breathe { animation: none !important; }
+  .wd-hover, .cyber-lift { transition: none; }
+  .cyber-lift:hover { transform: none; }
 }
 
-/* DataTable owns its own scroll container, so it opts out of the global
-   `table { display: block }` rule further down. */
+/* DataTable scroll opt-out */
 .dt-scroll table { display: table; overflow-x: visible; max-width: none; }
 
-/* ── Developer Docs markdown rendering ────────────────────────────────── */
+/* Docs markdown */
 .fg-docs { color: var(--fg); font-size: 0.875rem; line-height: 1.65; }
-.fg-docs h1, .fg-docs h2, .fg-docs h3, .fg-docs h4 {
-  color: var(--fg);
-  font-weight: 700;
-  margin: 1.25em 0 0.5em;
-  line-height: 1.3;
-}
+.fg-docs h1, .fg-docs h2, .fg-docs h3, .fg-docs h4 { color: var(--fg); font-weight: 700; margin: 1.25em 0 0.5em; line-height: 1.3; }
 .fg-docs h1 { font-size: 1.4rem; border-bottom: 1px solid var(--border-color); padding-bottom: 0.4em; }
 .fg-docs h2 { font-size: 1.15rem; border-bottom: 1px solid var(--border-color); padding-bottom: 0.3em; }
 .fg-docs h3 { font-size: 1rem; }
@@ -375,96 +412,37 @@ button:disabled { cursor: not-allowed; }
 .fg-docs a:hover { text-decoration: underline; }
 .fg-docs ul, .fg-docs ol { margin: 0.5em 0 0.5em 1.25em; }
 .fg-docs li { margin: 0.25em 0; }
-.fg-docs code {
-  font-family: var(--font-mono);
-  background: var(--bg-elevated);
-  color: var(--primary-blue);
-  padding: 0.1em 0.4em;
-  border-radius: 0.25rem;
-  font-size: 0.85em;
-}
-.fg-docs pre {
-  font-family: var(--font-mono);
-  background: var(--bg-elevated);
-  color: var(--fg);
-  padding: 0.9em 1em;
-  border-radius: 0.5rem;
-  overflow-x: auto;
-  margin: 0.75em 0;
-  border: 1px solid var(--border-color);
-}
+.fg-docs code { font-family: var(--font-mono); background: var(--bg-elevated); color: var(--primary-blue); padding: 0.1em 0.4em; border-radius: 0.25rem; font-size: 0.85em; }
+.fg-docs pre { font-family: var(--font-mono); background: var(--bg-elevated); color: var(--fg); padding: 0.9em 1em; border-radius: 0.5rem; overflow-x: auto; margin: 0.75em 0; border: 1px solid var(--border-color); }
 .fg-docs pre code { background: transparent; padding: 0; color: var(--fg); }
-.fg-docs blockquote {
-  border-left: 3px solid var(--primary-blue);
-  padding-left: 1em;
-  margin: 0.75em 0;
-  color: var(--color-muted);
-}
-.fg-docs table {
-  width: 100%;
-  border-collapse: collapse;
-  margin: 0.75em 0;
-  font-size: 0.85em;
-}
-.fg-docs th, .fg-docs td {
-  border: 1px solid var(--border-color);
-  padding: 0.5em 0.75em;
-  text-align: left;
-}
+.fg-docs blockquote { border-left: 3px solid var(--primary-blue); padding-left: 1em; margin: 0.75em 0; color: var(--color-muted); }
+.fg-docs table { width: 100%; border-collapse: collapse; margin: 0.75em 0; font-size: 0.85em; }
+.fg-docs th, .fg-docs td { border: 1px solid var(--border-color); padding: 0.5em 0.75em; text-align: left; }
 .fg-docs th { background: var(--bg-elevated); color: var(--fg); }
 .fg-docs hr { border: none; border-top: 1px solid var(--border-color); margin: 1.5em 0; }
 .fg-docs img { max-width: 100%; }
 
-/* ── Responsive utilities ──────────────────────────────────────────────── */
 @media (max-width: 639px) {
   .p-5 { padding: 0.75rem !important; }
-  .gap-3\\.5 { gap: 0.625rem !important; }
-  .gap-2\\.5 { gap: 0.5rem !important; }
 }
 
-/* Ensure wide content scrolls horizontally, not the page */
 table { display: block; overflow-x: auto; max-width: 100%; }
 .recharts-responsive-container { min-width: 0; }
 
-/* Brief highlight when "search this page" scrolls to a match. */
-.fg-search-hit {
-  background: var(--blue-light);
-  border-radius: 0.2em;
-  transition: background 1.2s ease-out;
-}
+.fg-search-hit { background: var(--blue-light); border-radius: 0.2em; transition: background 1.2s ease-out; }
 
-/* ── Motion system ──────────────────────────────────────────────────────
-   Small, reusable entrance + "alive" pulse utilities. Plain CSS keyframes,
-   no animation library — applied selectively. */
-@keyframes fg-fade-in-up {
-  from { opacity: 0; transform: translateY(8px); }
-  to { opacity: 1; transform: translateY(0); }
-}
-.fg-entrance {
-  animation: fg-fade-in-up 480ms ease-out both;
-}
+@keyframes fg-fade-in-up { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: translateY(0); } }
+.fg-entrance { animation: fg-fade-in-up 480ms ease-out both; }
 .fg-entrance-delay-1 { animation-delay: 60ms; }
 .fg-entrance-delay-2 { animation-delay: 120ms; }
 .fg-entrance-delay-3 { animation-delay: 180ms; }
 .fg-entrance-delay-4 { animation-delay: 240ms; }
 .fg-entrance-delay-5 { animation-delay: 300ms; }
 
-@keyframes fg-pulse-slow {
-  0%, 100% { opacity: 1; }
-  50% { opacity: 0.6; }
-}
-.fg-pulse-healthy {
-  animation: fg-pulse-slow 3s ease-in-out infinite;
-}
+@keyframes fg-pulse-slow { 0%, 100% { opacity: 1; } 50% { opacity: 0.6; } }
+.fg-pulse-healthy { animation: fg-pulse-slow 3s ease-in-out infinite; }
 
 @media (prefers-reduced-motion: reduce) {
-  .fg-entrance,
-  .fg-entrance-delay-1,
-  .fg-entrance-delay-2,
-  .fg-entrance-delay-3,
-  .fg-entrance-delay-4,
-  .fg-entrance-delay-5,
-  .fg-pulse-healthy {
-    animation: none !important;
-  }
+  .fg-entrance, .fg-entrance-delay-1, .fg-entrance-delay-2, .fg-entrance-delay-3,
+  .fg-entrance-delay-4, .fg-entrance-delay-5, .fg-pulse-healthy { animation: none !important; }
 }

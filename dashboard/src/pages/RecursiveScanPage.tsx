@@ -1,8 +1,13 @@
 import { useState, useEffect, useRef } from 'react';
 import { useMutation } from '@tanstack/react-query';
-import { Layers, AlertTriangle, CheckCircle } from 'lucide-react';
+import { Layers, AlertTriangle, CheckCircle, Crosshair } from 'lucide-react';
 import { triggerScan, getJobStatus } from '../lib/api';
 import type { ScanResult } from '../types/api';
+import { Card, CardHeader, CardBody } from '../components/ui/card';
+import { StatTile } from '../components/ui/stat-tile';
+import { StatusChip } from '../components/ui/status-chip';
+import { EmptyState } from '../components/EmptyState';
+import { CyberKicker } from '../components/cyber/CyberViz';
 
 // Scans run async — submit returns a job_id, poll until it settles.
 // Bounded to 5 minutes (150 * 2s) so a stuck worker can't poll forever, and
@@ -16,21 +21,16 @@ async function scanAndAwait(eco: string, pkg: string, ver: string, isMounted: ()
   let polls = 0;
   while (current.status !== 'complete' && current.status !== 'failed') {
     if (!isMounted()) throw new Error('cancelled — navigated away');
-    if (++polls > MAX_POLLS) throw new Error(`scan for ${pkg}@${ver} did not complete after 5 minutes`);
+    if (++polls > MAX_POLLS) throw new Error(`probe for ${pkg}@${ver} did not complete after 5 minutes`);
     await new Promise(r => setTimeout(r, 2_000));
     current = await getJobStatus(job.job_id);
   }
-  if (current.status === 'failed') throw new Error(current.error || `scan failed for ${pkg}@${ver}`);
+  if (current.status === 'failed') throw new Error(current.error || `probe failed for ${pkg}@${ver}`);
   return current.result!;
 }
 
-const SEV_COLOR: Record<string, string> = {
-  CRITICAL: 'var(--color-critical)',
-  HIGH: 'var(--color-high)',
-  MEDIUM: 'var(--color-medium)',
-  LOW: 'var(--color-low)',
-  INFORMATIONAL: 'var(--color-info)',
-};
+const FIELD = 'w-full rounded border border-border-color bg-bg-base px-3 py-2 font-mono text-[0.8rem] text-text-primary';
+const LABEL = 'mb-1 block font-mono text-[0.62rem] font-bold uppercase tracking-[0.14em] text-text-muted';
 
 export function RecursiveScanPage() {
   const [eco, setEco] = useState('npm');
@@ -46,7 +46,7 @@ export function RecursiveScanPage() {
 
   const { mutate, isPending, error } = useMutation({
     mutationFn: async () => {
-      // Scan the root package plus any comma-separated extra packages
+      // Probe the root package plus any comma-separated extra packages
       const pkgs = pkg.split(',').map(p => p.trim()).filter(Boolean);
       const scans = await Promise.all(
         pkgs.map(p => scanAndAwait(eco, p, ver, () => mountedRef.current))
@@ -59,117 +59,124 @@ export function RecursiveScanPage() {
   const totalFindings = results.reduce((s, r) => s + (r.findings?.length ?? 0), 0);
   const criticalCount = results.reduce((s, r) => s + (r.findings?.filter(f => f.severity === 'CRITICAL').length ?? 0), 0);
 
-  const inputStyle = {
-    background: 'var(--surface)',
-    border: '1px solid rgba(255,255,255,0.1)',
-    borderRadius: '0.375rem',
-    color: 'var(--fg)',
-    fontSize: '0.8rem',
-    padding: '0.4rem 0.625rem',
-    fontFamily: 'var(--font-mono)',
-    outline: 'none',
-  };
-
   return (
-    <div className="space-y-6">
-      <div className="flex items-center gap-3">
-        <Layers className="text-primary" size={20} />
-        <div>
-          <h1 className="text-xl font-bold font-mono text-text-primary">Recursive Scanning</h1>
-          <p className="text-sm mt-0.5 text-text-secondary">
-            Scan multiple packages at once — surface hidden vulnerabilities across transitive dependencies.
-          </p>
+    <div className="flex flex-col gap-5">
+      <div>
+        <CyberKicker index="R-06" label="recon // deep trace" />
+        <div className="flex items-center gap-2.5">
+          <Layers size={20} className="text-neon drop-shadow-[0_0_8px_var(--neon)]" aria-hidden="true" />
+          <div>
+            <h1 className="m-0 text-[1.15rem] font-bold tracking-tight text-text-primary">Deep Trace</h1>
+            <p className="m-0 mt-0.5 text-[0.78rem] text-text-secondary">
+              Trace several packages in one sweep — expose what hides in the transitive depths.
+            </p>
+          </div>
         </div>
       </div>
 
       {/* Input form */}
-      <div className="rounded-lg p-5 space-y-4 bg-surface border border-border-color">
-        <div className="grid grid-cols-1 sm:grid-cols-[120px_1fr_140px] gap-3 items-end">
-          <div>
-            <label style={{ fontSize: '0.7rem', color: 'var(--color-muted)', fontFamily: 'var(--font-mono)', display: 'block', marginBottom: 4 }}>ECOSYSTEM</label>
-            <select value={eco} onChange={e => setEco(e.target.value)} style={{ ...inputStyle, width: '100%' }}>
-              {['npm','pypi','go','maven','crates','rubygems','huggingface','mcp'].map(e => (
-                <option key={e} value={e}>{e}</option>
-              ))}
-            </select>
+      <Card className="cyber-lift">
+        <CardHeader title="Trace coordinates" description="One version across many packages, all engines firing" />
+        <CardBody className="flex flex-col gap-4">
+          <div className="grid grid-cols-1 items-end gap-3 sm:grid-cols-[120px_1fr_140px]">
+            <div>
+              <label className={LABEL} htmlFor="trace-eco">Ecosystem</label>
+              <select id="trace-eco" value={eco} onChange={e => setEco(e.target.value)} className={FIELD}>
+                {['npm','pypi','go','maven','crates','rubygems','huggingface','mcp'].map(e => (
+                  <option key={e} value={e}>{e}</option>
+                ))}
+              </select>
+            </div>
+            <div>
+              <label className={LABEL} htmlFor="trace-pkgs">Packages (comma-separated)</label>
+              <input id="trace-pkgs" value={pkg} onChange={e => setPkg(e.target.value)} placeholder="lodash, express, axios_" className={FIELD} />
+            </div>
+            <div>
+              <label className={LABEL} htmlFor="trace-ver">Version</label>
+              <input id="trace-ver" value={ver} onChange={e => setVer(e.target.value)} placeholder="4.17.21_" className={FIELD} />
+            </div>
           </div>
           <div>
-            <label style={{ fontSize: '0.7rem', color: 'var(--color-muted)', fontFamily: 'var(--font-mono)', display: 'block', marginBottom: 4 }}>PACKAGES (comma-separated)</label>
-            <input value={pkg} onChange={e => setPkg(e.target.value)} placeholder="lodash, express, axios" style={{ ...inputStyle, width: '100%' }} />
+            <button
+              type="button"
+              onClick={() => mutate()}
+              disabled={isPending || !pkg || !ver}
+              className="wd-hover flex items-center gap-2 rounded bg-neon px-5 py-2.5 font-mono text-[0.76rem] font-bold uppercase tracking-widest text-void hover:shadow-glow disabled:cursor-not-allowed disabled:opacity-50"
+            >
+              <Crosshair size={14} />
+              {isPending ? 'Tracing…' : 'Run deep trace'}
+            </button>
           </div>
-          <div>
-            <label style={{ fontSize: '0.7rem', color: 'var(--color-muted)', fontFamily: 'var(--font-mono)', display: 'block', marginBottom: 4 }}>VERSION</label>
-            <input value={ver} onChange={e => setVer(e.target.value)} placeholder="4.17.21" style={{ ...inputStyle, width: '100%' }} />
-          </div>
-        </div>
-        <button
-          onClick={() => mutate()}
-          disabled={isPending || !pkg || !ver}
-          style={{
-            background: isPending ? 'rgba(99,102,241,0.3)' : 'rgba(99,102,241,0.8)',
-            border: 'none', borderRadius: '0.375rem',
-            color: '#fff', fontSize: '0.8rem', fontFamily: 'var(--font-mono)',
-            padding: '0.5rem 1.25rem', cursor: isPending ? 'not-allowed' : 'pointer',
-          }}
-        >
-          {isPending ? 'Scanning…' : 'Run Recursive Scan'}
-        </button>
-        {error && (
-          <p style={{ fontSize: '0.75rem', color: 'var(--color-critical)' }}>
-            {(error as Error).message}
-          </p>
-        )}
-      </div>
+          {error && (
+            <p className="m-0 font-mono text-[0.74rem] text-critical">
+              {(error as Error).message}
+            </p>
+          )}
+        </CardBody>
+      </Card>
 
       {/* Summary bar */}
       {results.length > 0 && (
-        <div style={{ display: 'flex', gap: '1rem' }}>
-          {[
-            { label: 'Packages scanned', val: results.length, color: 'var(--color-indigo)' },
-            { label: 'Total findings', val: totalFindings, color: 'var(--color-warn)' },
-            { label: 'Critical', val: criticalCount, color: 'var(--color-critical)' },
-          ].map(s => (
-            <div key={s.label} className="rounded-lg p-4 flex-1 text-center bg-surface border border-border-color">
-              <p style={{ fontSize: '1.5rem', fontWeight: 700, fontFamily: 'var(--font-mono)', color: s.color }}>{s.val}</p>
-              <p style={{ fontSize: '0.7rem', color: 'var(--color-muted)', marginTop: 2 }}>{s.label}</p>
-            </div>
-          ))}
+        <div className="grid grid-cols-1 gap-5 sm:grid-cols-3">
+          <StatTile label="Packages traced" value={results.length} icon={Layers} className="cyber-lift" />
+          <StatTile label="Total findings" value={totalFindings} icon={AlertTriangle} accent="amber" className="cyber-lift" />
+          <StatTile label="Critical" value={criticalCount} icon={AlertTriangle} accent="critical" className="cyber-lift" />
         </div>
+      )}
+
+      {results.length === 0 && !isPending && (
+        <Card className="cyber-lift">
+          <CardBody>
+            <EmptyState
+              icon={Layers}
+              title="No trace on record"
+              description="Set coordinates above and run a deep trace across several packages at once."
+              command="cwctl scan . --recursive"
+            />
+          </CardBody>
+        </Card>
       )}
 
       {/* Per-package results */}
       {results.map((r, i) => (
-        <div key={i} className="rounded-lg overflow-hidden bg-surface border border-border-color">
-          <div style={{ padding: '0.625rem 0.875rem', borderBottom: '1px solid rgba(255,255,255,0.06)', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-            {(r.findings?.length ?? 0) === 0
-              ? <CheckCircle className="text-success" size={14} />
-              : <AlertTriangle className="text-critical" size={14} />}
-            <span style={{ fontSize: '0.8rem', fontFamily: 'var(--font-mono)', color: 'var(--fg)', fontWeight: 600 }}>{r.package}</span>
-            <span style={{ fontSize: '0.72rem', color: 'var(--color-muted)', marginLeft: 'auto' }}>{r.findings?.length ?? 0} findings</span>
-          </div>
-          {(r.findings ?? []).slice(0, 5).map((f, j) => (
-            <div key={j} style={{ padding: '0.5rem 0.875rem', borderBottom: '1px solid rgba(255,255,255,0.04)', display: 'flex', gap: '0.75rem', alignItems: 'flex-start' }}>
-              <span style={{ fontSize: '0.65rem', fontWeight: 700, fontFamily: 'var(--font-mono)', color: SEV_COLOR[f.severity] ?? 'var(--fg)', minWidth: 72, paddingTop: 2 }}>{f.severity}</span>
-              <div>
-                <p style={{ fontSize: '0.78rem', color: 'var(--fg)' }}>{f.title}</p>
-                <p style={{ fontSize: '0.7rem', color: 'var(--color-muted)', marginTop: 2 }}>{f.source}</p>
+        <Card key={i} className="cyber-lift overflow-hidden">
+          <CardHeader
+            icon={(r.findings?.length ?? 0) === 0 ? CheckCircle : AlertTriangle}
+            title={r.package}
+            description={`${r.findings?.length ?? 0} findings`}
+          />
+          <CardBody className="flex flex-col gap-0 p-0">
+            {(r.findings ?? []).slice(0, 5).map((f, j) => (
+              <div key={j} className="flex items-start gap-3 border-b border-border-color px-4 py-2.5 last:border-b-0">
+                <span className="w-[86px] shrink-0 pt-0.5">
+                  <StatusChip tone={f.severity} dot={false} />
+                </span>
+                <div className="min-w-0">
+                  <p className="m-0 text-[0.78rem] text-text-primary">{f.title}</p>
+                  <p className="m-0 mt-0.5 font-mono text-[0.68rem] text-text-muted">{f.source}</p>
+                </div>
               </div>
-            </div>
-          ))}
-          {(r.findings?.length ?? 0) > 5 && (
-            <p style={{ padding: '0.5rem 0.875rem', fontSize: '0.72rem', color: 'var(--color-muted)' }}>
-              + {(r.findings?.length ?? 0) - 5} more — use <code className="text-success">cwctl scan</code> for full output
-            </p>
-          )}
-        </div>
+            ))}
+            {(r.findings?.length ?? 0) > 5 && (
+              <p className="m-0 px-4 py-2.5 font-mono text-[0.7rem] text-text-muted">
+                + {(r.findings?.length ?? 0) - 5} more — use <code className="text-neon">cwctl scan</code> for full output
+              </p>
+            )}
+          </CardBody>
+        </Card>
       ))}
 
       {/* CLI hint */}
-      <div className="rounded-lg p-4 space-y-2 bg-surface border border-border-color">
-        <p className="text-xs font-mono font-bold text-text-secondary">CLI EQUIVALENT</p>
-        <code className="text-xs block text-success">cwctl scan . --recursive</code>
-        <code className="text-xs block text-success">cwctl scan . --recursive --depth=all --format json</code>
-      </div>
+      <Card className="cyber-lift">
+        <CardHeader title="Terminal equivalent" description="Same trace, no browser required" />
+        <CardBody className="flex flex-col gap-2">
+          {['cwctl scan . --recursive', 'cwctl scan . --recursive --depth=all --format json'].map(c => (
+            <code key={c} className="overflow-x-auto whitespace-nowrap rounded border border-border-color bg-bg-base px-3 py-2 font-mono text-[0.74rem] text-neon">
+              <span className="mr-2 select-none text-magenta">$</span>{c}
+            </code>
+          ))}
+        </CardBody>
+      </Card>
     </div>
   );
 }

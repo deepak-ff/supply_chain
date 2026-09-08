@@ -1,9 +1,11 @@
 import {
-  Shield, Search, RefreshCw, HardDrive, Bot, Activity, GitBranch, Bell,
+  Shield, Crosshair, RefreshCw, HardDrive, Bot, Activity, GitBranch, Bell,
   FolderOpen, Package, FileText, ListFilter, KeyRound, Download, Webhook,
   GitMerge, LayoutDashboard, FileCheck, PenTool,
-  Network, Puzzle, Globe2, Building2, Sparkles, Cpu,
-  ClipboardList, Terminal, SquareTerminal, Radar,
+  Network, Puzzle, Globe2, Building2, Sparkles, Cpu, Radar,
+  ClipboardList, Terminal, SquareTerminal, ScanSearch, Boxes,
+  ScrollText, Fingerprint, Route, Hammer, Satellite, FileDown, Zap, Siren,
+  Hexagon, Rocket, Swords,
 } from 'lucide-react';
 import type { ElementType } from 'react';
 
@@ -12,89 +14,126 @@ import type { ElementType } from 'react';
  * what the command palette offers, and what the top bar's breadcrumb shows.
  * Kept in a plain module (no React) so it can be imported from anywhere
  * without dragging the sidebar component along.
+ *
+ * NAMING — every label is a plain-language *synonym* of the old name,
+ * re-skinned with a cyber-ops flavor:
+ *
+ *   Dashboard    → Command Deck    (console / control panel)
+ *   Analyze      → Recon           (inspect / examine / probe)
+ *   Monitor      → Overwatch       (watch / surveil / guard)
+ *   Inventory    → Arsenal         (stockpile / vault / supply)
+ *   Policy       → Doctrine        (directive / protocol / mandate)
+ *   Integrations → Uplinks         (links / connectors / mesh)
+ *   Resources    → Archives        (store / records / vault)
+ *
+ * Routes (paths) are unchanged — only labels moved, so deep-links keep working.
  */
 
 export interface NavItem {
   label: string;
+  /** Short cyber tag shown as a chip in the sidebar (e.g. "LIVE", "AI"). */
+  tag?: string;
   icon: ElementType;
   path: string;
 }
 
 export interface NavSection {
   section: string;
+  /** One-line subtitle that explains the synonym in plain words. */
+  blurb: string;
   items: NavItem[];
 }
 
-export const STANDALONE: NavItem = { label: 'Dashboard', icon: LayoutDashboard, path: '/dashboard' };
+export const STANDALONE: NavItem = { label: 'Command Deck', icon: LayoutDashboard, path: '/dashboard' };
 
 export const NAV_SECTIONS: NavSection[] = [
   {
-    section: 'Analyze',
+    section: 'Recon',
+    blurb: 'inspect · probe · examine',
     items: [
-      { label: 'Scan Now',            icon: Search,       path: '/scan' },
-      { label: 'Scan Sessions',       icon: ClipboardList, path: '/sessions' },
-      { label: 'Recursive Scanning',  icon: RefreshCw,    path: '/recursive' },
-      { label: 'System Audit',        icon: HardDrive,    path: '/audit' },
-      { label: 'AI Security',         icon: Bot,          path: '/ai-security' },
-      { label: 'AI Advisory',         icon: Sparkles,     path: '/advisory' },
-      { label: 'AI Patch Agent',      icon: Cpu,          path: '/agents' },
-      { label: 'Terminal',            icon: SquareTerminal, path: '/terminal' },
+      { label: 'Threat Probe',    icon: ScanSearch,    path: '/scan',       tag: 'GO' },
+      { label: 'Sweep Logs',      icon: ClipboardList, path: '/sessions' },
+      { label: 'Deep Trace',      icon: RefreshCw,     path: '/recursive' },
+      { label: 'Host Inspect',    icon: HardDrive,     path: '/audit' },
+      { label: 'Neural Shield',   icon: Bot,           path: '/ai-security', tag: 'AI' },
+      { label: 'Oracle Brief',    icon: Sparkles,      path: '/advisory',    tag: 'AI' },
+      { label: 'Fix Operatives',  icon: Cpu,           path: '/agents',      tag: 'AI' },
+      { label: 'Strike Console',  icon: SquareTerminal, path: '/terminal' },
     ],
   },
   {
-    section: 'Monitor',
+    section: 'Overwatch',
+    blurb: 'watch · surveil · guard',
     items: [
-      { label: 'Live Monitoring',     icon: Activity,     path: '/monitor' },
-      { label: 'Log Monitor',         icon: Terminal,     path: '/logs' },
-      { label: 'Attack Surface',      icon: Network,      path: '/attack-surface' },
-      { label: 'Trust Score',         icon: Radar,        path: '/trust' },
-      { label: 'Dependency Drift',    icon: GitBranch,    path: '/drift' },
-      { label: 'Alerts',             icon: Bell,          path: '/alerts' },
+      { label: 'Live Sentinel',   icon: Activity,      path: '/monitor',    tag: 'LIVE' },
+      { label: 'Signal Logs',     icon: Terminal,      path: '/logs' },
+      { label: 'Exposure Map',    icon: Network,       path: '/attack-surface' },
+      { label: 'Trust Pulse',     icon: Radar,         path: '/trust' },
+      { label: 'Drift Radar',     icon: GitBranch,     path: '/drift' },
+      { label: 'Red Alerts',      icon: Siren,         path: '/alerts' },
     ],
   },
   {
-    section: 'Inventory',
+    section: 'Arsenal',
+    blurb: 'stockpile · vault · supply',
     items: [
-      { label: 'Projects',            icon: FolderOpen,   path: '/projects' },
-      { label: 'Dependencies',        icon: Package,      path: '/inventory' },
-      { label: 'SBOM',               icon: FileText,      path: '/sbom' },
+      { label: 'Missions',        icon: Rocket,        path: '/projects' },
+      { label: 'Supply Vault',    icon: Boxes,         path: '/inventory' },
+      { label: 'Manifest Ledger', icon: ScrollText,    path: '/sbom' },
     ],
   },
   {
-    section: 'Policy',
+    section: 'Doctrine',
+    blurb: 'directives · protocol · rules',
     items: [
-      { label: 'Policies',            icon: Shield,       path: '/policy' },
-      { label: 'Allowlist/Blocklist', icon: ListFilter,   path: '/allowlist' },
-      { label: 'Signatures',          icon: KeyRound,     path: '/sign' },
-      { label: 'Provenance',          icon: FileCheck,    path: '/provenance' },
-      { label: 'Sig. Authoring',      icon: PenTool,      path: '/intel/new' },
+      { label: 'Directives',      icon: Shield,        path: '/policy' },
+      { label: 'Permit / Deny',   icon: ListFilter,    path: '/allowlist' },
+      { label: 'Threat Prints',   icon: Fingerprint,   path: '/sign' },
+      { label: 'Origin Trail',    icon: Route,         path: '/provenance' },
+      { label: 'Print Forge',     icon: Hammer,        path: '/intel/new' },
     ],
   },
   {
-    section: 'Integrations',
+    section: 'Uplinks',
+    blurb: 'links · mesh · connectors',
     items: [
-      { label: 'Integrations',        icon: Puzzle,       path: '/integrations' },
-      { label: 'Exports',             icon: Download,     path: '/exports' },
-      { label: 'Webhooks',            icon: Webhook,      path: '/webhooks' },
-      { label: 'CI/CD',              icon: GitMerge,      path: '/cicd' },
+      { label: 'Mesh Links',      icon: Satellite,     path: '/integrations' },
+      { label: 'Intel Extracts',  icon: FileDown,      path: '/exports' },
+      { label: 'Tripwires',       icon: Zap,           path: '/webhooks' },
+      { label: 'Pipeline Sentry', icon: GitMerge,      path: '/cicd' },
     ],
   },
   {
-    section: 'Resources',
+    section: 'Archives',
+    blurb: 'records · intel · docs',
     items: [
-      { label: 'About ChainWarden', icon: Globe2,       path: '/welcome' },
-      { label: 'Enterprise',          icon: Building2,    path: '/enterprise' },
+      { label: 'About the Warden', icon: Hexagon,      path: '/welcome' },
+      { label: 'Command Tier',    icon: Swords,        path: '/enterprise' },
     ],
   },
 ];
 
+/** Keep tree-shaken legacy icon imports referenced so refactors stay type-safe. */
+export const _LEGACY_ICONS = {
+  Shield, Crosshair, HardDrive, Bot, Activity, GitBranch, Bell, FolderOpen,
+  Package, FileText, ListFilter, KeyRound, Download, Webhook, GitMerge,
+  FileCheck, PenTool, Network, Puzzle, Globe2, Building2, Sparkles, Cpu,
+  Radar, ClipboardList, Terminal, SquareTerminal,
+};
+
 /** Routes that are reachable but not listed in a nav section. */
 const EXTRA_CRUMBS: Record<string, { section: string; page: string }> = {
-  '/dependencies': { section: 'Inventory', page: 'Dependencies' },
-  '/policies':     { section: 'Policy',    page: 'Policies' },
-  '/enterprise':   { section: 'Resources', page: 'Enterprise' },
-  '/welcome':      { section: 'Resources', page: 'About ChainWarden' },
-  '/docs':         { section: 'Resources', page: 'Documentation' },
+  '/dependencies': { section: 'Arsenal',  page: 'Supply Vault' },
+  '/policies':     { section: 'Doctrine', page: 'Directives' },
+  '/enterprise':   { section: 'Archives', page: 'Command Tier' },
+  '/welcome':      { section: 'Archives', page: 'About the Warden' },
+  '/docs':         { section: 'Archives', page: 'Field Manual' },
+  '/risks':        { section: 'Archives', page: 'Hot Zones' },
+  '/graph':        { section: 'Archives', page: 'Blast Graph' },
+  '/settings':     { section: 'Archives', page: 'War-Room Tuning' },
+  '/intelligence': { section: 'Archives', page: 'Signal Intel' },
+  '/manual':       { section: 'Archives', page: 'Field Manual' },
+  '/api-reference': { section: 'Archives', page: 'API Reference' },
 };
 
 /**
@@ -110,6 +149,6 @@ export function resolveBreadcrumbs(path: string): { section: string; page: strin
     }
   }
   if (EXTRA_CRUMBS[path]) return EXTRA_CRUMBS[path];
-  if (path.startsWith('/sessions/')) return { section: 'Analyze', page: 'Scan Session' };
-  return { section: 'Overview', page: 'Dashboard' };
+  if (path.startsWith('/sessions/')) return { section: 'Recon', page: 'Sweep Detail' };
+  return { section: 'Overview', page: 'Command Deck' };
 }

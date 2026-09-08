@@ -8,13 +8,14 @@ import { getAuthStatus, logout, changePassword, getAIStatus } from '../lib/api'
 import { useUIStore } from '../store/ui'
 import { Input } from '../components/ui/input'
 import { Button } from '../components/ui/button'
+import { CyberKicker } from '../components/cyber/CyberViz'
 
 function SectionCard({ title, icon: Icon, children }: { title: string; icon: React.ElementType; children: React.ReactNode }) {
   return (
-    <div className="rounded-xl border border-border-color bg-surface p-5 shadow-sm">
+    <div className="cyber-lift rounded border border-border-color bg-surface p-5">
       <div className="flex items-center gap-2 mb-3">
-        <Icon size={14} className="text-text-muted" />
-        <h2 className="text-xs font-semibold uppercase tracking-wide text-text-muted">{title}</h2>
+        <Icon size={14} className="text-neon" />
+        <h2 className="font-mono text-[0.68rem] font-bold uppercase tracking-[0.18em] text-text-muted">{title}</h2>
       </div>
       {children}
     </div>
@@ -23,8 +24,8 @@ function SectionCard({ title, icon: Icon, children }: { title: string; icon: Rea
 
 function ComingSoonBadge() {
   return (
-    <span className="text-[0.65rem] font-medium px-2 py-0.5 rounded-full bg-surface-muted text-text-secondary shrink-0">
-      Coming soon
+    <span className="shrink-0 rounded-full border border-border-color bg-bg-base px-2 py-0.5 font-mono text-[0.62rem] font-bold uppercase tracking-widest text-text-muted">
+      Queued
     </span>
   )
 }
@@ -169,9 +170,9 @@ function ChangePasswordSection() {
         <Button
           type="submit"
           disabled={!canSubmit}
-          className="bg-primary-blue font-mono text-white hover:bg-primary-blue/90 text-xs" >
+          className="bg-neon font-mono text-void hover:shadow-glow text-xs font-bold uppercase tracking-widest" >
           {mutation.isPending ? <Loader size={13} className="animate-spin" /> : null}
-          {mutation.isPending ? 'Updating…' : 'Update Password'}
+          {mutation.isPending ? 'Re-sealing…' : 'Re-seal password'}
         </Button>
       </form>
     </SectionCard>
@@ -186,11 +187,11 @@ function NotificationsSection() {
         Configure Slack, Discord, or generic webhook alerts via <code className="font-mono text-xs">cwctl config set</code>.
       </p>
       <div className="flex gap-3 mt-2">
-        <button type="button" onClick={() => navigate('/webhooks')} className="text-xs text-primary-blue hover:underline">
-          Webhook settings →
+        <button type="button" onClick={() => navigate('/webhooks')} className="wd-hover border-none bg-transparent font-mono text-[0.72rem] font-bold text-neon hover:underline">
+          Tripwire rigging →
         </button>
-        <button type="button" onClick={() => navigate('/integrations')} className="text-xs text-primary-blue hover:underline">
-          Integrations →
+        <button type="button" onClick={() => navigate('/integrations')} className="wd-hover border-none bg-transparent font-mono text-[0.72rem] font-bold text-neon hover:underline">
+          Mesh links →
         </button>
       </div>
     </SectionCard>
@@ -198,6 +199,7 @@ function NotificationsSection() {
 }
 
 function ApiKeysSection() {
+  const navigate = useUIStore(s => s.navigate)
   const configured = (import.meta.env.VITE_API_KEY ?? '') !== ''
   return (
     <SectionCard title="API keys" icon={KeyRound}>
@@ -213,12 +215,17 @@ function ApiKeysSection() {
         <span
           className="text-[0.65rem] font-medium px-2 py-0.5 rounded-full shrink-0"
           style={{
-            background: configured ? 'var(--blue-light)' : 'var(--surface-muted)',
-            color: configured ? 'var(--primary-blue)' : 'var(--text-secondary)',
+            background: configured ? 'color-mix(in srgb, var(--neon) 12%, transparent)' : 'var(--surface-muted)',
+            color: configured ? 'var(--neon)' : 'var(--text-secondary)',
           }}
         >
           {configured ? 'Configured' : 'Not configured'}
         </span>
+      </div>
+      <div className="mt-2">
+        <button type="button" onClick={() => navigate('/api-reference')} className="wd-hover border-none bg-transparent font-mono text-[0.72rem] font-bold text-neon hover:underline">
+          REST API reference →
+        </button>
       </div>
     </SectionCard>
   )
@@ -235,7 +242,7 @@ function PlaceholderSection({
 }) {
   const Icon = icon
   return (
-    <div className="rounded-xl border border-dashed border-border-color bg-surface-muted/40 p-5">
+    <div className="rounded border border-dashed border-border-color bg-[color-mix(in_srgb,var(--surface-muted)_40%,transparent)] p-5">
       <div className="flex items-center justify-between mb-2">
         <div className="flex items-center gap-2">
           <Icon size={14} className="text-text-muted" />
@@ -286,8 +293,8 @@ function AIProviderSection() {
             <span
               className="text-[0.65rem] font-medium px-2 py-0.5 rounded-full shrink-0"
               style={{
-                background: ai.data?.configured ? 'var(--blue-light)' : 'var(--surface-muted)',
-                color: ai.data?.configured ? 'var(--primary-blue)' : 'var(--text-secondary)',
+                background: ai.data?.configured ? 'color-mix(in srgb, var(--neon) 12%, transparent)' : 'var(--surface-muted)',
+                color: ai.data?.configured ? 'var(--neon)' : 'var(--text-secondary)',
               }}
             >
               {ai.data?.configured ? 'Active' : 'Not configured'}
@@ -317,8 +324,11 @@ function AIProviderSection() {
 
 export function SettingsPage() {
   return (
-    <div className="space-y-4">
-      <h1 className="text-lg font-bold text-text-primary">Settings</h1>
+    <div className="flex flex-col gap-4">
+      <div>
+        <CyberKicker index="X-07" label="archives // war-room tuning" />
+        <h1 className="m-0 text-[1.15rem] font-bold tracking-tight text-text-primary">War-Room Tuning</h1>
+      </div>
 
       <GeneralSection />
       <AIProviderSection />
@@ -338,9 +348,9 @@ export function SettingsPage() {
       <PlaceholderSection
         title="Audit Log"
         icon={ScrollText}
-        reason="No persisted audit trail exists server-side yet. Recent activity (scans, findings) is visible on the System Audit page, but a durable, queryable audit log is not yet implemented." />
+        reason="No persisted audit trail exists server-side yet. Recent activity (scans, findings) is visible on the Host Inspect page, but a durable, queryable audit log is not yet implemented." />
 
-      <div className="rounded-xl border border-border-color bg-surface p-4 flex items-start gap-3 shadow-sm">
+      <div className="cyber-lift rounded border border-border-color bg-surface p-4 flex items-start gap-3">
         <Info size={14} className="text-text-muted mt-0.5" />
         <div className="space-y-0.5">
           <p className="text-xs text-text-secondary">

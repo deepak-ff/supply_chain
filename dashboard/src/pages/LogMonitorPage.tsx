@@ -6,12 +6,13 @@ import {
 } from 'lucide-react';
 import { getServerLogs, getDashboardActivity } from '../lib/api';
 import { Input } from '../components/ui/input';
+import { CyberKicker } from '../components/cyber/CyberViz';
 
 const LEVEL_COLORS: Record<string, string> = {
-  DEBUG: '#06B6D4',
-  INFO: '#22C55E',
-  WARN: '#D97706',
-  ERROR: '#DC2626',
+  DEBUG: '#00E5FF',
+  INFO: '#3BE88C',
+  WARN: '#FFB224',
+  ERROR: '#FF4D5E',
 };
 
 const LEVEL_ICONS: Record<string, typeof Info> = {
@@ -144,21 +145,22 @@ export function LogMonitorPage() {
 
   return (
     <div className="flex flex-col h-[calc(100vh-7rem)] max-w-[1600px] mx-auto">
+      <CyberKicker index="O-06" label="overwatch // signal logs" />
       {/* Header */}
       <div className="flex items-center justify-between mb-4">
         <div>
           <div className="flex items-center gap-2.5">
-            <Terminal size={20} className="text-primary-blue" />
-            <h1 className="text-xl font-bold text-text-primary m-0">Log Monitor</h1>
+            <Terminal size={20} className="text-neon drop-shadow-[0_0_8px_var(--neon)]" />
+            <h1 className="text-xl font-bold tracking-tight text-text-primary m-0">Signal Logs</h1>
             <span className={`flex items-center gap-1 px-2 py-0.5 rounded-full text-[0.62rem] font-medium ${
-              paused ? 'bg-warning/10 text-warning' : 'bg-success/10 text-success'
+              paused ? 'bg-[color-mix(in_srgb,var(--warning)_10%,transparent)] text-warning' : 'bg-[color-mix(in_srgb,var(--success)_10%,transparent)] text-success'
             }`}>
-              <span className={`w-1.5 h-1.5 rounded-full ${paused ? 'bg-warning' : 'bg-success animate-pulse'}`} />
+              <span className={`w-1.5 h-1.5 rounded-full ${paused ? 'bg-warning' : 'sonar bg-success text-success'}`} />
               {paused ? 'Paused' : 'Live'}
             </span>
           </div>
           <p className="text-sm text-text-secondary mt-1">
-            Server logs and scan activity events &middot; {combined.length} entries
+            Server exhaust + probe activity on one wire &middot; {combined.length} entries
           </p>
         </div>
         <div className="flex items-center gap-2">
@@ -166,8 +168,8 @@ export function LogMonitorPage() {
             onClick={() => setPaused(!paused)}
             className={`flex items-center gap-1.5 px-3 py-1.5 rounded-md text-[0.72rem] font-medium border cursor-pointer [font-family:inherit] transition-colors ${
               paused
-                ? 'bg-success/10 text-success border-success/30 hover:bg-success/20'
-                : 'bg-warning/10 text-warning border-warning/30 hover:bg-warning/20'
+                ? 'bg-[color-mix(in_srgb,var(--success)_10%,transparent)] text-success border-[color-mix(in_srgb,var(--success)_30%,transparent)] hover:bg-[color-mix(in_srgb,var(--success)_20%,transparent)]'
+                : 'bg-[color-mix(in_srgb,var(--warning)_10%,transparent)] text-warning border-[color-mix(in_srgb,var(--warning)_30%,transparent)] hover:bg-[color-mix(in_srgb,var(--warning)_20%,transparent)]'
             }`}
           >
             {paused ? <Play size={13} /> : <Pause size={13} />}
@@ -175,7 +177,7 @@ export function LogMonitorPage() {
           </button>
           <button
             onClick={exportLogs}
-            className="flex items-center gap-1.5 px-3 py-1.5 rounded-md text-[0.72rem] text-text-secondary border border-border-color hover:text-primary-blue hover:border-primary-blue/40 bg-transparent cursor-pointer [font-family:inherit] transition-colors" >
+            className="flex items-center gap-1.5 px-3 py-1.5 rounded-md text-[0.72rem] text-text-secondary border border-border-color hover:text-neon hover:border-neon hover:shadow-glow bg-transparent cursor-pointer [font-family:inherit] transition-colors" >
             <Download size={13} /> Export
           </button>
         </div>
@@ -184,12 +186,12 @@ export function LogMonitorPage() {
       {/* Stats strip */}
       <div className="grid grid-cols-2 md:grid-cols-4 gap-3 mb-4">
         {[
-          { label: 'Total Entries', value: stats.total, color: 'var(--primary-blue)' },
+          { label: 'Total Entries', value: stats.total, color: 'var(--neon)' },
           { label: 'Errors', value: stats.error, color: LEVEL_COLORS.ERROR },
           { label: 'Warnings', value: stats.warn, color: LEVEL_COLORS.WARN },
           { label: 'Info', value: stats.info, color: LEVEL_COLORS.INFO },
         ].map(s => (
-          <div key={s.label} className="rounded-lg border border-border-color bg-surface p-3">
+          <div key={s.label} className="cw-brackets cyber-panel rounded border border-border-color p-3">
             <p className="text-[0.62rem] text-text-muted uppercase tracking-wider m-0">{s.label}</p>
             <p className="text-xl font-bold font-mono m-0 mt-0.5" style={{ color: s.color }}>{s.value}</p>
           </div>
@@ -203,7 +205,7 @@ export function LogMonitorPage() {
           <Input
             value={search}
             onChange={e => setSearch(e.target.value)}
-            placeholder="Search logs..."
+            placeholder="grep the wire…"
             className="pl-8 h-8 text-xs" />
         </div>
         <div className="flex items-center gap-1.5">
@@ -214,8 +216,8 @@ export function LogMonitorPage() {
               onClick={() => setLevelFilter(level)}
               className={`px-2 py-1 rounded text-[0.68rem] border cursor-pointer [font-family:inherit] transition-colors ${
                 levelFilter === level
-                  ? 'bg-primary-blue/10 text-primary-blue border-primary-blue/30'
-                  : 'bg-transparent text-text-secondary border-border-color hover:border-text-muted'
+                  ? 'bg-[color-mix(in_srgb,var(--neon)_12%,transparent)] text-neon border-neon shadow-glow'
+                  : 'bg-transparent text-text-secondary border-border-color hover:border-neon hover:text-neon'
               }`}
             >
               {level === 'all' ? 'All' : level}
@@ -228,9 +230,9 @@ export function LogMonitorPage() {
       <div
         ref={scrollRef}
         onScroll={handleScroll}
-        className="flex-1 overflow-auto rounded-lg border border-border-color bg-[#0a0c0e] font-mono text-[0.72rem]" >
+        className="cyber-panel flex-1 overflow-auto rounded border border-border-color bg-[#05080F] font-mono text-[0.72rem] shadow-card" >
         {filtered.length === 0 ? (
-          <div className="flex flex-col items-center justify-center py-20 text-text-muted">
+          <div className="flex flex-col items-center justify-center py-20 text-slate-500">
             <Terminal size={32} className="mb-3 opacity-40" />
             <p className="text-sm font-medium">No log entries</p>
             <p className="text-xs mt-1">
@@ -254,7 +256,7 @@ export function LogMonitorPage() {
                     }`}
                     onClick={() => hasFields && setExpandedId(isExpanded ? null : entry.id)}
                   >
-                    <td className="px-3 py-1.5 w-[70px] text-text-muted whitespace-nowrap align-top">
+                    <td className="px-3 py-1.5 w-[70px] text-slate-500 whitespace-nowrap align-top">
                       <span title={entry.time}>{formatTime(entry.time)}</span>
                     </td>
                     <td className="px-2 py-1.5 w-[60px] whitespace-nowrap align-top">
@@ -268,7 +270,7 @@ export function LogMonitorPage() {
                     </td>
                     <td className="px-2 py-1.5 w-[50px] whitespace-nowrap align-top">
                       <span className={`text-[0.58rem] px-1 py-0.5 rounded ${
-                        entry.source === 'server' ? 'bg-primary-blue/10 text-primary-blue' : 'bg-[#7C3AED]/10 text-[#7C3AED]'
+                        entry.source === 'server' ? 'bg-[color-mix(in_srgb,var(--neon)_12%,transparent)] text-neon' : 'bg-[color-mix(in_srgb,var(--magenta)_12%,transparent)] text-magenta'
                       }`}>
                         {entry.source === 'server' ? 'SRV' : 'ACT'}
                       </span>
@@ -276,12 +278,12 @@ export function LogMonitorPage() {
                     <td className="px-2 py-1.5 text-[#E5E7EB] align-top">
                       <div>{entry.message}</div>
                       {isExpanded && hasFields && (
-                        <pre className="mt-1.5 p-2 rounded bg-white/[0.04] text-[0.65rem] text-text-muted overflow-x-auto">
+                        <pre className="mt-1.5 p-2 rounded bg-white/[0.04] text-[0.65rem] text-slate-400 overflow-x-auto">
                           {JSON.stringify(entry.fields, null, 2)}
                         </pre>
                       )}
                       {hasFields && !isExpanded && (
-                        <span className="text-text-muted text-[0.58rem] ml-2">
+                        <span className="text-slate-500 text-[0.58rem] ml-2">
                           <ChevronDown size={9} className="inline" /> {Object.keys(entry.fields!).length} fields
                         </span>
                       )}
@@ -307,7 +309,7 @@ export function LogMonitorPage() {
                 setAutoScroll(true);
                 if (scrollRef.current) scrollRef.current.scrollTop = scrollRef.current.scrollHeight;
               }}
-              className="text-primary-blue hover:underline bg-transparent border-none cursor-pointer [font-family:inherit] text-[0.65rem]" >
+              className="text-neon hover:underline bg-transparent border-none cursor-pointer [font-family:inherit] text-[0.65rem]" >
               Jump to latest
             </button>
           )}

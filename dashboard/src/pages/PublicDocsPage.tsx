@@ -21,9 +21,9 @@ const SECTIONS: Section[] = [
 
 function CodeBlock({ code, lang = 'bash' }: { code: string; lang?: string }) {
   return (
-    <div className="relative group rounded-lg border border-border-color bg-[var(--bg-base)] overflow-hidden">
+    <div className="cyber-panel relative group rounded border border-border-color bg-[var(--bg-base)] overflow-hidden">
       <div className="flex items-center justify-between px-4 py-2 border-b border-border-color bg-surface-muted">
-        <span className="text-[0.65rem] font-mono text-text-muted uppercase tracking-wider">{lang}</span>
+        <span className="text-[0.65rem] font-mono font-bold text-neon uppercase tracking-[0.18em]">{lang}</span>
         <CopyButton text={code} />
       </div>
       <pre className="p-4 overflow-x-auto text-[0.82rem] leading-relaxed font-mono text-text-primary">
@@ -36,7 +36,7 @@ function CodeBlock({ code, lang = 'bash' }: { code: string; lang?: string }) {
 function SectionHeading({ id, title }: { id: string; title: string }) {
   return (
     <h2 id={id} className="text-xl font-bold text-text-primary mt-14 mb-5 scroll-mt-20 flex items-center gap-2">
-      <span className="text-primary-blue">#</span> {title}
+      <span className="text-neon drop-shadow-[0_0_6px_var(--neon)]">#</span> {title}
     </h2>
   );
 }
@@ -44,7 +44,7 @@ function SectionHeading({ id, title }: { id: string; title: string }) {
 function ScreenshotCard({ src, alt, caption }: { src: string; alt: string; caption: string }) {
   return (
     <figure className="my-6">
-      <div className="rounded-xl border border-border-color overflow-hidden shadow-lg shadow-black/20">
+      <div className="cyber-panel rounded border border-border-color overflow-hidden">
         <img src={src} alt={alt} className="w-full block" loading="lazy" />
       </div>
       <figcaption className="text-center text-[0.75rem] text-text-muted mt-2.5 italic">{caption}</figcaption>
@@ -54,10 +54,10 @@ function ScreenshotCard({ src, alt, caption }: { src: string; alt: string; capti
 
 function FeatureCard({ icon: Icon, title, desc }: { icon: React.ElementType; title: string; desc: string }) {
   return (
-    <div className="rounded-lg border border-border-color bg-surface p-4 hover:border-primary-blue/40 transition-colors">
+    <div className="cyber-lift rounded border border-border-color bg-surface p-4 hover:border-neon transition-colors">
       <div className="flex items-start gap-3">
-        <div className="mt-0.5 p-1.5 rounded-md bg-primary-blue/10">
-          <Icon size={14} className="text-primary-blue" />
+        <div className="mt-0.5 p-1.5 rounded-md bg-[color-mix(in_srgb,var(--neon)_10%,transparent)]">
+          <Icon size={14} className="text-neon" />
         </div>
         <div>
           <p className="text-[0.82rem] font-semibold text-text-primary mb-0.5">{title}</p>
@@ -71,7 +71,7 @@ function FeatureCard({ icon: Icon, title, desc }: { icon: React.ElementType; tit
 function StatBadge({ value, label }: { value: string; label: string }) {
   return (
     <div className="text-center">
-      <p className="text-2xl font-bold text-text-primary">{value}</p>
+      <p className="m-0 font-mono text-2xl font-bold text-neon drop-shadow-[0_0_8px_var(--neon)]">{value}</p>
       <p className="text-[0.72rem] text-text-muted mt-0.5">{label}</p>
     </div>
   );
@@ -88,15 +88,15 @@ export function PublicDocsPage({ onNavigateHome }: { onNavigateHome?: () => void
   return (
     <div className="min-h-screen text-text-primary">
       {/* Header */}
-      <header className="border-b border-border-color bg-surface sticky top-0 z-50 backdrop-blur-sm bg-surface/90">
+      <header className="border-b border-border-color bg-surface sticky top-0 z-50 backdrop-blur-sm bg-[color-mix(in_srgb,var(--surface)_90%,transparent)]">
         <div className="max-w-6xl mx-auto px-6 py-3.5 flex items-center justify-between">
           <div className="flex items-center gap-3 cursor-pointer" onClick={onNavigateHome}>
             <img src="/logo-icon.png" alt="ChainWarden" className="h-7" />
             <span className="font-semibold text-text-primary text-[0.9rem]">ChainWarden</span>
-            <span className="text-text-muted text-[0.8rem]">/ Docs</span>
+            <span className="font-mono text-[0.72rem] font-bold uppercase tracking-[0.18em] text-neon">/ Field Manual</span>
           </div>
           <div className="flex items-center gap-4">
-            <a href={GITHUB_URL} target="_blank" rel="noopener noreferrer" className="text-[0.8rem] text-text-secondary hover:text-primary-blue transition-colors">
+            <a href={GITHUB_URL} target="_blank" rel="noopener noreferrer" className="text-[0.8rem] text-text-secondary hover:text-neon transition-colors">
               GitHub
             </a>
           </div>
@@ -113,7 +113,7 @@ export function PublicDocsPage({ onNavigateHome }: { onNavigateHome?: () => void
               onClick={() => scrollTo(s.id)}
               className={`w-full flex items-center gap-2 px-3 py-2 rounded-md text-[0.8rem] text-left transition-colors mb-0.5 bg-transparent cursor-pointer border-none [font-family:inherit] ${
                 activeSection === s.id
-                  ? 'bg-blue-light text-primary-blue'
+                  ? 'bg-[color-mix(in_srgb,var(--neon)_12%,transparent)] text-neon font-bold shadow-glow'
                   : 'text-text-secondary hover:bg-surface-muted hover:text-text-primary'
               }`}
             >
@@ -125,15 +125,15 @@ export function PublicDocsPage({ onNavigateHome }: { onNavigateHome?: () => void
           <div className="mt-6 pt-4 border-t border-border-color">
             <p className="text-[0.65rem] font-bold text-text-muted uppercase tracking-wider mb-3 px-2">Quick Links</p>
             <a href={`${GITHUB_URL}/blob/main/CONTRIBUTING.md`} target="_blank" rel="noopener noreferrer"
-              className="block px-3 py-1.5 text-[0.78rem] text-text-secondary hover:text-primary-blue transition-colors">
+              className="block px-3 py-1.5 text-[0.78rem] text-text-secondary hover:text-neon transition-colors">
               Contributing
             </a>
             <a href={`${GITHUB_URL}/blob/main/SECURITY.md`} target="_blank" rel="noopener noreferrer"
-              className="block px-3 py-1.5 text-[0.78rem] text-text-secondary hover:text-primary-blue transition-colors">
+              className="block px-3 py-1.5 text-[0.78rem] text-text-secondary hover:text-neon transition-colors">
               Security Policy
             </a>
             <a href={`${GITHUB_URL}/releases`} target="_blank" rel="noopener noreferrer"
-              className="block px-3 py-1.5 text-[0.78rem] text-text-secondary hover:text-primary-blue transition-colors">
+              className="block px-3 py-1.5 text-[0.78rem] text-text-secondary hover:text-neon transition-colors">
               Releases
             </a>
           </div>
@@ -148,21 +148,21 @@ export function PublicDocsPage({ onNavigateHome }: { onNavigateHome?: () => void
             <span className="text-text-primary">Documentation</span>
           </div>
 
-          <h1 className="text-3xl font-bold text-text-primary mb-3">ChainWarden Documentation</h1>
+          <h1 className="text-3xl font-bold tracking-tight text-text-primary mb-3">ChainWarden Field Manual</h1>
           <p className="text-text-secondary mb-6 text-[0.95rem] leading-relaxed max-w-2xl">
             Local-first, AI-native software supply chain security. Scan packages across nine ecosystems,
             generate SLSA Level 3 provenance, sign artifacts with Sigstore, and get AI-powered security advisories.
           </p>
 
           {/* Hero stats */}
-          <div className="rounded-xl border border-border-color bg-surface p-5 mb-8 flex items-center justify-around">
+          <div className="cw-brackets cyber-panel rounded border border-border-color p-5 mb-8 flex items-center justify-around">
             <StatBadge value="8" label="Scan Engines" />
             <div className="w-px h-10 bg-border-color" />
             <StatBadge value="9" label="Ecosystems" />
             <div className="w-px h-10 bg-border-color" />
             <StatBadge value="223+" label="Signatures" />
             <div className="w-px h-10 bg-border-color" />
-            <StatBadge value="30+" label="Dashboard Pages" />
+            <StatBadge value="40+" label="Dashboard Pages" />
           </div>
 
           {/* ─── Getting Started ─────────────────────────────────────── */}
@@ -197,15 +197,15 @@ export function PublicDocsPage({ onNavigateHome }: { onNavigateHome?: () => void
           </p>
           <CodeBlock code="cwctl serve" />
           <p className="text-text-muted text-[0.8rem] mt-2">
-            Open <code className="px-1 py-0.5 bg-surface-muted rounded text-[0.78rem]">http://localhost:8080</code> — SOC-style dashboard with security posture, scan history, attack surface mapping, and more.
+            Open <code className="px-1 py-0.5 bg-surface-muted rounded text-[0.78rem]">http://localhost:8080</code> — mission-control dashboard with threat posture, sweep history, exposure mapping, and more.
           </p>
 
           {/* ─── Dashboard ───────────────────────────────────────────── */}
           <SectionHeading id="dashboard" title="Dashboard" />
 
           <p className="text-text-secondary text-[0.88rem] mb-5 leading-relaxed">
-            The web dashboard provides a SOC-style visual interface for all ChainWarden features —
-            security posture grading, vulnerability trends, dependency topology, scan sessions with export,
+            The web dashboard provides a mission-control interface for all ChainWarden features —
+            security posture grading, vulnerability trends, dependency topology, sweep logs with export,
             and multi-workspace project management.
           </p>
 
@@ -214,31 +214,31 @@ export function PublicDocsPage({ onNavigateHome }: { onNavigateHome?: () => void
             alt="ChainWarden SOC Dashboard"
             caption="Security posture overview — severity cards, 30-day trend, donut chart, top risks, engine coverage, and fix rate" />
 
-          <h3 className="text-base font-semibold text-text-primary mt-8 mb-4">30+ pages across 7 categories</h3>
+          <h3 className="text-base font-semibold text-text-primary mt-8 mb-4">40+ pages across 6 sections</h3>
 
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 mb-8">
-            <FeatureCard icon={Shield} title="Vulnerability Scanner" desc="Multi-engine scan via registry, file upload, or remote SSH — with engine status bar" />
-            <FeatureCard icon={Layers} title="Attack Surface" desc="Force-directed dependency topology graph with risk-colored nodes and exposure breakdown" />
-            <FeatureCard icon={BarChart3} title="Scan Sessions" desc="Full scan history per workspace with JSON, CSV, and HTML report export" />
-            <FeatureCard icon={Eye} title="Live Monitoring" desc="Real-time file system and dependency change detection with auto-quarantine" />
+            <FeatureCard icon={Shield} title="Threat Probe" desc="Multi-engine probe via registry, file upload, or remote SSH — with engine status bar" />
+            <FeatureCard icon={Layers} title="Exposure Map" desc="Force-directed dependency topology graph with risk-colored nodes and exposure breakdown" />
+            <FeatureCard icon={BarChart3} title="Sweep Logs" desc="Full sweep history per workspace with JSON, CSV, and HTML report export" />
+            <FeatureCard icon={Eye} title="Live Sentinel" desc="Real-time file system and dependency change detection with auto-quarantine" />
             <FeatureCard icon={Cpu} title="AI Advisory & Patching" desc="AI-powered analysis, remediation guidance, and autonomous patch agent" />
             <FeatureCard icon={Globe2} title="Multi-Workspace" desc="Organize projects into workspaces with independent scan histories and topology" />
             <FeatureCard icon={Lock} title="Policy & Signing" desc="Policy-as-code, allowlist/blocklist, Sigstore signing, provenance tracking" />
             <FeatureCard icon={Package} title="SBOM & Inventory" desc="CycloneDX + SPDX generation, package inventory with risk grades" />
             <FeatureCard icon={Zap} title="Integrations" desc="Webhook alerts (Slack, Discord, HTTP), CI/CD pipelines, report exports" />
-            <FeatureCard icon={Terminal} title="Web Terminal" desc="Built-in terminal for running cwctl commands directly from the dashboard" />
-            <FeatureCard icon={Activity} title="Dependency Drift" desc="30-day vulnerability trend chart with severity breakdown" />
-            <FeatureCard icon={FileText} title="Signature Authoring" desc="Detection signature wizard, validation, and community sharing" />
+            <FeatureCard icon={Terminal} title="Strike Console" desc="Built-in terminal for running cwctl commands directly from the dashboard" />
+            <FeatureCard icon={Activity} title="Drift Radar" desc="30-day vulnerability trend chart with severity breakdown" />
+            <FeatureCard icon={FileText} title="Print Forge" desc="Detection signature wizard, validation, and community sharing" />
           </div>
 
           <ScreenshotCard
             src="/docs/images/attack-surface.png"
-            alt="Attack Surface — Dependency Topology"
-            caption="Attack surface mapping — dependency topology graph with exposure breakdown by ecosystem" />
+            alt="Exposure Map — Dependency Topology"
+            caption="Exposure mapping — dependency topology graph with exposure breakdown by ecosystem" />
 
           <ScreenshotCard
             src="/docs/images/scan-now.png"
-            alt="Vulnerability Scanner"
+            alt="Threat Probe"
             caption="Multi-engine vulnerability scanner with registry, upload, and remote scan tabs" />
 
           <h3 className="text-base font-semibold text-text-primary mt-8 mb-3">Default credentials</h3>
@@ -277,8 +277,8 @@ export function PublicDocsPage({ onNavigateHome }: { onNavigateHome?: () => void
                   ['cwctl doctor --fix', 'Diagnose and auto-repair issues'],
                   ['cwctl stats', 'Signature statistics and coverage'],
                 ].map(([cmd, desc]) => (
-                  <tr key={cmd} className="border-b border-border-color/50">
-                    <td className="py-2.5 pr-4 text-primary-blue whitespace-nowrap">{cmd}</td>
+                  <tr key={cmd} className="border-b border-[color-mix(in_srgb,var(--border-color)_50%,transparent)]">
+                    <td className="py-2.5 pr-4 text-neon font-bold whitespace-nowrap">{cmd}</td>
                     <td className="py-2.5 text-text-secondary font-sans">{desc}</td>
                   </tr>
                 ))}
@@ -315,7 +315,7 @@ export function PublicDocsPage({ onNavigateHome }: { onNavigateHome?: () => void
                   <p className="text-[0.73rem] text-text-muted">{desc}</p>
                 </div>
                 <span className={`text-[0.65rem] px-2 py-0.5 rounded-full font-medium shrink-0 ${
-                  always ? 'bg-green-500/15 text-green-400' : 'bg-yellow-500/15 text-yellow-400'
+                  always ? 'bg-[color-mix(in_srgb,var(--success)_12%,transparent)] text-success border border-[color-mix(in_srgb,var(--success)_30%,transparent)]' : 'bg-[color-mix(in_srgb,var(--warning)_12%,transparent)] text-warning border border-[color-mix(in_srgb,var(--warning)_30%,transparent)]'
                 }`}>
                   {always ? 'always runs' : 'optional'}
                 </span>
@@ -439,16 +439,16 @@ jobs:
                 </tr>
               </thead>
               <tbody>
-                <tr className="border-b border-border-color/50">
-                  <td className="py-2.5 pr-4 font-mono text-green-400">0</td>
+                <tr className="border-b border-[color-mix(in_srgb,var(--border-color)_50%,transparent)]">
+                  <td className="py-2.5 pr-4 font-mono font-bold text-success">0</td>
                   <td className="py-2.5 text-text-secondary">Clean — no findings at or above threshold</td>
                 </tr>
-                <tr className="border-b border-border-color/50">
-                  <td className="py-2.5 pr-4 font-mono text-yellow-400">1</td>
+                <tr className="border-b border-[color-mix(in_srgb,var(--border-color)_50%,transparent)]">
+                  <td className="py-2.5 pr-4 font-mono font-bold text-warning">1</td>
                   <td className="py-2.5 text-text-secondary">Error — tool failure, network error, invalid args</td>
                 </tr>
-                <tr className="border-b border-border-color/50">
-                  <td className="py-2.5 pr-4 font-mono text-red-400">2</td>
+                <tr className="border-b border-[color-mix(in_srgb,var(--border-color)_50%,transparent)]">
+                  <td className="py-2.5 pr-4 font-mono font-bold text-critical">2</td>
                   <td className="py-2.5 text-text-secondary">Policy violation — findings at or above <code className="px-1 py-0.5 bg-surface-muted rounded text-[0.78rem]">--fail-on</code> threshold</td>
                 </tr>
               </tbody>
@@ -460,9 +460,9 @@ jobs:
             <div className="flex flex-col sm:flex-row items-center justify-between gap-4 text-[0.78rem] text-text-muted">
               <span>&copy; 2026 ChainWarden — Apache 2.0 Licensed</span>
               <div className="flex gap-4">
-                <a href={GITHUB_URL} target="_blank" rel="noopener noreferrer" className="hover:text-primary-blue transition-colors">GitHub</a>
-                <a href={`${GITHUB_URL}/blob/main/LICENSE`} target="_blank" rel="noopener noreferrer" className="hover:text-primary-blue transition-colors">License</a>
-                <a href={`${GITHUB_URL}/blob/main/SECURITY.md`} target="_blank" rel="noopener noreferrer" className="hover:text-primary-blue transition-colors">Security</a>
+                <a href={GITHUB_URL} target="_blank" rel="noopener noreferrer" className="hover:text-neon transition-colors">GitHub</a>
+                <a href={`${GITHUB_URL}/blob/main/LICENSE`} target="_blank" rel="noopener noreferrer" className="hover:text-neon transition-colors">License</a>
+                <a href={`${GITHUB_URL}/blob/main/SECURITY.md`} target="_blank" rel="noopener noreferrer" className="hover:text-neon transition-colors">Security</a>
               </div>
             </div>
           </div>

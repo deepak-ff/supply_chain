@@ -1,12 +1,16 @@
-import { Bot, Radio, Trash2 } from 'lucide-react';
+import { Bot, Radio, Trash2, Cpu } from 'lucide-react';
 import { useAgentStream } from '../hooks/useAgentStream';
+import { Card, CardHeader, CardBody } from '../components/ui/card';
+import { EmptyState } from '../components/EmptyState';
+import { CyberKicker } from '../components/cyber/CyberViz';
+import { cn } from '../components/ui/utils';
 
-const TYPE_COLOR: Record<string, string> = {
-  start: 'var(--color-indigo)',
-  step:  'var(--color-info)',
-  patch: 'var(--color-safe)',
-  done:  'var(--color-safe)',
-  error: 'var(--color-critical)',
+const TYPE_TONE: Record<string, string> = {
+  start: 'text-neon',
+  step: 'text-teal',
+  patch: 'text-success',
+  done: 'text-success',
+  error: 'text-critical',
 };
 
 function relTime(s: string) {
@@ -31,89 +35,122 @@ export function AgentsPage() {
                  !latestSessionEvents.some(e => e.type === 'done' || e.type === 'error');
 
   return (
-    <div className="space-y-6">
-      <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-xl font-bold font-mono text-text-primary">AI Patch Agents</h1>
-          <p className="text-sm mt-0.5 text-text-secondary">
-            Live feed of autonomous patch agent sessions.
-          </p>
-        </div>
-        <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-          <span style={{
-            width: 8, height: 8, borderRadius: '50%',
-            background: connected ? 'var(--color-safe)' : 'var(--color-critical)',
-            display: 'inline-block',
-          }} />
-          <span style={{ fontSize: '0.72rem', fontFamily: 'var(--font-mono)', color: 'var(--color-muted)' }}>
-            {connected ? 'LIVE' : 'DISCONNECTED'}
+    <div className="flex flex-col gap-5">
+      <div>
+        <CyberKicker index="R-04" label="recon // fix operatives" />
+        <div className="flex flex-wrap items-center justify-between gap-2">
+          <div>
+            <h1 className="m-0 flex items-center gap-2 text-[1.15rem] font-bold tracking-tight text-text-primary">
+              <Cpu size={18} className="text-magenta drop-shadow-[0_0_8px_var(--magenta)]" aria-hidden="true" />
+              Fix Operatives
+            </h1>
+            <p className="m-0 mt-1 text-[0.78rem] text-text-secondary">
+              Live feed of autonomous patch-operative sessions.
+            </p>
+          </div>
+          <span className={cn(
+            'flex items-center gap-2 rounded border px-2.5 py-1.5 font-mono text-[0.66rem] font-bold tracking-widest',
+            connected
+              ? 'border-[color-mix(in_srgb,var(--success)_30%,transparent)] bg-[color-mix(in_srgb,var(--success)_8%,transparent)] text-success'
+              : 'border-[color-mix(in_srgb,var(--critical)_30%,transparent)] bg-[color-mix(in_srgb,var(--critical)_8%,transparent)] text-critical',
+          )}>
+            <span className={cn('h-1.5 w-1.5 rounded-full', connected ? 'sonar bg-success text-success' : 'bg-critical')} aria-hidden="true" />
+            {connected ? 'UPLINK LIVE' : 'UPLINK DOWN'}
           </span>
         </div>
       </div>
 
       {/* Session status */}
-      <div className="rounded-lg p-5" style={{ background: 'var(--surface)', border: `1px solid ${active ? 'rgba(0,255,135,0.2)' : 'rgba(255,255,255,0.06)'}` }}>
-        <div className="flex items-center gap-3 mb-2">
+      <Card className="cyber-lift">
+        <CardBody className="flex items-center gap-3">
           {active
-            ? <Radio className="text-success" size={16} />
-            : <Bot className="text-text-secondary" size={16} />}
-          <span className="text-sm font-mono font-bold" style={{ color: active ? 'var(--color-safe)' : 'var(--color-muted)' }}>
-            {active ? 'AGENT SESSION RUNNING' : 'NO ACTIVE AGENT SESSION'}
-          </span>
-        </div>
-        <p className="text-xs text-text-secondary">
-          {active
-            ? 'Patch agent is active. Events stream below in real time.'
-            : 'Start a session from the CLI. Events will appear here automatically.'}
-        </p>
-        {error && <p className="text-xs mt-2 text-critical">{error}</p>}
-      </div>
+            ? <Radio size={18} className="shrink-0 text-success drop-shadow-[0_0_8px_var(--success)]" />
+            : <Bot size={18} className="shrink-0 text-text-muted" />}
+          <div className="min-w-0">
+            <p className={cn('m-0 font-mono text-[0.78rem] font-bold tracking-widest', active ? 'text-success' : 'text-text-muted')}>
+              {active ? '// OPERATIVE IN THE FIELD' : '// NO OPERATIVE DEPLOYED'}
+            </p>
+            <p className="m-0 mt-0.5 text-[0.74rem] text-text-secondary">
+              {active
+                ? 'Patch operative is active. Events stream below in real time.'
+                : 'Deploy one from the CLI — events will appear here automatically.'}
+            </p>
+            {error && <p className="m-0 mt-1 font-mono text-[0.72rem] text-critical">{error}</p>}
+          </div>
+        </CardBody>
+      </Card>
 
       {/* Live event feed */}
-      {events.length > 0 && (
-        <div className="rounded-lg overflow-hidden bg-surface border border-border-color">
-          <div style={{ padding: '0.5rem 0.875rem', borderBottom: '1px solid rgba(255,255,255,0.06)', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-            <span style={{ fontSize: '0.7rem', fontFamily: 'var(--font-mono)', color: 'var(--color-muted)', fontWeight: 600 }}>
-              AGENT EVENT LOG ({events.length})
-            </span>
-            <button onClick={clear} style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--color-muted)', display: 'flex', alignItems: 'center', gap: 4 }}>
-              <Trash2 size={12} />
-              <span style={{ fontSize: '0.7rem', fontFamily: 'var(--font-mono)' }}>clear</span>
-            </button>
-          </div>
-          <div style={{ maxHeight: '320px', overflowY: 'auto' }}>
+      {events.length > 0 ? (
+        <Card className="cyber-lift">
+          <CardHeader
+            title={`Operative event log · ${events.length}`}
+            description="Newest findings first"
+            action={
+              <button
+                type="button"
+                onClick={clear}
+                className="wd-hover flex items-center gap-1 rounded border border-transparent bg-transparent px-2 py-1 font-mono text-[0.66rem] font-bold uppercase tracking-widest text-text-muted hover:border-neon hover:text-neon"
+              >
+                <Trash2 size={12} /> purge
+              </button>
+            }
+          />
+          <CardBody className="max-h-[340px] overflow-y-auto p-0">
             {events.map((ev, i) => (
-              <div key={i} style={{ padding: '0.5rem 0.875rem', borderBottom: '1px solid rgba(255,255,255,0.03)', display: 'flex', gap: '0.75rem', alignItems: 'flex-start' }}>
-                <span style={{
-                  fontSize: '0.65rem', fontWeight: 700, fontFamily: 'var(--font-mono)',
-                  color: TYPE_COLOR[ev.type] ?? 'var(--fg)',
-                  minWidth: 52, paddingTop: 2, textTransform: 'uppercase',
-                }}>{ev.type}</span>
-                <div className="flex-1">
-                  <p style={{ fontSize: '0.78rem', color: 'var(--fg)' }}>{ev.message}</p>
+              <div
+                key={i}
+                className={cn('flex items-start gap-3 px-4 py-2', i < events.length - 1 && 'border-b border-border-color')}
+              >
+                <span className={cn('w-[52px] shrink-0 pt-0.5 font-mono text-[0.64rem] font-bold uppercase', TYPE_TONE[ev.type] ?? 'text-text-primary')}>
+                  {ev.type}
+                </span>
+                <div className="min-w-0 flex-1">
+                  <p className="m-0 text-[0.78rem] leading-snug text-text-primary">{ev.message}</p>
                   {ev.package && (
-                    <p style={{ fontSize: '0.7rem', color: 'var(--color-muted)', marginTop: 2 }}>
+                    <p className="m-0 mt-0.5 truncate font-mono text-[0.7rem] text-neon">
                       {ev.package}{ev.version ? `@${ev.version}` : ''}
                     </p>
                   )}
                 </div>
-                <span style={{ fontSize: '0.65rem', color: 'var(--color-muted)', fontFamily: 'var(--font-mono)', whiteSpace: 'nowrap' }}>
+                <span className="shrink-0 whitespace-nowrap font-mono text-[0.64rem] text-text-muted">
                   {relTime(ev.occurred_at)}
                 </span>
               </div>
             ))}
-          </div>
-        </div>
+          </CardBody>
+        </Card>
+      ) : (
+        <Card className="cyber-lift">
+          <CardBody>
+            <EmptyState
+              icon={Bot}
+              title="No operative traffic yet"
+              description="Deploy an operative from the CLI and watch it work here."
+              command="cwctl patch . --dry-run"
+            />
+          </CardBody>
+        </Card>
       )}
 
       {/* CLI hint */}
-      <div className="rounded-lg p-4 space-y-2 bg-surface border border-border-color">
-        <p className="text-xs font-mono font-bold text-text-secondary">START A PATCH SESSION</p>
-        <code className="text-xs block text-success">cwctl patch .                      # patch current project</code>
-        <code className="text-xs block text-success">cwctl patch . --severity=high      # high+ findings only</code>
-        <code className="text-xs block text-success">cwctl patch . --dry-run            # preview proposed changes</code>
-        <p className="text-xs mt-1 text-text-secondary">Requires an AI provider API key. See Settings for configuration.</p>
-      </div>
+      <Card className="cyber-lift">
+        <CardHeader title="Deployment orders" description="Launch an operative from your terminal" />
+        <CardBody className="flex flex-col gap-2">
+          {[
+            'cwctl patch .                      # patch current project',
+            'cwctl patch . --severity=high      # high+ findings only',
+            'cwctl patch . --dry-run            # preview proposed changes',
+          ].map(c => (
+            <code key={c} className="overflow-x-auto whitespace-pre rounded border border-border-color bg-bg-base px-3 py-2 font-mono text-[0.74rem] text-neon">
+              <span className="mr-2 select-none text-magenta">$</span>{c}
+            </code>
+          ))}
+          <p className="m-0 mt-1 font-mono text-[0.68rem] text-text-muted">
+            {'// requires an AI provider key — see Settings to arm it.'}
+          </p>
+        </CardBody>
+      </Card>
     </div>
   );
 }

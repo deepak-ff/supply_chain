@@ -8,9 +8,10 @@ import { triggerScan, scanUpload, getJobStatus, triggerRemoteScan, getRemoteScan
 import { FindingsTable } from '../components/FindingsTable';
 import {
   Search, Upload, AlertCircle, ShieldCheck, CheckCircle, XCircle, Loader,
-  Server, Lock, Clock, FolderOpen, Package, RefreshCw,
+  Server, Lock, Clock, FolderOpen, Package, RefreshCw, Crosshair, ScanSearch,
 } from 'lucide-react';
 import type { EngineStatus, ScanSummary, ProjectScanResult } from '../types/api';
+import { CyberKicker } from '../components/cyber/CyberViz';
 import { useSessionStore } from '../store/sessions';
 import { useWorkspaceStore } from '../store/workspace';
 import { Card, CardHeader, CardBody } from '../components/ui/card';
@@ -42,9 +43,9 @@ const SUMMARY_TILES: Array<{
   fill: string; swatch: string;
 }> = [
   { key: 'critical', label: 'Critical', accent: 'critical', fill: 'var(--critical)', swatch: 'bg-critical' },
-  { key: 'high',     label: 'High',     accent: 'amber',    fill: 'var(--amber)',    swatch: 'bg-amber' },
-  { key: 'medium',   label: 'Medium',   accent: 'warning',  fill: 'var(--warning)',  swatch: 'bg-warning' },
-  { key: 'low',      label: 'Low',      accent: 'teal',     fill: 'var(--teal)',     swatch: 'bg-teal' },
+  { key: 'high',     label: 'High',     accent: 'warning',  fill: 'var(--warning)',  swatch: 'bg-warning' },
+  { key: 'medium',   label: 'Medium',   accent: 'amber',    fill: 'var(--amber)',    swatch: 'bg-amber' },
+  { key: 'low',      label: 'Low',      accent: 'primary',  fill: 'var(--neon)',     swatch: 'bg-neon' },
 ];
 
 // ── shared styling ─────────────────────────────────────────────────────────
@@ -90,9 +91,9 @@ function SummaryTiles({ summary }: { summary: ScanSummary }) {
   return (
     <div className="grid grid-cols-2 gap-5 sm:grid-cols-3 lg:grid-cols-5">
       {SUMMARY_TILES.map((t) => (
-        <StatTile key={t.key} label={t.label} value={summary[t.key]} accent={t.accent} />
+        <StatTile key={t.key} label={t.label} value={summary[t.key]} accent={t.accent} className="cyber-lift" />
       ))}
-      <StatTile label="Total findings" value={summary.total} />
+      <StatTile label="Total findings" value={summary.total} className="cyber-lift" />
     </div>
   );
 }
@@ -177,7 +178,7 @@ function ScanHistory({ onRescan }: { onRescan: (eco: string, name: string, ver: 
       <CardHeader
         icon={Clock}
         title="Recent scans"
-        description="Last ten results recorded by the server — pick one to re-run it." />
+        description="Last ten probe results on record — pick one to re-run it." />
       <DataTable
         columns={columns}
         rows={results}
@@ -188,8 +189,8 @@ function ScanHistory({ onRescan }: { onRescan: (eco: string, name: string, ver: 
         initialSort={{ key: 'scanned', dir: 'desc' }}
         empty={{
           icon: Search,
-          title: 'No scan results yet',
-          description: 'Pick a registry package above, or upload an archive — then run a full scan.',
+          title: 'No probe results yet',
+          description: 'Pick a registry package above, or upload an archive — then run a full probe.',
           command: 'cwctl scan .',
         }}
       />
@@ -212,7 +213,7 @@ function ProjectResults({ result, origin }: { result: ProjectScanResult; origin:
   return (
     <div className="space-y-5">
       <Card>
-        <CardHeader icon={FolderOpen} title="Scan target" />
+        <CardHeader icon={FolderOpen} title="Probe target" />
         <CardBody className="flex flex-wrap gap-x-10 gap-y-3">{origin}</CardBody>
       </Card>
 
@@ -225,8 +226,8 @@ function ProjectResults({ result, origin }: { result: ProjectScanResult; origin:
       )}
 
       {bars.length > 0 && (
-        <Card>
-          <CardHeader title="Findings by engine" description="Attributed across the scanned manifests" />
+        <Card className="cyber-lift">
+          <CardHeader title="Findings by engine" description="Attributed across the probed manifests" />
           <CardBody>
             <ResponsiveContainer width="100%" height={Math.max(140, bars.length * 30)}>
               <BarChart data={bars} layout="vertical" margin={{ top: 4, right: 16, left: 8, bottom: 4 }}>
@@ -234,7 +235,7 @@ function ProjectResults({ result, origin }: { result: ProjectScanResult; origin:
                 <XAxis type="number" {...axisProps} />
                 <YAxis type="category" dataKey="name" {...axisProps} width={84} />
                 <RechartsTooltip {...barTooltipProps} />
-                <Bar dataKey="count" fill="var(--chart-1)" radius={[0, 4, 4, 0]} barSize={16} isAnimationActive animationDuration={200} />
+                <Bar dataKey="count" fill="var(--neon)" radius={[0, 4, 4, 0]} barSize={16} isAnimationActive animationDuration={200} />
               </BarChart>
             </ResponsiveContainer>
           </CardBody>
@@ -496,9 +497,10 @@ export function ScanPage() {
   return (
     <div className="space-y-5">
       <header>
-        <h1 className="m-0 text-[1.05rem] font-semibold text-text-primary">Vulnerability Scanner</h1>
+        <CyberKicker index="R-01" label="recon // threat probe" />
+        <h1 className="m-0 flex items-center gap-2 text-[1.15rem] font-bold tracking-tight text-text-primary"><Crosshair size={18} className="text-neon" aria-hidden="true" /> Threat Probe</h1>
         <p className="m-0 mt-1.5 text-[0.78rem] text-text-secondary">
-          Full 8-engine scan — OSV · Grype · Semgrep · Trivy · Behavioral · Malware · AI-Model · MCP
+          Full 8-engine probe across the arsenal — every engine fires concurrently
         </p>
       </header>
 
@@ -526,10 +528,10 @@ export function ScanPage() {
 
       {/* Registry scan form */}
       {tab === 'registry' && (
-        <Card>
+        <Card className="cyber-lift">
           <CardHeader
             title="Registry package"
-            description="Downloads the package from its registry and runs all engines against the real files." />
+            description="Pulls the package from its registry and fires all engines at the real files." />
           <CardBody className="space-y-4">
             <div className="grid grid-cols-1 gap-3 md:grid-cols-3">
               <div>
@@ -573,7 +575,7 @@ export function ScanPage() {
               className={PRIMARY_BTN}
             >
               {isPending ? <Loader size={14} className="animate-spin" /> : <Search size={14} />}
-              {isPending ? 'Scanning…' : 'Run full scan'}
+              {isPending ? 'Probing…' : 'Run full probe'}
             </button>
           </CardBody>
         </Card>
@@ -581,10 +583,10 @@ export function ScanPage() {
 
       {/* Upload form */}
       {tab === 'upload' && (
-        <Card>
+        <Card className="cyber-lift">
           <CardHeader
             title="Upload project"
-            description="Upload a project archive (.tar.gz, .zip) or a single file. All engines run against the extracted contents." />
+            description="Drop a project archive (.tar.gz, .zip) or a single file. All engines fire at the extracted contents." />
           <CardBody className="space-y-4">
             <div
               onDragOver={(e) => { e.preventDefault(); setDragOver(true); }}
@@ -598,8 +600,8 @@ export function ScanPage() {
               className={cn(
                 'wd-hover cursor-pointer rounded border-2 border-dashed p-8 text-center',
                 dragOver
-                  ? 'border-success bg-[color-mix(in_srgb,var(--success)_6%,transparent)]'
-                  : 'border-border-color hover:border-text-muted hover:bg-surface-muted/50',
+                  ? 'border-neon bg-[color-mix(in_srgb,var(--neon)_8%,transparent)] shadow-glow'
+                  : 'border-border-color hover:border-neon hover:bg-[color-mix(in_srgb,var(--surface-muted)_50%,transparent)]',
               )}
             >
               <input
@@ -634,7 +636,7 @@ export function ScanPage() {
               className={PRIMARY_BTN}
             >
               {uploadIsPending ? <Loader size={14} className="animate-spin" /> : <Upload size={14} />}
-              {uploadIsPending ? 'Scanning…' : 'Scan uploaded file'}
+              {uploadIsPending ? 'Probing…' : 'Probe uploaded file'}
             </button>
 
             {uploadError && <Alert tone="critical">{(uploadError as Error).message}</Alert>}
@@ -644,7 +646,7 @@ export function ScanPage() {
 
       {/* Remote (SSH) scan form */}
       {tab === 'remote' && (
-        <Card>
+        <Card className="cyber-lift">
           <CardHeader
             title="Remote host"
             description="Connects over SSH, discovers dependency manifests and pulls them to scan locally. Nothing is installed on the target — only read-only find/cat commands run remotely." />
@@ -721,7 +723,7 @@ export function ScanPage() {
               className={PRIMARY_BTN}
             >
               {remoteIsPending ? <Loader size={14} className="animate-spin" /> : <Server size={14} />}
-              {remoteIsPending ? 'Scanning…' : 'Scan remote host'}
+              {remoteIsPending ? 'Probing…' : 'Probe remote host'}
             </button>
 
             {remoteError && <Alert tone="critical">{(remoteError as Error).message}</Alert>}
@@ -738,7 +740,7 @@ export function ScanPage() {
           origin={
             <>
               <Field label="Source">{uploadFile?.name ?? 'Uploaded archive'}</Field>
-              <Field label="Scan type">Upload / project scan</Field>
+              <Field label="Probe type">Upload / project probe</Field>
               {uploadResult.root_dir && <Field label="Scanned directory">{uploadResult.root_dir}</Field>}
               <Field label="Manifests found">{uploadResult.manifests.length}</Field>
             </>
@@ -754,7 +756,7 @@ export function ScanPage() {
             <>
               <Field label="Remote host">{remoteTarget}</Field>
               <Field label="Remote path">{remotePath || '~ (home)'}</Field>
-              <Field label="Scan type">Remote SSH scan</Field>
+              <Field label="Probe type">Remote SSH probe</Field>
               {remoteResult.root_dir && <Field label="Scanned directory">{remoteResult.root_dir}</Field>}
               <Field label="Manifests found">{remoteResult.manifests.length}</Field>
             </>
@@ -768,8 +770,8 @@ export function ScanPage() {
           <Card>
             <CardBody>
               <EmptyState
-                icon={Search}
-                title="Nothing scanned yet in this view"
+                icon={ScanSearch}
+                title="Nothing probed yet in this view"
                 description="Pick a registry package, upload an archive, or point at a remote host above."
                 command="cwctl scan ." />
             </CardBody>
@@ -784,11 +786,11 @@ export function ScanPage() {
       {result && (
         <div className="space-y-5">
           <Card>
-            <CardHeader icon={Package} title="Scan target" />
+            <CardHeader icon={Package} title="Probe target" />
             <CardBody className="flex flex-wrap gap-x-10 gap-y-3">
               <Field label="Package">{result.package}</Field>
               <Field label="Ecosystem">{ecosystem}</Field>
-              <Field label="Scan type">Registry package</Field>
+              <Field label="Probe type">Registry package</Field>
               {result.sha256 && <Field label="SHA-256">{result.sha256}</Field>}
               <div className="min-w-0">
                 <span className="block font-mono text-[0.62rem] uppercase tracking-wide text-text-muted">Status</span>
@@ -808,8 +810,8 @@ export function ScanPage() {
                 icon={RefreshCw}
                 title="Engines"
                 description={result.downloaded
-                  ? 'Artifact downloaded — full scan'
-                  : 'Download failed — OSV + behavioral only'}
+                  ? 'Artifact pulled — full probe'
+                  : 'Pull failed — OSV + behavioral only'}
               />
               <CardBody>
                 <EngineStatusBar engines={result.engines} />
@@ -829,10 +831,10 @@ export function ScanPage() {
                       <PieChart>
                         <Pie
                           data={sevData} dataKey="value" cx="50%" cy="50%"
-                          innerRadius={38} outerRadius={58} paddingAngle={2} stroke="none"
+                          innerRadius={38} outerRadius={58} paddingAngle={2} stroke="var(--surface)" strokeWidth={2}
                           isAnimationActive animationDuration={200}
                         >
-                          {sevData.map((d, i) => <Cell key={i} fill={d.fill} />)}
+                          {sevData.map((d, i) => <Cell key={i} fill={d.fill} style={{ filter: `drop-shadow(0 0 6px ${d.fill})` }} />)}
                         </Pie>
                         <RechartsTooltip {...tooltipProps} />
                       </PieChart>
@@ -857,7 +859,7 @@ export function ScanPage() {
                   .sort((a, b) => b.findings - a.findings);
                 if (engineData.length === 0) return null;
                 return (
-                  <Card>
+                  <Card className="cyber-lift">
                     <CardHeader title="Findings by engine" />
                     <CardBody>
                       <ResponsiveContainer width="100%" height={150}>
@@ -866,7 +868,7 @@ export function ScanPage() {
                           <XAxis type="number" {...axisProps} />
                           <YAxis type="category" dataKey="name" {...axisProps} width={84} />
                           <RechartsTooltip {...barTooltipProps} />
-                          <Bar dataKey="findings" fill="var(--chart-1)" radius={[0, 4, 4, 0]} barSize={16} isAnimationActive animationDuration={200} />
+                          <Bar dataKey="findings" fill="var(--neon)" radius={[0, 4, 4, 0]} barSize={16} isAnimationActive animationDuration={200} />
                         </BarChart>
                       </ResponsiveContainer>
                     </CardBody>
@@ -881,7 +883,7 @@ export function ScanPage() {
             <Card>
               <CardBody className="flex flex-wrap items-center gap-2 text-[0.78rem] text-text-secondary">
                 <AlertCircle size={13} className="shrink-0 text-text-muted" aria-hidden="true" />
-                <span>This scan&apos;s highest severity:</span>
+                <span>This probe&apos;s highest severity:</span>
                 <StatusChip tone={result.summary.highest_sev} dot={false} />
                 <span>— would fail CI with</span>
                 <code className="rounded bg-surface-muted px-1.5 py-0.5 font-mono text-[0.72rem] text-text-primary">
@@ -951,7 +953,7 @@ export function ScanPage() {
             ) : groupedFindings ? (
               <div>
                 {Array.from(groupedFindings.entries()).map(([key, group]) => (
-                  <div key={key} className="border-b border-border-color/60 last:border-b-0">
+                  <div key={key} className="border-b border-[color-mix(in_srgb,var(--border-color)_60%,transparent)] last:border-b-0">
                     <div className="bg-bg-base px-4 py-1.5 font-mono text-[0.72rem] font-bold text-text-muted">
                       {key} <span className="text-text-primary">({group.length})</span>
                     </div>

@@ -17,6 +17,7 @@ import { Card, CardHeader, CardBody, CardFooter } from '../components/ui/card';
 import { StatTile, type StatTileAccent } from '../components/ui/stat-tile';
 import { EmptyState } from '../components/EmptyState';
 import { cn } from '../components/ui/utils';
+import { CyberKicker } from '../components/cyber/CyberViz';
 import type { Finding } from '../types/api';
 import {
   axisProps, barTooltipProps, gridProps, seriesProps, tooltipProps, CHART_CATEGORICAL,
@@ -80,7 +81,7 @@ function FindingsMindmap({ findings }: { findings: Finding[] }) {
 
   if (tree.length === 0) {
     return (
-      <Card>
+      <Card className="cyber-lift">
         <CardHeader icon={GitBranch} title="Findings mindmap" />
         <CardBody>
           <EmptyState
@@ -93,8 +94,8 @@ function FindingsMindmap({ findings }: { findings: Finding[] }) {
   }
 
   return (
-    <Card>
-      <CardHeader icon={GitBranch} title="Findings mindmap" description="Findings grouped by category, then severity" />
+    <Card className="cyber-lift">
+      <CardHeader icon={GitBranch} title="Findings mindmap" description="Grouped by category, then severity" />
       <CardBody className="pl-6">
         <div className="relative">
           <div aria-hidden="true" className="absolute bottom-0 left-[7px] top-0 w-px bg-border-color" />
@@ -105,7 +106,7 @@ function FindingsMindmap({ findings }: { findings: Finding[] }) {
                 <button
                   type="button"
                   onClick={() => toggle(node.type)}
-                  className="wd-hover flex w-full items-center gap-1.5 rounded bg-transparent px-2 py-1 text-left hover:bg-surface-muted" >
+                  className="wd-hover flex w-full items-center gap-1.5 rounded bg-transparent px-2 py-1 text-left hover:bg-surface-muted hover:text-neon" >
                   <span aria-hidden="true" className="relative -ml-[calc(1rem+1px)] h-px w-4 bg-border-color" />
                   {isOpen ? <ChevronDown size={12} /> : <ChevronRight size={12} />}
                   <span className="text-[0.75rem] font-medium text-text-primary">{node.type}</span>
@@ -113,10 +114,10 @@ function FindingsMindmap({ findings }: { findings: Finding[] }) {
                 </button>
                 {isOpen && (
                   <div className="relative pl-8">
-                    <div aria-hidden="true" className="absolute bottom-0 left-[calc(1.5rem+7px)] top-0 w-px bg-border-color/50" />
+                    <div aria-hidden="true" className="absolute bottom-0 left-[calc(1.5rem+7px)] top-0 w-px bg-[color-mix(in_srgb,var(--border-color)_50%,transparent)]" />
                     {node.severities.map(({ sev, items }) => (
                       <div key={sev} className="relative flex items-start gap-2 py-1">
-                        <span aria-hidden="true" className="absolute left-[calc(-0.5rem+7px)] top-[0.65rem] h-px w-3 bg-border-color/50" />
+                        <span aria-hidden="true" className="absolute left-[calc(-0.5rem+7px)] top-[0.65rem] h-px w-3 bg-[color-mix(in_srgb,var(--border-color)_50%,transparent)]" />
                         <StatusChip tone={sev} dot={false} />
                         <div className="flex flex-wrap gap-1">
                           {items.slice(0, 5).map((f, i) => (
@@ -156,7 +157,7 @@ function CategoryTreemap({ findings }: { findings: Finding[] }) {
   }, [findings]);
 
   return (
-    <Card>
+    <Card className="cyber-lift">
       <CardHeader icon={Layers} title="Source distribution" description="Findings per detection engine" />
       <CardBody>
         {data.length === 0 ? (
@@ -224,8 +225,8 @@ function SeverityTrendChart({ sessions, currentId }: { sessions: ScanSession[]; 
   if (data.length < 2) return null;
 
   return (
-    <Card>
-      <CardHeader icon={Target} title="Severity trend" description="Every recorded session for the same package" />
+    <Card className="cyber-lift">
+      <CardHeader icon={Target} title="Blast trend" description="Every recorded sweep for the same target" />
       <CardBody>
         <ResponsiveContainer width="100%" height={220}>
           <LineChart data={data} margin={{ top: 8, right: 8, left: -18, bottom: 0 }}>
@@ -348,7 +349,7 @@ const TABS = ['overview', 'findings', 'mindmap'] as const;
 type Tab = (typeof TABS)[number];
 
 const EXPORT_BTN =
-  'wd-hover flex items-center gap-1.5 rounded border border-border-color bg-surface px-2.5 py-1.5 text-[0.72rem] font-medium text-text-secondary hover:border-text-muted hover:text-text-primary';
+  'wd-hover flex items-center gap-1.5 rounded border border-border-color bg-surface px-2.5 py-1.5 font-mono text-[0.7rem] font-bold uppercase tracking-wider text-text-secondary hover:border-neon hover:text-neon';
 
 export default function SessionDetailPage({ sessionId }: { sessionId: string }) {
   const navigate = useUIStore((s) => s.navigate);
@@ -384,7 +385,7 @@ export default function SessionDetailPage({ sessionId }: { sessionId: string }) 
 
   if (!session) {
     return (
-      <Card>
+      <Card className="cyber-lift">
         <CardBody>
           <EmptyState
             icon={Shield}
@@ -408,16 +409,17 @@ export default function SessionDetailPage({ sessionId }: { sessionId: string }) 
   return (
     <div className="space-y-5">
       {/* Header */}
+      <CyberKicker index="R-09" label="recon // sweep debrief" />
       <div className="flex flex-wrap items-start gap-3">
         <button
           type="button"
           onClick={() => navigate('/sessions')}
-          aria-label="Back to sessions"
-          className="wd-hover rounded border border-transparent bg-transparent p-1.5 text-text-muted hover:bg-surface-muted hover:text-text-primary" >
+          aria-label="Back to sweep logs"
+          className="wd-hover rounded border border-transparent bg-transparent p-1.5 text-text-muted hover:border-neon hover:text-neon" >
           <ArrowLeft size={16} />
         </button>
         <div className="min-w-0 flex-1">
-          <h1 className="m-0 truncate text-[1.05rem] font-semibold text-text-primary">{session.label}</h1>
+          <h1 className="m-0 truncate text-[1.15rem] font-bold tracking-tight text-text-primary">{session.label}</h1>
           <div className="mt-1 flex flex-wrap items-center gap-3 text-[0.72rem] text-text-muted">
             <span className="flex items-center gap-1"><Clock size={11} /> {formatDate(session.created_at)}</span>
             <StatusChip
@@ -445,9 +447,9 @@ export default function SessionDetailPage({ sessionId }: { sessionId: string }) 
       {/* KPI row */}
       <div className="grid grid-cols-2 gap-5 sm:grid-cols-4 lg:grid-cols-5">
         {SEVERITY_TILES.map((s) => (
-          <StatTile key={s.key} label={s.label} value={summary[s.key]} accent={s.accent} />
+          <StatTile key={s.key} label={s.label} value={summary[s.key]} accent={s.accent} className="cyber-lift" />
         ))}
-        <StatTile label="Total findings" value={summary.total} />
+        <StatTile label="Total findings" value={summary.total} className="cyber-lift" />
       </div>
 
       {/* Metrics strip */}
@@ -457,19 +459,19 @@ export default function SessionDetailPage({ sessionId }: { sessionId: string }) 
           value={`${fixableCount} / ${findings.length}`}
           icon={Shield}
           accent="success"
-          hint="Findings with a known upgrade path" />
+          hint="Findings with a known upgrade path" className="cyber-lift" />
         <StatTile
           label="Engines"
           value={uniqueSources}
           icon={Layers}
           accent="primary"
-          hint="Distinct engines that reported" />
+          hint="Distinct engines that reported" className="cyber-lift" />
         <StatTile
           label="Categories"
           value={categoryData.length}
           icon={Eye}
           accent="teal"
-          hint="Distinct finding types" />
+          hint="Distinct finding types" className="cyber-lift" />
       </div>
 
       {/* Tabs */}
@@ -483,8 +485,8 @@ export default function SessionDetailPage({ sessionId }: { sessionId: string }) 
             className={cn(
               'wd-hover -mb-px border-b-2 bg-transparent px-4 py-2 text-[0.78rem] font-medium capitalize',
               activeTab === tab
-                ? 'border-primary text-primary'
-                : 'border-transparent text-text-secondary hover:text-text-primary',
+                ? 'border-neon text-neon drop-shadow-[0_0_8px_var(--neon)]'
+                : 'border-transparent text-text-secondary hover:text-neon',
             )}
           >
             {tab === 'findings' ? `Findings (${findings.length})` : tab}
@@ -494,8 +496,8 @@ export default function SessionDetailPage({ sessionId }: { sessionId: string }) 
 
       {activeTab === 'overview' && (
         <div className="grid grid-cols-1 gap-5 lg:grid-cols-2">
-          <Card>
-            <CardHeader title="Severity distribution" description="Findings in this session" />
+          <Card className="cyber-lift">
+            <CardHeader title="Blast distribution" description="Findings in this sweep" />
             <CardBody>
               {sevPieData.length === 0 ? (
                 <EmptyState icon={Shield} title="No findings detected" description="This scan came back clean across every engine." />
@@ -526,7 +528,7 @@ export default function SessionDetailPage({ sessionId }: { sessionId: string }) 
             </CardBody>
           </Card>
 
-          <Card>
+          <Card className="cyber-lift">
             <CardHeader title="Findings by engine" description="Which detector fired most" />
             <CardBody>
               {engineData.length === 0 ? (
@@ -545,7 +547,7 @@ export default function SessionDetailPage({ sessionId }: { sessionId: string }) 
             </CardBody>
           </Card>
 
-          <Card>
+          <Card className="cyber-lift">
             <CardHeader title="Findings by category" description="Top 10 finding types" />
             <CardBody>
               {categoryData.length === 0 ? (
@@ -576,7 +578,7 @@ export default function SessionDetailPage({ sessionId }: { sessionId: string }) 
       )}
 
       {activeTab === 'findings' && (
-        <Card>
+        <Card className="cyber-lift">
           <CardHeader
             title="Findings"
             description={`${findings.length} finding${findings.length === 1 ? '' : 's'} — click a row for full metadata`}
@@ -601,8 +603,8 @@ export default function SessionDetailPage({ sessionId }: { sessionId: string }) 
           <FindingsMindmap findings={findings} />
 
           {session.result?.engines && session.result.engines.length > 0 && (
-            <Card>
-              <CardHeader icon={Target} title="Engine effectiveness" description="Per-engine outcome for this session" />
+            <Card className="cyber-lift">
+              <CardHeader icon={Target} title="Engine effectiveness" description="Per-engine outcome for this sweep" />
               <CardBody className="grid grid-cols-2 gap-3 md:grid-cols-4">
                 {session.result.engines.map((eng) => (
                   <div key={eng.engine} className="rounded border border-border-color bg-bg-base p-3">
@@ -623,10 +625,10 @@ export default function SessionDetailPage({ sessionId }: { sessionId: string }) 
         </div>
       )}
 
-      <Card>
+      <Card className="cyber-lift">
         <CardFooter>
-          <span className="truncate font-mono">session {session.id}</span>
-          <span>stored locally in this browser</span>
+          <span className="truncate font-mono">sweep {session.id}</span>
+          <span className="font-mono">sealed in local storage</span>
         </CardFooter>
       </Card>
     </div>
